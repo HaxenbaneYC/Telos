@@ -233,6 +233,7 @@
   $("mSave").addEventListener("click", function () {
     var w = parseFloat($("mWaist").value), s2 = parseFloat($("mShoulder").value);
     if (!isFinite(w) && !isFinite(s2)) { $("mWaist").focus(); return; }
+    if ((isFinite(w) && (w < 30 || w > 250)) || (isFinite(s2) && (s2 < 30 || s2 > 250))) { toast("Measurements are in centimetres, between 30 and 250."); return; }
     S.meas[TODAY] = { w: isFinite(w) ? w : null, s: isFinite(s2) ? s2 : null };
     save(); $("mWaist").value = ""; $("mShoulder").value = ""; renderMeas(); renderReview();
     toast("Measurements saved");
@@ -363,8 +364,11 @@
     var b = ev.target.closest("[data-chip]"); if (!b) return;
     recChip = b.getAttribute("data-chip"); renderRecipes();
   });
+  var foodBuilt = false;
   function renderFood() {
     renderRecipes();
+    if (foodBuilt) return;   // the tables below are static and move into the accordion once; a second pass has nothing to find
+    foodBuilt = true;
     var cls = { a: "a", b: "b", c: "" };
     $("proteins").innerHTML = PROTEINS.map(function (gr) {
       return '<div class="pgrp"><div class="pgt ' + cls[gr.cls] + '">' + gr.g + '</div><div class="pgn">' + gr.note + "</div>" +
@@ -376,8 +380,8 @@
     }).join("");
     $("swaps").innerHTML = SWAPS.map(function (s2) { return '<div class="sw"><div class="a">' + s2[0] + '</div><div class="b">' + s2[1] + "</div></div>"; }).join("");
     $("swapAcc").innerHTML = accHtml("sw1", false, "Swaps and the food rule", "Protein swaps, the rule, everything else", "", '<div class="acc-in" id="swapIn" style="padding-top:0"></div>');
-    var h = document.querySelector(".swapholder");
-    while (h.firstChild) $("swapIn").appendChild(h.firstChild);
+    var h = document.querySelector(".swapholder"), si = $("swapIn");
+    if (h && si) while (h.firstChild) si.appendChild(h.firstChild);
   }
 
   // ── Train ──

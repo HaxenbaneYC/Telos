@@ -279,6 +279,7 @@
 
   /* ── bottom sheet ── */
   .sheetwrap { position: fixed; inset: 0; z-index: 60; }
+  .panel:focus { outline: none; }
   .scrim { position: absolute; inset: 0; background: var(--scrim); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity .24s ease; touch-action: none; }
   .panel {
     position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 600px; max-height: 92%;
@@ -363,6 +364,35 @@
   .rp-body li:last-child { margin-bottom: 0; }
   .rhead { font-size: 14px; font-weight: 600; color: var(--fg-2); padding: 14px 4px 8px; }
 
+  /* ── TEST: search results and add button, from the refined mock (branch claude/search-sheet-test).
+     To go back to the original look, switch to main. Hard-coded colours from the mock are now tokens. ── */
+  .hit-cap { margin: 12px 4px 0; font-size: 13px; color: var(--fg-3); }
+  .fgroup-enhanced { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .opt-hit {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px;
+    padding: 12px 14px; background: var(--fill); color: var(--fg); font-family: var(--sans);
+    border: 1px solid var(--line); border-radius: var(--r-ctl); text-align: left; cursor: pointer;
+    transition: transform .18s var(--ease), background-color .18s ease, border-color .18s ease;
+  }
+  .opt-hit:active { transform: scale(0.985); background: var(--card); }
+  .opt-hit:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .opt-hit.sel { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 10%, var(--fill)); cursor: default; }
+  .opt-hit .ob { flex: 1; min-width: 0; display: block; }
+  .hit-title { display: block; font-size: 16px; font-weight: 600; line-height: 1.3; }
+  .hit-sub { font-size: 13.5px; font-weight: 400; color: var(--fg-2); margin-left: 4px; }
+  .hit-macros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .m-badge { font-family: var(--mono); font-size: 12.5px; padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--fg-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .m-badge.kcal { font-weight: 600; color: var(--fg); }
+  .m-badge.p { color: var(--teal); }
+  .m-badge.f { color: var(--bronze); }
+  .m-badge.c { color: var(--chalk); }
+  .hit-add-icon { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; line-height: 1; color: var(--teal); background: color-mix(in srgb, var(--teal) 14%, transparent); }
+  .opt-hit .tick { flex: none; width: 10px; height: 18px; border: solid var(--teal); border-width: 0 2.4px 2.4px 0; transform: rotate(43deg); margin: 0 8px 0 4px; }
+  .bigbtn.active-ready { box-shadow: 0 4px 16px color-mix(in srgb, var(--teal) 30%, transparent); font-weight: 700; display: flex; align-items: center; justify-content: center; white-space: pre; padding-inline: 16px; }
+  .al-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .al-k { flex: none; }
+  .addhint { margin: 0; min-height: 20px; text-align: center; font-size: 13.5px; line-height: 20px; color: var(--fg-3); }
+
   /* ── forms in the sheet ── */
   .flabel { display: block; font-size: 14px; color: var(--fg-2); padding: 12px 4px 7px; }
   .fin3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
@@ -446,7 +476,7 @@
   /* ── coach note, add-food sheet ── */
   .trimnote { margin-top: 4px; font-family: var(--mono); font-size: 12.5px; color: var(--bronze); font-variant-numeric: tabular-nums; }
   .seg { display: flex; gap: 4px; padding: 4px; margin-bottom: 4px; background: var(--fill); border-radius: var(--r-ctl); }
-  .segb { flex: 1; min-width: 0; min-height: 40px; border: 0; border-radius: 11px; background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .18s ease, color .18s ease; }
+  .segb { flex: 1; min-width: 0; min-height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .18s ease, color .18s ease; }
   .segb.on { background: var(--card); color: var(--fg); }
   .segb:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
   .aihint { margin: 10px 4px 0; font-size: 13.5px; line-height: 1.45; color: var(--fg-2); }
@@ -617,7 +647,7 @@
 
   .chips { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
-  .chip { flex: none; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-ctl); background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .16s ease, color .16s ease; }
+  .chip { flex: none; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-ctl); background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .16s ease, color .16s ease; }
   .chip.on { background: var(--teal); border-color: var(--teal); color: var(--void); }
   .chip:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
   .rfit { margin: 0 0 8px; font-size: 13.5px; color: var(--fg-3); }
@@ -744,8 +774,8 @@
       <div class="label">This morning</div>
       <div class="card">
         <div class="fld">
-          <div><label for="wIn">Weight, kg</label><input class="inp m" id="wIn" type="number" inputmode="decimal" step="0.05" placeholder="75.00"></div>
-          <div><label for="sIn">Sleep last night, h</label><input class="inp m" id="sIn" type="number" inputmode="decimal" step="0.25" placeholder="6.5"></div>
+          <div><label for="wIn">Weight, kg</label><input class="inp m" id="wIn" type="number" inputmode="decimal" min="30" max="250" step="0.05" placeholder="75.00"></div>
+          <div><label for="sIn">Sleep last night, h</label><input class="inp m" id="sIn" type="number" inputmode="decimal" min="0" max="16" step="0.25" placeholder="6.5"></div>
         </div>
         <button class="bigbtn" id="mLog" style="margin-top:12px">Log</button>
         <p class="ferr" id="mErr" hidden></p>
@@ -768,8 +798,8 @@
       <div class="card">
         <div class="wlead"><div><b class="num" id="mGap">&mdash;</b><span class="u"> cm</span></div><span class="wsub">Shoulders minus waist</span></div>
         <div class="fld" style="margin-top:12px">
-          <div><label for="mWaist">Waist, cm</label><input class="inp m" id="mWaist" type="number" inputmode="decimal" step="0.5" placeholder="82.0"></div>
-          <div><label for="mShoulder">Shoulders, cm</label><input class="inp m" id="mShoulder" type="number" inputmode="decimal" step="0.5" placeholder="113.0"></div>
+          <div><label for="mWaist">Waist, cm</label><input class="inp m" id="mWaist" type="number" inputmode="decimal" min="30" max="250" step="0.5" placeholder="82.0"></div>
+          <div><label for="mShoulder">Shoulders, cm</label><input class="inp m" id="mShoulder" type="number" inputmode="decimal" min="30" max="250" step="0.5" placeholder="113.0"></div>
         </div>
         <button class="bigbtn alt" id="mSave" style="margin-top:12px">Save measurements</button>
         <p class="aihint">Waist at the navel, relaxed. Shoulders at the widest, arms down. The gap widening is the goal, and it moves even when weight doesn&rsquo;t.</p>
@@ -837,7 +867,7 @@
 
 <div class="sheetwrap" id="sheetWrap" hidden>
   <div class="scrim" id="scrim"></div>
-  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Details"></div>
+  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Details" tabindex="-1"></div>
 </div>
 
 <nav>
@@ -8690,15 +8720,65 @@
   "use strict";
   var PREVIEW = false;   // the build turns this off for the live app: real storage key, no sample data
   var KEY = PREVIEW ? "telos_mock2" : "telos_v1";
-  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  function isObj(v) { return !!v && typeof v === "object" && !Array.isArray(v); }
+  function load() {
+    try { var v = JSON.parse(localStorage.getItem(KEY)); return isObj(v) ? v : {}; } catch (e) { return {}; }
+  }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
-  var S = load();
-  if (!S.weights) S.weights = {};
-  if (!S.eggs) S.eggs = {};
-  if (!S.ticks) S.ticks = {};
-  if (!S.extras) S.extras = {};
-  if (!S.picks) S.picks = {};
-  if (!S.done) S.done = {};
+
+  // Whatever is in storage (an older version, a hand edit, a half-written save) is coerced into the
+  // shape the code reads. Anything that does not fit is dropped, so the app opens instead of throwing.
+  function fin(v) { return typeof v === "number" && isFinite(v) ? v : undefined; }
+  var DAYKEY = /^\d{4}-\d{2}-\d{2}(-[sd])?$/, MEALKEY = /^[a-z][a-z0-9]{0,11}$/;
+  function mapOf(m, leaf, keyOk) {
+    var o = {}, k, v;
+    if (!isObj(m)) return o;
+    for (k in m) if (Object.prototype.hasOwnProperty.call(m, k) && (!keyOk || keyOk.test(k))) { v = leaf(m[k]); if (v !== undefined) o[k] = v; }
+    return o;
+  }
+  function str(v, n) { return typeof v === "string" ? v.slice(0, n) : undefined; }
+  function partOf(x) {
+    return { cat: /^(protein|carb|fat)$/.test(x.cat) ? x.cat : "protein", g: fin(x.g) || 0, n: fin(x.n) !== undefined ? x.n : str(x.n, 40),
+             noun: str(x.noun, 40), sub: str(x.sub, 40), name: str(x.name, 80) || "Food", skip: x.skip ? true : undefined, off: x.off ? true : undefined,
+             t: macros(x.t) || { k: 0, p: 0, f: 0, c: 0 } };
+  }
+  function flags(m, keyOk) { return mapOf(m, function (v) { return v ? true : undefined; }, keyOk); }
+  function macros(t) {
+    if (!isObj(t)) return undefined;
+    var o = { k: fin(t.k), p: fin(t.p), f: fin(t.f), c: fin(t.c) };
+    return o.k === undefined ? undefined : { k: o.k, p: o.p || 0, f: o.f || 0, c: o.c || 0 };
+  }
+  function normalizeState(x) {
+    x.weights = mapOf(x.weights, fin, DAYKEY);
+    x.sleep = mapOf(x.sleep, fin, DAYKEY);
+    x.eggs = mapOf(x.eggs, function (v) { v = fin(v); return v === undefined ? undefined : Math.max(0, Math.min(12, Math.round(v))); }, MEALKEY);
+    x.ticks = mapOf(x.ticks, function (d) { return isObj(d) ? flags(d, MEALKEY) : undefined; }, DAYKEY);
+    x.extras = mapOf(x.extras, function (list) {
+      if (!Array.isArray(list)) return undefined;
+      return list.filter(function (e) { return isObj(e) && fin(e.k) !== undefined; }).map(function (e) {
+        return { n: String(e.n == null ? "Food" : e.n).slice(0, 80), k: Math.min(5000, Math.max(0, e.k)), p: Math.min(800, Math.max(0, fin(e.p) || 0)), f: Math.min(800, Math.max(0, fin(e.f) || 0)), c: Math.min(800, Math.max(0, fin(e.c) || 0)), src: /^(manual|estimate|label|database)$/.test(e.src) ? e.src : "manual" };
+      });
+    }, DAYKEY);
+    x.picks = mapOf(x.picks, function (m) { return isObj(m) ? mapOf(m, function (v) { return str(v, 12); }, MEALKEY) : undefined; }, MEALKEY);
+    x.done = mapOf(x.done, function (v) { return str(v, 20); }, MEALKEY);
+    x.snap = mapOf(x.snap, function (day) {
+      return isObj(day) ? mapOf(day, function (s) {
+        var t = isObj(s) ? macros(s.tot) : undefined;
+        return t ? { tot: t, full: macros(s.full) || t, parts: Array.isArray(s.parts) ? s.parts.filter(isObj).map(partOf) : [] } : undefined;
+      }, MEALKEY) : undefined;
+    }, DAYKEY);
+    x.skip = mapOf(x.skip, function (day) {
+      return isObj(day) ? mapOf(day, function (m) { return isObj(m) ? flags(m, /^\d{1,2}$/) : undefined; }, MEALKEY) : undefined;
+    }, DAYKEY);
+    x.skipped = mapOf(x.skipped, function (day) { return isObj(day) ? flags(day, MEALKEY) : undefined; }, DAYKEY);
+    x.meas = mapOf(x.meas, function (m) { return isObj(m) ? { w: fin(m.w) === undefined ? null : m.w, s: fin(m.s) === undefined ? null : m.s } : undefined; }, DAYKEY);
+    x.photos = (Array.isArray(x.photos) ? x.photos : []).filter(function (p) {
+      return isObj(p) && typeof p.src === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(p.src) && typeof p.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.d);
+    });
+    x.seenWk = fin(x.seenWk) || 0;
+    return x;
+  }
+  var S = normalizeState(load());
 
   var START = "2026-10-28", TARGET = 69;
 
@@ -8754,6 +8834,12 @@
       ["avo", "Avocado",    160,  2,    15, 9]
     ]
   };
+  function hasFood(cat, id) {
+    var a = FOODS[cat];
+    if (!a) return false;
+    for (var i = 0; i < a.length; i++) if (a[i][0] === id) return true;
+    return false;
+  }
   function food(cat, id) {
     var a = FOODS[cat];
     for (var i = 0; i < a.length; i++) if (a[i][0] === id) return a[i];
@@ -8797,12 +8883,16 @@
     ["m5", "21:30", "Dinner",        0.32, 0.22, 0.28, ["protein","carb","fat"], { protein:"chk", carb:"pot", fat:"oil" }]
   ];
 
-  // a slot's absolute targets for today's phase
-  function slotTarget(m) {
+  // a slot's absolute targets for the phase, before any coach trim
+  function planTarget(m) {
     var ph = currentPhase();
-    var f = ph.f * m[4], c = ph.c * m[5];
-    if (TRIM.on && !handled(m[0])) { f *= 1 - TRIM.fatFrac; if (m[0] !== "m4") c *= 1 - TRIM.carbFrac; }
-    return { p: ph.p * m[3], f: f, c: c };
+    return { p: ph.p * m[3], f: ph.f * m[4], c: ph.c * m[5] };
+  }
+  // ...and with today's trim on the slots still to come
+  function slotTarget(m) {
+    var t = planTarget(m);
+    if (TRIM.on && !handled(m[0])) { t.f *= 1 - TRIM.fatFrac; if (m[0] !== "m4") t.c *= 1 - TRIM.carbFrac; }
+    return t;
   }
 
   function mealById(id) {
@@ -8811,15 +8901,15 @@
   }
   function pickFor(mealId) {
     var m = mealById(mealId), saved = (S.picks && S.picks[mealId]) || {}, out = {};
-    m[6].forEach(function (cat) { out[cat] = saved[cat] || m[7][cat]; });
+    m[6].forEach(function (cat) { out[cat] = (saved[cat] && hasFood(cat, saved[cat])) ? saved[cat] : m[7][cat]; });
     return out;
   }
   // Protein hits the protein target. Carb fills the carb gap left after it.
   // Fat fills only what the first two have not already brought.
   // Every portion is rounded to how it is served — pieces or 5 g — before
   // its macros are counted, so the numbers match what you actually eat.
-  function buildMeal(mealId) {
-    var m = mealById(mealId), pick = pickFor(mealId), tgt = slotTarget(m);
+  function buildMealT(mealId, over) {
+    var m = mealById(mealId), pick = pickFor(mealId), tgt = over || slotTarget(m);
     var tP = tgt.p, tF = tgt.f, tC = tgt.c;
     var NIL = { parts: [], t: { k:0, p:0, f:0, c:0 } };
 
@@ -8870,10 +8960,81 @@
 
     var tot = { k: P.t.k+C.t.k+F.t.k, p: P.t.p+C.t.p+F.t.p,
                 f: P.t.f+C.t.f+F.t.f, c: P.t.c+C.t.c+F.t.c };
+    var raw = { k: tot.k, p: tot.p, f: tot.f, c: tot.c };
     tot.k = Math.round(tot.k); tot.p = Math.round(tot.p);
     tot.f = Math.round(tot.f); tot.c = Math.round(tot.c);
-    return { parts: parts, tot: tot, m: m };
+    return { parts: parts, tot: tot, raw: raw, m: m };
   }
+
+  // The day has to add up. Each slot is solved against its own share, but a slot cannot always
+  // deliver it: breakfast has no fat source for its fat share, and a banana or a slice of bread is
+  // a coarse step. So the meals are built together, and what the day is still short of or over by
+  // goes to the slots that can take it in small steps (rice, potato, oil, chicken, yogurt, nuts).
+  // Pieces (eggs, bread, bananas) never absorb it.
+  // The plan does not depend on what you have eaten: only the coach's trim changes the slots still
+  // to come, and then the slots already eaten stay exactly as the plan had them.
+  function isPiece(id) { return !!PIECE[id] || id === "egx"; }
+  var CAT = { p: "protein", f: "fat", c: "carb" }, SH = { p: 3, f: 4, c: 5 };
+  function reconcile(ms, base, adj) {
+    var want = { p: 0, f: 0, c: 0 }, best = null, bestErr = 1e9;
+    ms.forEach(function (m) { var t = base[m[0]], a = adj[m[0]]; want.p += t.p + a.p; want.f += t.f + a.f; want.c += t.c + a.c; });
+    for (var it = 0; it < 8; it++) {
+      var out = {}, got = { p: 0, f: 0, c: 0 };
+      ms.forEach(function (m) {
+        var b = base[m[0]], a = adj[m[0]];
+        var r = buildMealT(m[0], { p: Math.max(0, b.p + a.p), f: Math.max(0, b.f + a.f), c: Math.max(0, b.c + a.c) });
+        out[m[0]] = r; got.p += r.raw.p; got.f += r.raw.f; got.c += r.raw.c;
+      });
+      var res = { p: want.p - got.p, f: want.f - got.f, c: want.c - got.c };
+      // Fat that is already over, with no fat source left to cut (fatty meat, eggs, nuts), cannot go
+      // lower. The calories still have to add up, so the carbs take that difference instead.
+      var fatCut = ms.some(function (m) {
+        return pickFor(m[0]).fat && m[4] > 0 && out[m[0]].parts.some(function (x) { return x.cat === "fat" && x.g > 0; });
+      });
+      var stuck = res.f < -1 && !fatCut;
+      if (stuck) res.c += res.f * 9 / 4;
+      var err = Math.abs(res.p) * 4 + (stuck ? 0 : Math.abs(res.f) * 9) + Math.abs(res.c) * 4;
+      if (err < bestErr) { bestErr = err; best = out; }
+      if (err < 8) break;
+      ["p", "f", "c"].forEach(function (k) {
+        var can = ms.filter(function (m) {
+          var pk = pickFor(m[0])[CAT[k]];
+          return m[SH[k]] > 0 && pk && !isPiece(pk);
+        });
+        var tw = 0; can.forEach(function (m) { tw += m[SH[k]]; });
+        if (!tw) return;
+        can.forEach(function (m) {
+          // a slot gives up at most half its carbs or 40% of its protein: past that it is no longer that meal
+          var floor = k === "c" ? -0.5 * base[m[0]].c : k === "p" ? -0.4 * base[m[0]].p : -base[m[0]].f;
+          adj[m[0]][k] = Math.max(floor, adj[m[0]][k] + res[k] * m[SH[k]] / tw);
+        });
+      });
+    }
+    return best;
+  }
+  var PLAN = { key: "", v: null }, PLAIN = { key: "", v: null };
+  function plainPlan() {
+    var key = JSON.stringify([S.picks, S.eggs, currentPhase().n]);
+    if (PLAIN.key === key && PLAIN.v) return PLAIN.v;
+    var base = {}, adj = {};
+    MEALS.forEach(function (m) { base[m[0]] = planTarget(m); adj[m[0]] = { p: 0, f: 0, c: 0 }; });
+    PLAIN.v = { out: reconcile(MEALS, base, adj), adj: adj }; PLAIN.key = key;
+    return PLAIN.v;
+  }
+  function dayPlan() {
+    var plain = plainPlan();
+    if (!TRIM.on) return plain.out;
+    var hs = MEALS.map(function (m) { return handled(m[0]) ? 1 : 0; }).join("");
+    var key = JSON.stringify([PLAIN.key, TRIM.fatFrac, TRIM.carbFrac, hs]);
+    if (PLAN.key === key && PLAN.v) return PLAN.v;
+    var open = MEALS.filter(function (m) { return !handled(m[0]); }), base = {}, adj = {};
+    open.forEach(function (m) { base[m[0]] = slotTarget(m); adj[m[0]] = { p: plain.adj[m[0]].p, f: plain.adj[m[0]].f, c: plain.adj[m[0]].c }; });
+    var out = reconcile(open, base, adj), res = {};
+    MEALS.forEach(function (m) { res[m[0]] = out[m[0]] || plain.out[m[0]]; });
+    PLAN.key = key; PLAN.v = res;
+    return res;
+  }
+  function buildMeal(mealId) { return dayPlan()[mealId]; }
 
   var DAILY = [
     ["protein", "Protein hit", ""],
@@ -8962,26 +9123,30 @@
     ["Mustard, vinegar, hot sauce, spices","Free"]
   ];
 
-  function iso(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function iso(d) { return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
   function parseISO(s) { var p = s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
   function dayDiff(a,b) { return Math.round((parseISO(b)-parseISO(a))/86400000); }
   function shift(d,n) { var x = parseISO(d); x.setDate(x.getDate()+n); return iso(x); }
   var TODAY = iso(new Date()), YDAY = shift(TODAY,-1);
 
   function weekNumber() { var d = dayDiff(START,TODAY); return d<0?1:Math.min(13,Math.floor(d/7)+1); }
-  function currentPhase() {
-    var w = weekNumber();
+  function phaseOn(iso) {
+    var d = dayDiff(START, iso), w = d < 0 ? 1 : Math.min(13, Math.floor(d / 7) + 1);
     for (var i=0;i<PHASES.length;i++) if (w>=PHASES[i].w[0]&&w<=PHASES[i].w[1]) return PHASES[i];
     return PHASES[PHASES.length-1];
   }
+  function currentPhase() { return phaseOn(TODAY); }
   function eatenOn(d) {
     var t = S.ticks[d]||{}, o = {k:0,p:0,f:0,c:0};
     MEALS.forEach(function(m){ if(t[m[0]]){ var b=snapTot(d,m[0]); o.k+=b.k;o.p+=b.p;o.f+=b.f;o.c+=b.c; } });
     (S.extras[d]||[]).forEach(function(e){ o.k+=e.k||0;o.p+=e.p||0;o.f+=e.f||0;o.c+=e.c||0; });
+    // whole numbers: extras carry decimals, and a float sum must never reach the screen or an "over?" test
+    o.k=Math.round(o.k); o.p=Math.round(o.p); o.f=Math.round(o.f); o.c=Math.round(o.c);
     return o;
   }
   function carryover() {
-    var ph = currentPhase();
+    var ph = phaseOn(YDAY);
     if (!S.ticks[YDAY] && !(S.extras[YDAY]||[]).length) return 0;
     var over = eatenOn(YDAY).k - ph.kcal;
     return over <= 150 ? 0 : -Math.min(300, Math.round(over));
@@ -8990,7 +9155,7 @@
   function entries() { return Object.keys(S.weights).sort().map(function(k){return {d:k,w:S.weights[k]};}); }
   function mean(a) { return a.reduce(function(s,x){return s+x;},0)/a.length; }
   var $ = function(id){ return document.getElementById(id); };
-  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];}); }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];}); }
 
   function methodsFor(mealId) {
     var pick = pickFor(mealId);
@@ -9329,13 +9494,6 @@
     S.mockSeeded = true; save();
   }
   DAILY.push(["bike", "3 km bike ride", ""]);
-  if (!S.snap) S.snap = {};
-  if (!S.skip) S.skip = {};
-  if (!S.skipped) S.skipped = {};
-  if (!S.sleep) S.sleep = {};
-  if (!S.meas) S.meas = {};
-  if (!S.photos) S.photos = [];
-  if (!S.seenWk) S.seenWk = 0;
 
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   function RM() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
@@ -9365,8 +9523,8 @@
     return parts.map(function (pt, i) {
       var q, w, none = pt.skip || (!pt.noun && pt.g === 0);
       if (none)         { q = "none"; w = esc(pt.name) + '<span class="gs">' + (pt.skip ? "protein covers the fat" : "trimmed for today") + "</span>"; }
-      else if (pt.noun) { q = String(pt.n); w = pt.noun + '<span class="gs">' + pt.sub + "</span>"; }
-      else              { q = pt.g + " g"; w = esc(pt.name); }
+      else if (pt.noun) { q = esc(pt.n); w = esc(pt.noun) + '<span class="gs">' + esc(pt.sub) + "</span>"; }
+      else              { q = esc(pt.g) + " g"; w = esc(pt.name); }
       var off = pt.off || (toggle && sk[i]);
       if (toggle && !none) {
         return '<button class="item tg' + (off ? " off" : "") + '" data-sk="' + i + '" aria-pressed="' + !off + '" aria-label="' + esc(pt.name) + ', ' + (off ? "skipped" : "eating") + '">' +
@@ -9696,9 +9854,13 @@
     save(); refresh();
   }
   function unEat(id, prevSnap) {
-    delete S.ticks[TODAY][id]; delete S.snap[TODAY][id]; clearSkip(id);
+    if (S.ticks[TODAY]) delete S.ticks[TODAY][id];
+    if (S.snap[TODAY]) delete S.snap[TODAY][id];
+    clearSkip(id);
     save(); refresh();
     toast(mealById(id)[2] + " is back to not eaten", function () {
+      if (!S.ticks[TODAY]) S.ticks[TODAY] = {};
+      if (!S.snap[TODAY]) S.snap[TODAY] = {};
       S.ticks[TODAY][id] = true; S.snap[TODAY][id] = prevSnap; save(); refresh();
       if (sh && sh.view === "meal") paintSheet();
     });
@@ -9853,18 +10015,31 @@
   var ICON_X = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>';
   var ICON_BACK = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg>';
 
+  // While a sheet is open the page behind it is not reachable by keyboard or screen reader, and focus
+  // goes back to where it was when the sheet closes.
+  var BEHIND = ["main", "mini"], opener = null;
+  function setBehind(on) {
+    BEHIND.forEach(function (id) { var e = $(id); if (e) { if (on) e.setAttribute("inert", ""); else e.removeAttribute("inert"); } });
+    [].forEach.call(document.querySelectorAll("header, nav"), function (e) { if (on) e.setAttribute("inert", ""); else e.removeAttribute("inert"); });
+  }
   function openSheet(s) {
     if (s.view === "add") { s.tab = "find"; s.q = ""; s.hits = []; s.pick = null; s.units = []; s.draft = { name: "", k: "", p: "", f: "", c: "", src: "manual" }; s.ready = false; s.note = ""; s.err = ""; s.busy = ""; s.dText = ""; s.label = null; s.thumb = ""; }
+    if (!sh) opener = document.activeElement;
     sh = s; paintSheet(); hideToast();
     var w = $("sheetWrap");
     clearTimeout(closeT);
     w.hidden = false; void w.offsetWidth; w.classList.add("open");
+    setBehind(true);
+    try { $("panel").focus({ preventScroll: true }); } catch (e) {}
   }
   function closeSheet() {
     var w = $("sheetWrap");
     if (sh && sh.ctl) { try { sh.ctl.abort(); } catch (e) {} }
     if (sh && sh.thumb) { try { URL.revokeObjectURL(sh.thumb); } catch (e2) {} }
     sh = null; w.classList.remove("open");
+    setBehind(false);
+    if (opener && opener.focus && document.contains(opener)) { try { opener.focus({ preventScroll: true }); } catch (e3) {} }
+    opener = null;
     clearTimeout(closeT);
     closeT = setTimeout(function () { if (!sh) w.hidden = true; }, 340);
   }
@@ -9953,7 +10128,47 @@
     if ((v = g("fF")) !== null) sh.draft.f = v;
     if ((v = g("fC")) !== null) sh.draft.c = v;
   }
-  function addValid() { return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
+  // The button names what it will add and how much it counts: Add "Orange juice, raw" · 118 kcal
+  function addLabel() {
+    var d = sh && sh.draft; if (!addValid()) return "Add to today";
+    return '<span class="al-n">Add “' + esc(d.name.trim().replace(/\s*\([^)]*\)$/, "")) + '”</span><span class="al-k"> · ' + Math.round(parseFloat(d.k)) + " kcal</span>";
+  }
+  function paintAdd() {
+    var b = document.getElementById("fAdd"); if (!b) return;
+    var ok = addValid(); b.disabled = !ok; b.classList.toggle("active-ready", ok); b.innerHTML = addLabel();
+    var h = document.getElementById("fHint"); if (h) h.textContent = addHint();
+  }
+  // Why the button is off, in the words of the tab you are on. Empty once it is ready.
+  function addHint() {
+    if (!sh || !sh.draft) return "";
+    var r = addRange(); if (r) return r;
+    if (addValid()) {   // typed by hand: say so when the calories and the macros disagree
+      var d = sh.draft;
+      return sh.tab === "num" && (d.p !== "" || d.f !== "" || d.c !== "") ? energyWarn(parseFloat(d.k), num(d.p), num(d.f), num(d.c)).trim() : "";
+    }
+    if (sh.tab === "find") return sh.pick ? "Enter how much you had to continue." : "Pick a food from the list to continue.";
+    if (sh.tab === "desc") return sh.ready ? "Add a name and calories to continue." : "Describe it and tap Estimate to continue.";
+    if (sh.tab === "photo") return sh.ready ? "Enter how much you ate to continue." : "Choose a photo of the label to continue.";
+    return "Add a name and calories to continue.";
+  }
+  // Ranges for what can be added. Typing 1e9 kcal or a negative macro would wreck the day's totals.
+  var LIM = { k: 5000, m: 800 };
+  function addRange() {
+    var d = sh && sh.draft; if (!d) return "";
+    var k = parseFloat(d.k), keys = [["p", "Protein"], ["f", "Fat"], ["c", "Carbs"]], i, v;
+    if (d.k !== "" && isFinite(k) && (k < 0 || k > LIM.k)) return k < 0 ? "Calories can’t be negative." : "Calories can’t be over " + fmt(LIM.k) + " in one entry.";
+    for (i = 0; i < keys.length; i++) {
+      if (d[keys[i][0]] === "" || d[keys[i][0]] == null) continue;
+      v = parseFloat(d[keys[i][0]]);
+      if (!isFinite(v) || v < 0 || v > LIM.m) return keys[i][1] + " has to be between 0 and " + LIM.m + " g.";
+    }
+    return "";
+  }
+  function addValid() {
+    if (addRange()) return false;
+    // with a picked food or a read label the amount drives the numbers, so an empty amount is not addable
+    if (sh && sh.amt && ((sh.tab === "find" && sh.pick) || (sh.tab === "photo" && sh.label && sh.ready)) && !(sh.amt.n > 0)) return false;
+    return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
 
   function viewAdd() {
     var d = sh.draft, ex = S.extras[TODAY] || [], tab = sh.tab;
@@ -10005,11 +10220,11 @@
     var form = "";
     if (showForm) {
       form = amount + '<label class="flabel" for="fName">Name</label><input id="fName" type="text" autocomplete="off" placeholder="Shawarma, 2 biscuits…" value="' + esc(d.name) + '">' +
-        '<label class="flabel" for="fKcal">Calories</label><input id="fKcal" class="m" type="number" inputmode="numeric" step="any" placeholder="kcal" value="' + esc(d.k) + '">' +
+        '<label class="flabel" for="fKcal">Calories</label><input id="fKcal" class="m" type="number" inputmode="numeric" min="0" max="5000" step="any" placeholder="kcal" value="' + esc(d.k) + '">' +
         '<div class="flabel">Macros in grams, if you know them</div>' +
-        '<div class="fin3"><input id="fP" class="m" type="number" inputmode="decimal" step="any" placeholder="Protein" aria-label="Protein grams" value="' + esc(d.p) + '">' +
-        '<input id="fF" class="m" type="number" inputmode="decimal" step="any" placeholder="Fat" aria-label="Fat grams" value="' + esc(d.f) + '">' +
-        '<input id="fC" class="m" type="number" inputmode="decimal" step="any" placeholder="Carbs" aria-label="Carb grams" value="' + esc(d.c) + '"></div>' +
+        '<div class="fin3"><input id="fP" class="m" type="number" inputmode="decimal" min="0" max="800" step="any" placeholder="Protein" aria-label="Protein grams" value="' + esc(d.p) + '">' +
+        '<input id="fF" class="m" type="number" inputmode="decimal" min="0" max="800" step="any" placeholder="Fat" aria-label="Fat grams" value="' + esc(d.f) + '">' +
+        '<input id="fC" class="m" type="number" inputmode="decimal" min="0" max="800" step="any" placeholder="Carbs" aria-label="Carb grams" value="' + esc(d.c) + '"></div>' +
         (sh.note ? '<p class="aihint" id="aNote">' + esc(sh.note) + "</p>" : "");
     }
     var err = sh.err ? '<p class="ferr" id="fErr">' + esc(sh.err) + "</p>" : '<p class="ferr" id="fErr" hidden></p>';
@@ -10019,11 +10234,11 @@
     }).join("") + "</div>" : "";
     return phead("Off-plan food", "Counts toward today", false) +
       '<div class="pbody">' + seg + top + form + err + list + "</div>" +
-      '<div class="pfoot"><button class="bigbtn" id="fAdd"' + (addValid() ? "" : " disabled") + '>Add to today</button></div>';
+      '<div class="pfoot"><button class="bigbtn' + (addValid() ? " active-ready" : "") + '" id="fAdd"' + (addValid() ? "" : " disabled") + ">" + addLabel() + '</button><p class="addhint" id="fHint">' + addHint() + "</p></div>";
   }
 
   function toForm() {
-    var el = document.querySelector("#panel .lblhead") || document.querySelector("#panel label[for=fName]");
+    var el = document.querySelector("#panel .lblhead, #panel .picked") || document.querySelector("#panel label[for=fName]");
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: RM() ? "auto" : "smooth" });
   }
   function paintSheet() {
@@ -10034,13 +10249,16 @@
 
   function addExtra() {
     syncAdd();
-    var d = sh.draft, n = d.name.trim(), k = parseFloat(d.k);
+    var d = sh.draft, n = d.name.trim().slice(0, 80), k = parseFloat(d.k), bad = addRange();
+    if (bad) { sh.err = bad; paintSheet(); return; }
     if (!n || !isFinite(k) || k < 0) { sh.err = "Give it a name and a calorie figure. A rough number beats no number."; paintSheet(); return; }
     if (!S.extras[TODAY]) S.extras[TODAY] = [];
-    S.extras[TODAY].push({ n: n, k: Math.round(k), p: r1(num(d.p)), f: r1(num(d.f)), c: r1(num(d.c)), src: d.src || "manual" });
+    var entry = { n: n, k: Math.round(k), p: r1(num(d.p)), f: r1(num(d.f)), c: r1(num(d.c)), src: d.src || "manual" };
+    S.extras[TODAY].push(entry);
     save(); closeSheet(); refresh();
-    toast(n + " added · " + Math.round(k) + " kcal", function () {
-      var l = S.extras[TODAY]; if (l && l.length) { l.pop(); save(); refresh(); }
+    toast(n + " added · " + Math.round(k) + " kcal", function () {   // undo takes out this entry, not just the last one
+      var l = S.extras[TODAY], i = l ? l.indexOf(entry) : -1;
+      if (i >= 0) { l.splice(i, 1); save(); refresh(); }
     });
   }
 
@@ -10119,7 +10337,7 @@
       for (var k in map) { var el = document.getElementById(k); if (el && isFinite(sh.amt.n) && sh.amt.n > 0) el.value = sh.draft[map[k]]; }
       var nn = document.getElementById("aNote"); if (nn) nn.textContent = sh.note;
     } else syncAdd();
-    var b = document.getElementById("fAdd"); if (b) b.disabled = !addValid();
+    paintAdd();
   });
   $("panel").addEventListener("change", function (ev) {
     var dn = ev.target.getAttribute("data-done"), eg = ev.target.getAttribute("data-eggs");
@@ -10132,7 +10350,7 @@
     var map = { fName: "name", fKcal: "k", fP: "p", fF: "f", fC: "c" };
     for (var k in map) { var el = document.getElementById(k); if (el) el.value = sh.draft[map[k]]; }
     var n = document.getElementById("aNote"); if (n) n.textContent = sh.note;
-    var b = document.getElementById("fAdd"); if (b) b.disabled = !addValid();
+    paintAdd();
   }
   $("panel").addEventListener("keydown", function (ev) {
     if (ev.key === "Enter" && ev.target.id === "dText") { ev.preventDefault(); syncAdd(); askDescribe(); }
@@ -10260,9 +10478,19 @@
   function hitsHtml() {
     if (!sh.q || !sh.q.trim()) return '<p class="aihint" style="margin-top:12px">Type a food, like orange juice or chicken breast. Values are USDA, per 100 g.</p>';
     if (!sh.hits.length) return '<p class="aihint" style="margin-top:12px">Nothing matches that. Try fewer words, or use Describe or Label.</p>';
-    return '<div class="fgroup" style="margin-top:12px">' + sh.hits.map(function (r, i) {
-      return '<button class="opt" data-hit="' + i + '"><span class="ob"><span class="on1">' + esc(cleanName(r.d)) + '</span><span class="on2">per 100 g · ' + r.k + " kcal · " + r.p + "P " + r.f + "F " + r.c + "C</span></span></button>";
+    return '<div class="hit-cap">Per 100 g, USDA</div><div class="fgroup-enhanced">' + sh.hits.map(function (r, i) {
+      return '<button class="opt-hit" data-hit="' + i + '">' + hitBody(r) + '<span class="hit-add-icon" aria-hidden="true">+</span></button>';
     }).join("") + "</div>";
+  }
+  // "Orange juice, chilled, with added calcium" -> title "Orange juice", subtitle "chilled, with added calcium"
+  function hitBody(r) {
+    // USDA leads with a category ("Fish, salmon, chum, raw"): drop it where the next word is the food, join it for cuts of meat
+    var parts = cleanName(r.d).split(/,\s*/);
+    if (parts.length > 1 && /^(fish|nuts|seeds|oil|cereals|beverages|snacks|candies|crackers|soup|spices)$/i.test(parts[0])) parts.shift();
+    else if (parts.length > 1 && /^(beef|pork|lamb|veal|sauce)$/i.test(parts[0])) parts.splice(0, 2, parts[0] + " " + parts[1]);
+    var t = parts[0].charAt(0).toUpperCase() + parts[0].slice(1), sub = parts.slice(1).join(", ");
+    return '<span class="ob"><span class="hit-title">' + esc(t) + (sub ? ' <span class="hit-sub">' + esc(sub) + "</span>" : "") + "</span>" +
+      '<span class="hit-macros"><span class="m-badge kcal">' + r.k + ' kcal</span><span class="m-badge p">' + r.p + 'g P</span><span class="m-badge f">' + r.f + 'g F</span><span class="m-badge c">' + r.c + "g C</span></span></span>";
   }
   // The portions a food comes with: cup, tbsp, slice and so on, each as grams for one.
   function unitsOf(r) {
@@ -10281,11 +10509,11 @@
     return u;
   }
   function findBlock() {
-    var q = '<label class="flabel" for="qIn">Search foods</label>' +
+    var q = '<label class="flabel" for="qIn">Search USDA Database</label>' +
       '<input id="qIn" type="search" autocomplete="off" enterkeyhint="search" placeholder="Orange juice, chicken breast, oats…" value="' + esc(sh.q || "") + '">';
     if (sh.pick) {
       var r = sh.pick;
-      return '<div class="lblhead"><b>' + esc(cleanName(r.d)) + '</b><span>USDA per 100 g · ' + r.k + " kcal · " + r.p + "P " + r.f + "F " + r.c + 'C</span></div>' +
+      return '<div class="hit-cap">Per 100 g, USDA</div><div class="fgroup-enhanced"><div class="opt-hit sel picked">' + hitBody(r) + '<span class="tick" aria-hidden="true"></span></div></div>' +
         '<button class="sbtn" style="margin-top:10px;flex:none;width:100%" data-unpick>Search for something else</button>';
     }
     return q + '<div id="qRes">' + hitsHtml() + "</div>";
@@ -10547,6 +10775,7 @@
   $("mSave").addEventListener("click", function () {
     var w = parseFloat($("mWaist").value), s2 = parseFloat($("mShoulder").value);
     if (!isFinite(w) && !isFinite(s2)) { $("mWaist").focus(); return; }
+    if ((isFinite(w) && (w < 30 || w > 250)) || (isFinite(s2) && (s2 < 30 || s2 > 250))) { toast("Measurements are in centimetres, between 30 and 250."); return; }
     S.meas[TODAY] = { w: isFinite(w) ? w : null, s: isFinite(s2) ? s2 : null };
     save(); $("mWaist").value = ""; $("mShoulder").value = ""; renderMeas(); renderReview();
     toast("Measurements saved");
@@ -10677,8 +10906,11 @@
     var b = ev.target.closest("[data-chip]"); if (!b) return;
     recChip = b.getAttribute("data-chip"); renderRecipes();
   });
+  var foodBuilt = false;
   function renderFood() {
     renderRecipes();
+    if (foodBuilt) return;   // the tables below are static and move into the accordion once; a second pass has nothing to find
+    foodBuilt = true;
     var cls = { a: "a", b: "b", c: "" };
     $("proteins").innerHTML = PROTEINS.map(function (gr) {
       return '<div class="pgrp"><div class="pgt ' + cls[gr.cls] + '">' + gr.g + '</div><div class="pgn">' + gr.note + "</div>" +
@@ -10690,8 +10922,8 @@
     }).join("");
     $("swaps").innerHTML = SWAPS.map(function (s2) { return '<div class="sw"><div class="a">' + s2[0] + '</div><div class="b">' + s2[1] + "</div></div>"; }).join("");
     $("swapAcc").innerHTML = accHtml("sw1", false, "Swaps and the food rule", "Protein swaps, the rule, everything else", "", '<div class="acc-in" id="swapIn" style="padding-top:0"></div>');
-    var h = document.querySelector(".swapholder");
-    while (h.firstChild) $("swapIn").appendChild(h.firstChild);
+    var h = document.querySelector(".swapholder"), si = $("swapIn");
+    if (h && si) while (h.firstChild) si.appendChild(h.firstChild);
   }
 
   // ── Train ──
@@ -10784,5 +11016,21 @@
   initAI();
   var h0 = (location.hash || "").replace("#", "");
   if (VIEWS.indexOf(h0) > 0) showTab(h0, true);
+
+  // Another tab or window saved: take its state instead of overwriting it with ours on the next save.
+  window.addEventListener("storage", function (ev) {
+    if (ev.key !== null && ev.key !== KEY) return;
+    var n = normalizeState(load()), k;
+    for (k in S) if (Object.prototype.hasOwnProperty.call(S, k)) delete S[k];
+    for (k in n) if (Object.prototype.hasOwnProperty.call(n, k)) S[k] = n[k];
+    if (sh) closeSheet();
+    renderTop(); refresh(); renderFood(); renderTrain(); renderTrend(); renderNewWk();
+  });
+
+  // The phone keeps the page alive overnight. Past midnight "today" is a new day, so start it fresh.
+  function rolled() { return iso(new Date()) !== TODAY; }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && rolled()) location.reload(); });
+  window.addEventListener("pageshow", function () { if (rolled()) location.reload(); });
+  setInterval(function () { if (!document.hidden && rolled()) location.reload(); }, 60000);
 })();
 </script>

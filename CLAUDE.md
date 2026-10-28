@@ -141,6 +141,23 @@ He wants flexible, not too flexible. If a day is projected over target:
 
 These numbers (`COACH`) are judgment, adjustable.
 
+### The day adds up
+
+`dayPlan()` builds all five slots together. A slot is solved against its share, but breakfast has no
+fat source and bananas and bread are coarse steps, so the leftover for the day goes to the slots that
+can take it in small steps (rice, potato, oil, chicken, yogurt, nuts); pieces never absorb it. The
+plan does not depend on what has been eaten; only the coach trim recalculates the slots still to come,
+and eaten slots stay as planned. Fat that cannot go lower (fatty meat, eggs) is traded against carbs so
+the calories still add up. Default day lands within 3% of the phase calories, one- and two-food swaps
+within about 6%. Known: the plan table's own macros do not sum to its calories (weeks 1-2: 2,302 vs
+2,350; diet break: 2,645 vs 2,700), which is most of the remaining gap.
+
+### Stored data is untrusted
+
+`normalizeState()` runs on load and coerces every key into the shape the code reads, dropping anything
+that does not fit (wrong types, odd keys, bad photos). Add a key to `S` and you add it there. Other tabs
+that save are picked up through the `storage` event; past midnight the page reloads so "today" is today.
+
 ### Recipes
 
 `LIB` (methods) plus `FIN` (finishers) and `RECIPES` (sauces and bases). They are
@@ -222,8 +239,8 @@ Wordmark: TELOS in IBM Plex Mono, 0.26em letter-spacing, uppercase.
 - The deliverable is one self-contained HTML file. Edit `src/`, run `build.py`.
   No npm, no framework.
 - Vanilla JS, `var`, no transpiling.
-- Test before claiming it works. Render it in a real browser (Playwright
-  chromium is available) at 320, 360, 390 and 430 px and look at it. Past
+- Test before claiming it works. `tests/` has day-accuracy, storage-fuzz, injection and mobile-scan
+  (Playwright). Render it in a real browser at 320, 360, 390 and 430 px and look at it. Past
   failures all shipped because nobody opened the page.
 - Keep it simple. His words: KISS. Don't add features he didn't ask for.
 - Logo exploration is deliberately **last**; the mark is untouched for now.

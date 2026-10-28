@@ -279,6 +279,7 @@
 
   /* ── bottom sheet ── */
   .sheetwrap { position: fixed; inset: 0; z-index: 60; }
+  .panel:focus { outline: none; }
   .scrim { position: absolute; inset: 0; background: var(--scrim); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity .24s ease; touch-action: none; }
   .panel {
     position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 600px; max-height: 92%;
@@ -363,6 +364,35 @@
   .rp-body li:last-child { margin-bottom: 0; }
   .rhead { font-size: 14px; font-weight: 600; color: var(--fg-2); padding: 14px 4px 8px; }
 
+  /* ── TEST: search results and add button, from the refined mock (branch claude/search-sheet-test).
+     To go back to the original look, switch to main. Hard-coded colours from the mock are now tokens. ── */
+  .hit-cap { margin: 12px 4px 0; font-size: 13px; color: var(--fg-3); }
+  .fgroup-enhanced { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .opt-hit {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px;
+    padding: 12px 14px; background: var(--fill); color: var(--fg); font-family: var(--sans);
+    border: 1px solid var(--line); border-radius: var(--r-ctl); text-align: left; cursor: pointer;
+    transition: transform .18s var(--ease), background-color .18s ease, border-color .18s ease;
+  }
+  .opt-hit:active { transform: scale(0.985); background: var(--card); }
+  .opt-hit:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .opt-hit.sel { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 10%, var(--fill)); cursor: default; }
+  .opt-hit .ob { flex: 1; min-width: 0; display: block; }
+  .hit-title { display: block; font-size: 16px; font-weight: 600; line-height: 1.3; }
+  .hit-sub { font-size: 13.5px; font-weight: 400; color: var(--fg-2); margin-left: 4px; }
+  .hit-macros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .m-badge { font-family: var(--mono); font-size: 12.5px; padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--fg-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .m-badge.kcal { font-weight: 600; color: var(--fg); }
+  .m-badge.p { color: var(--teal); }
+  .m-badge.f { color: var(--bronze); }
+  .m-badge.c { color: var(--chalk); }
+  .hit-add-icon { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; line-height: 1; color: var(--teal); background: color-mix(in srgb, var(--teal) 14%, transparent); }
+  .opt-hit .tick { flex: none; width: 10px; height: 18px; border: solid var(--teal); border-width: 0 2.4px 2.4px 0; transform: rotate(43deg); margin: 0 8px 0 4px; }
+  .bigbtn.active-ready { box-shadow: 0 4px 16px color-mix(in srgb, var(--teal) 30%, transparent); font-weight: 700; display: flex; align-items: center; justify-content: center; white-space: pre; padding-inline: 16px; }
+  .al-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .al-k { flex: none; }
+  .addhint { margin: 0; min-height: 20px; text-align: center; font-size: 13.5px; line-height: 20px; color: var(--fg-3); }
+
   /* ── forms in the sheet ── */
   .flabel { display: block; font-size: 14px; color: var(--fg-2); padding: 12px 4px 7px; }
   .fin3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
@@ -446,7 +476,7 @@
   /* ── coach note, add-food sheet ── */
   .trimnote { margin-top: 4px; font-family: var(--mono); font-size: 12.5px; color: var(--bronze); font-variant-numeric: tabular-nums; }
   .seg { display: flex; gap: 4px; padding: 4px; margin-bottom: 4px; background: var(--fill); border-radius: var(--r-ctl); }
-  .segb { flex: 1; min-width: 0; min-height: 40px; border: 0; border-radius: 11px; background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .18s ease, color .18s ease; }
+  .segb { flex: 1; min-width: 0; min-height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .18s ease, color .18s ease; }
   .segb.on { background: var(--card); color: var(--fg); }
   .segb:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
   .aihint { margin: 10px 4px 0; font-size: 13.5px; line-height: 1.45; color: var(--fg-2); }
@@ -617,7 +647,7 @@
 
   .chips { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
-  .chip { flex: none; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-ctl); background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .16s ease, color .16s ease; }
+  .chip { flex: none; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-ctl); background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .16s ease, color .16s ease; }
   .chip.on { background: var(--teal); border-color: var(--teal); color: var(--void); }
   .chip:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
   .rfit { margin: 0 0 8px; font-size: 13.5px; color: var(--fg-3); }
@@ -744,8 +774,8 @@
       <div class="label">This morning</div>
       <div class="card">
         <div class="fld">
-          <div><label for="wIn">Weight, kg</label><input class="inp m" id="wIn" type="number" inputmode="decimal" step="0.05" placeholder="75.00"></div>
-          <div><label for="sIn">Sleep last night, h</label><input class="inp m" id="sIn" type="number" inputmode="decimal" step="0.25" placeholder="6.5"></div>
+          <div><label for="wIn">Weight, kg</label><input class="inp m" id="wIn" type="number" inputmode="decimal" min="30" max="250" step="0.05" placeholder="75.00"></div>
+          <div><label for="sIn">Sleep last night, h</label><input class="inp m" id="sIn" type="number" inputmode="decimal" min="0" max="16" step="0.25" placeholder="6.5"></div>
         </div>
         <button class="bigbtn" id="mLog" style="margin-top:12px">Log</button>
         <p class="ferr" id="mErr" hidden></p>
@@ -768,8 +798,8 @@
       <div class="card">
         <div class="wlead"><div><b class="num" id="mGap">&mdash;</b><span class="u"> cm</span></div><span class="wsub">Shoulders minus waist</span></div>
         <div class="fld" style="margin-top:12px">
-          <div><label for="mWaist">Waist, cm</label><input class="inp m" id="mWaist" type="number" inputmode="decimal" step="0.5" placeholder="82.0"></div>
-          <div><label for="mShoulder">Shoulders, cm</label><input class="inp m" id="mShoulder" type="number" inputmode="decimal" step="0.5" placeholder="113.0"></div>
+          <div><label for="mWaist">Waist, cm</label><input class="inp m" id="mWaist" type="number" inputmode="decimal" min="30" max="250" step="0.5" placeholder="82.0"></div>
+          <div><label for="mShoulder">Shoulders, cm</label><input class="inp m" id="mShoulder" type="number" inputmode="decimal" min="30" max="250" step="0.5" placeholder="113.0"></div>
         </div>
         <button class="bigbtn alt" id="mSave" style="margin-top:12px">Save measurements</button>
         <p class="aihint">Waist at the navel, relaxed. Shoulders at the widest, arms down. The gap widening is the goal, and it moves even when weight doesn&rsquo;t.</p>
@@ -837,7 +867,7 @@
 
 <div class="sheetwrap" id="sheetWrap" hidden>
   <div class="scrim" id="scrim"></div>
-  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Details"></div>
+  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Details" tabindex="-1"></div>
 </div>
 
 <nav>
@@ -859,13 +889,63 @@
   "use strict";
   var PREVIEW = true;   // the build turns this off for the live app: real storage key, no sample data
   var KEY = PREVIEW ? "telos_mock2" : "telos_v1";
-  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  function isObj(v) { return !!v && typeof v === "object" && !Array.isArray(v); }
+  function load() {
+    try { var v = JSON.parse(localStorage.getItem(KEY)); return isObj(v) ? v : {}; } catch (e) { return {}; }
+  }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
-  var S = load();
-  if (!S.weights) S.weights = {};
-  if (!S.eggs) S.eggs = {};
-  if (!S.ticks) S.ticks = {};
-  if (!S.extras) S.extras = {};
-  if (!S.picks) S.picks = {};
-  if (!S.done) S.done = {};
+
+  // Whatever is in storage (an older version, a hand edit, a half-written save) is coerced into the
+  // shape the code reads. Anything that does not fit is dropped, so the app opens instead of throwing.
+  function fin(v) { return typeof v === "number" && isFinite(v) ? v : undefined; }
+  var DAYKEY = /^\d{4}-\d{2}-\d{2}(-[sd])?$/, MEALKEY = /^[a-z][a-z0-9]{0,11}$/;
+  function mapOf(m, leaf, keyOk) {
+    var o = {}, k, v;
+    if (!isObj(m)) return o;
+    for (k in m) if (Object.prototype.hasOwnProperty.call(m, k) && (!keyOk || keyOk.test(k))) { v = leaf(m[k]); if (v !== undefined) o[k] = v; }
+    return o;
+  }
+  function str(v, n) { return typeof v === "string" ? v.slice(0, n) : undefined; }
+  function partOf(x) {
+    return { cat: /^(protein|carb|fat)$/.test(x.cat) ? x.cat : "protein", g: fin(x.g) || 0, n: fin(x.n) !== undefined ? x.n : str(x.n, 40),
+             noun: str(x.noun, 40), sub: str(x.sub, 40), name: str(x.name, 80) || "Food", skip: x.skip ? true : undefined, off: x.off ? true : undefined,
+             t: macros(x.t) || { k: 0, p: 0, f: 0, c: 0 } };
+  }
+  function flags(m, keyOk) { return mapOf(m, function (v) { return v ? true : undefined; }, keyOk); }
+  function macros(t) {
+    if (!isObj(t)) return undefined;
+    var o = { k: fin(t.k), p: fin(t.p), f: fin(t.f), c: fin(t.c) };
+    return o.k === undefined ? undefined : { k: o.k, p: o.p || 0, f: o.f || 0, c: o.c || 0 };
+  }
+  function normalizeState(x) {
+    x.weights = mapOf(x.weights, fin, DAYKEY);
+    x.sleep = mapOf(x.sleep, fin, DAYKEY);
+    x.eggs = mapOf(x.eggs, function (v) { v = fin(v); return v === undefined ? undefined : Math.max(0, Math.min(12, Math.round(v))); }, MEALKEY);
+    x.ticks = mapOf(x.ticks, function (d) { return isObj(d) ? flags(d, MEALKEY) : undefined; }, DAYKEY);
+    x.extras = mapOf(x.extras, function (list) {
+      if (!Array.isArray(list)) return undefined;
+      return list.filter(function (e) { return isObj(e) && fin(e.k) !== undefined; }).map(function (e) {
+        return { n: String(e.n == null ? "Food" : e.n).slice(0, 80), k: Math.min(5000, Math.max(0, e.k)), p: Math.min(800, Math.max(0, fin(e.p) || 0)), f: Math.min(800, Math.max(0, fin(e.f) || 0)), c: Math.min(800, Math.max(0, fin(e.c) || 0)), src: /^(manual|estimate|label|database)$/.test(e.src) ? e.src : "manual" };
+      });
+    }, DAYKEY);
+    x.picks = mapOf(x.picks, function (m) { return isObj(m) ? mapOf(m, function (v) { return str(v, 12); }, MEALKEY) : undefined; }, MEALKEY);
+    x.done = mapOf(x.done, function (v) { return str(v, 20); }, MEALKEY);
+    x.snap = mapOf(x.snap, function (day) {
+      return isObj(day) ? mapOf(day, function (s) {
+        var t = isObj(s) ? macros(s.tot) : undefined;
+        return t ? { tot: t, full: macros(s.full) || t, parts: Array.isArray(s.parts) ? s.parts.filter(isObj).map(partOf) : [] } : undefined;
+      }, MEALKEY) : undefined;
+    }, DAYKEY);
+    x.skip = mapOf(x.skip, function (day) {
+      return isObj(day) ? mapOf(day, function (m) { return isObj(m) ? flags(m, /^\d{1,2}$/) : undefined; }, MEALKEY) : undefined;
+    }, DAYKEY);
+    x.skipped = mapOf(x.skipped, function (day) { return isObj(day) ? flags(day, MEALKEY) : undefined; }, DAYKEY);
+    x.meas = mapOf(x.meas, function (m) { return isObj(m) ? { w: fin(m.w) === undefined ? null : m.w, s: fin(m.s) === undefined ? null : m.s } : undefined; }, DAYKEY);
+    x.photos = (Array.isArray(x.photos) ? x.photos : []).filter(function (p) {
+      return isObj(p) && typeof p.src === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(p.src) && typeof p.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.d);
+    });
+    x.seenWk = fin(x.seenWk) || 0;
+    return x;
+  }
+  var S = normalizeState(load());
 
