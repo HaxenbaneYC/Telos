@@ -60,7 +60,7 @@ Google Fonts link. Open it in a browser and it runs.
 It is now **built from `src/`** so it stays editable:
 
 ```
-python3 build.py             # coach.html          (live: no sample data, key telos_v1)
+python3 build.py             # coach.html          (live: no sample data, key telos_v2)
 python3 build.py --preview   # coach-preview.html  (sample data, key telos_mock2)
 ```
 
@@ -89,7 +89,8 @@ Pages publishes only `docs/`, so keep personal notes (this file, `data/`, `src/`
 
 ### Data
 
-Everything lives in `localStorage` under `telos_v1`. Nothing is uploaded
+Everything lives in `localStorage` under `telos_v2` (v1 held the test entries and is erased on first open;
+bump the number to start everyone fresh). Nothing is uploaded
 anywhere, including weekly photos (resized to <=440 px JPEG on the client).
 **Keep it that way.** Every read and write is wrapped in try/catch; the app
 must render with storage empty.

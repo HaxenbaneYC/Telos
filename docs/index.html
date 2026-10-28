@@ -8732,7 +8732,7 @@
 (function () {
   "use strict";
   var PREVIEW = false;   // the build turns this off for the live app: real storage key, no sample data
-  var KEY = PREVIEW ? "telos_mock2" : "telos_v1";
+  var KEY = PREVIEW ? "telos_mock2" : "telos_v2";   // v2 = the fresh start on 28 Oct 2026; v1 held test entries
   function isObj(v) { return !!v && typeof v === "object" && !Array.isArray(v); }
   function load() {
     try { var v = JSON.parse(localStorage.getItem(KEY)); return isObj(v) ? v : {}; } catch (e) { return {}; }
@@ -8791,6 +8791,8 @@
     x.seenWk = fin(x.seenWk) || 0;
     return x;
   }
+  // First open after the fresh start: the test entries in the old slot are erased, once.
+  if (!PREVIEW) { try { localStorage.removeItem("telos_v1"); } catch (e) {} }
   var S = normalizeState(load());
 
   var START = "2026-10-28", TARGET = 69;
