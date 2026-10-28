@@ -53,9 +53,19 @@
   function hitsHtml() {
     if (!sh.q || !sh.q.trim()) return '<p class="aihint" style="margin-top:12px">Type a food, like orange juice or chicken breast. Values are USDA, per 100 g.</p>';
     if (!sh.hits.length) return '<p class="aihint" style="margin-top:12px">Nothing matches that. Try fewer words, or use Describe or Label.</p>';
-    return '<div class="fgroup" style="margin-top:12px">' + sh.hits.map(function (r, i) {
-      return '<button class="opt" data-hit="' + i + '"><span class="ob"><span class="on1">' + esc(cleanName(r.d)) + '</span><span class="on2">per 100 g · ' + r.k + " kcal · " + r.p + "P " + r.f + "F " + r.c + "C</span></span></button>";
+    return '<div class="hit-cap">Per 100 g, USDA</div><div class="fgroup-enhanced">' + sh.hits.map(function (r, i) {
+      return '<button class="opt-hit" data-hit="' + i + '">' + hitBody(r) + '<span class="hit-add-icon" aria-hidden="true">+</span></button>';
     }).join("") + "</div>";
+  }
+  // "Orange juice, chilled, with added calcium" -> title "Orange juice", subtitle "chilled, with added calcium"
+  function hitBody(r) {
+    // USDA leads with a category ("Fish, salmon, chum, raw"): drop it where the next word is the food, join it for cuts of meat
+    var parts = cleanName(r.d).split(/,\s*/);
+    if (parts.length > 1 && /^(fish|nuts|seeds|oil|cereals|beverages|snacks|candies|crackers|soup|spices)$/i.test(parts[0])) parts.shift();
+    else if (parts.length > 1 && /^(beef|pork|lamb|veal|sauce)$/i.test(parts[0])) parts.splice(0, 2, parts[0] + " " + parts[1]);
+    var t = parts[0].charAt(0).toUpperCase() + parts[0].slice(1), sub = parts.slice(1).join(", ");
+    return '<span class="ob"><span class="hit-title">' + esc(t) + (sub ? ' <span class="hit-sub">' + esc(sub) + "</span>" : "") + "</span>" +
+      '<span class="hit-macros"><span class="m-badge kcal">' + r.k + ' kcal</span><span class="m-badge p">' + r.p + 'g P</span><span class="m-badge f">' + r.f + 'g F</span><span class="m-badge c">' + r.c + "g C</span></span></span>";
   }
   // The portions a food comes with: cup, tbsp, slice and so on, each as grams for one.
   function unitsOf(r) {
@@ -74,11 +84,11 @@
     return u;
   }
   function findBlock() {
-    var q = '<label class="flabel" for="qIn">Search foods</label>' +
+    var q = '<label class="flabel" for="qIn">Search USDA Database</label>' +
       '<input id="qIn" type="search" autocomplete="off" enterkeyhint="search" placeholder="Orange juice, chicken breast, oats…" value="' + esc(sh.q || "") + '">';
     if (sh.pick) {
       var r = sh.pick;
-      return '<div class="lblhead"><b>' + esc(cleanName(r.d)) + '</b><span>USDA per 100 g · ' + r.k + " kcal · " + r.p + "P " + r.f + "F " + r.c + 'C</span></div>' +
+      return '<div class="hit-cap">Per 100 g, USDA</div><div class="fgroup-enhanced"><div class="opt-hit sel picked">' + hitBody(r) + '<span class="tick" aria-hidden="true"></span></div></div>' +
         '<button class="sbtn" style="margin-top:10px;flex:none;width:100%" data-unpick>Search for something else</button>';
     }
     return q + '<div id="qRes">' + hitsHtml() + "</div>";

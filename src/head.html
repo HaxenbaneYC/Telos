@@ -363,6 +363,34 @@
   .rp-body li:last-child { margin-bottom: 0; }
   .rhead { font-size: 14px; font-weight: 600; color: var(--fg-2); padding: 14px 4px 8px; }
 
+  /* ── TEST: search results and add button, from the refined mock (branch claude/search-sheet-test).
+     To go back to the original look, switch to main. Hard-coded colours from the mock are now tokens. ── */
+  .hit-cap { margin: 12px 4px 0; font-size: 13px; color: var(--fg-3); }
+  .fgroup-enhanced { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .opt-hit {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px;
+    padding: 12px 14px; background: var(--fill); color: var(--fg); font-family: var(--sans);
+    border: 1px solid var(--line); border-radius: var(--r-ctl); text-align: left; cursor: pointer;
+    transition: transform .18s var(--ease), background-color .18s ease, border-color .18s ease;
+  }
+  .opt-hit:active { transform: scale(0.985); background: var(--card); }
+  .opt-hit:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .opt-hit.sel { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 10%, var(--fill)); cursor: default; }
+  .opt-hit .ob { flex: 1; min-width: 0; display: block; }
+  .hit-title { display: block; font-size: 16px; font-weight: 600; line-height: 1.3; }
+  .hit-sub { font-size: 13.5px; font-weight: 400; color: var(--fg-2); margin-left: 4px; }
+  .hit-macros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .m-badge { font-family: var(--mono); font-size: 12.5px; padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--fg-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .m-badge.kcal { font-weight: 600; color: var(--fg); }
+  .m-badge.p { color: var(--teal); }
+  .m-badge.f { color: var(--bronze); }
+  .m-badge.c { color: var(--chalk); }
+  .hit-add-icon { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; line-height: 1; color: var(--teal); background: color-mix(in srgb, var(--teal) 14%, transparent); }
+  .opt-hit .tick { flex: none; width: 10px; height: 18px; border: solid var(--teal); border-width: 0 2.4px 2.4px 0; transform: rotate(43deg); margin: 0 8px 0 4px; }
+  .bigbtn.active-ready { box-shadow: 0 4px 16px color-mix(in srgb, var(--teal) 30%, transparent); font-weight: 700; display: flex; align-items: center; justify-content: center; white-space: pre; padding-inline: 16px; }
+  .al-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .al-k { flex: none; }
+
   /* ── forms in the sheet ── */
   .flabel { display: block; font-size: 14px; color: var(--fg-2); padding: 12px 4px 7px; }
   .fin3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
