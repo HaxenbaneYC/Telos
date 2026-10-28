@@ -363,6 +363,35 @@
   .rp-body li:last-child { margin-bottom: 0; }
   .rhead { font-size: 14px; font-weight: 600; color: var(--fg-2); padding: 14px 4px 8px; }
 
+  /* ── TEST: search results and add button, from the refined mock (branch claude/search-sheet-test).
+     To go back to the original look, switch to main. Hard-coded colours from the mock are now tokens. ── */
+  .hit-cap { margin: 12px 4px 0; font-size: 13px; color: var(--fg-3); }
+  .fgroup-enhanced { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .opt-hit {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px;
+    padding: 12px 14px; background: var(--fill); color: var(--fg); font-family: var(--sans);
+    border: 1px solid var(--line); border-radius: var(--r-ctl); text-align: left; cursor: pointer;
+    transition: transform .18s var(--ease), background-color .18s ease, border-color .18s ease;
+  }
+  .opt-hit:active { transform: scale(0.985); background: var(--card); }
+  .opt-hit:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .opt-hit.sel { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 10%, var(--fill)); cursor: default; }
+  .opt-hit .ob { flex: 1; min-width: 0; display: block; }
+  .hit-title { display: block; font-size: 16px; font-weight: 600; line-height: 1.3; }
+  .hit-sub { font-size: 13.5px; font-weight: 400; color: var(--fg-2); margin-left: 4px; }
+  .hit-macros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .m-badge { font-family: var(--mono); font-size: 12.5px; padding: 2px 6px; border-radius: 4px; background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--fg-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .m-badge.kcal { font-weight: 600; color: var(--fg); }
+  .m-badge.p { color: var(--teal); }
+  .m-badge.f { color: var(--bronze); }
+  .m-badge.c { color: var(--chalk); }
+  .hit-add-icon { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; line-height: 1; color: var(--teal); background: color-mix(in srgb, var(--teal) 14%, transparent); }
+  .opt-hit .tick { flex: none; width: 10px; height: 18px; border: solid var(--teal); border-width: 0 2.4px 2.4px 0; transform: rotate(43deg); margin: 0 8px 0 4px; }
+  .bigbtn.active-ready { box-shadow: 0 4px 16px color-mix(in srgb, var(--teal) 30%, transparent); font-weight: 700; display: flex; align-items: center; justify-content: center; white-space: pre; padding-inline: 16px; }
+  .al-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .al-k { flex: none; }
+  .addhint { margin: 0; min-height: 20px; text-align: center; font-size: 13.5px; line-height: 20px; color: var(--fg-3); }
+
   /* ── forms in the sheet ── */
   .flabel { display: block; font-size: 14px; color: var(--fg-2); padding: 12px 4px 7px; }
   .fin3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
@@ -10028,7 +10057,28 @@
     if ((v = g("fF")) !== null) sh.draft.f = v;
     if ((v = g("fC")) !== null) sh.draft.c = v;
   }
-  function addValid() { return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
+  // The button names what it will add and how much it counts: Add "Orange juice, raw" · 118 kcal
+  function addLabel() {
+    var d = sh && sh.draft; if (!addValid()) return "Add to today";
+    return '<span class="al-n">Add “' + esc(d.name.trim().replace(/\s*\([^)]*\)$/, "")) + '”</span><span class="al-k"> · ' + Math.round(parseFloat(d.k)) + " kcal</span>";
+  }
+  function paintAdd() {
+    var b = document.getElementById("fAdd"); if (!b) return;
+    var ok = addValid(); b.disabled = !ok; b.classList.toggle("active-ready", ok); b.innerHTML = addLabel();
+    var h = document.getElementById("fHint"); if (h) h.textContent = addHint();
+  }
+  // Why the button is off, in the words of the tab you are on. Empty once it is ready.
+  function addHint() {
+    if (addValid() || !sh) return "";
+    if (sh.tab === "find") return sh.pick ? "Enter how much you had to continue." : "Pick a food from the list to continue.";
+    if (sh.tab === "desc") return sh.ready ? "Add a name and calories to continue." : "Describe it and tap Estimate to continue.";
+    if (sh.tab === "photo") return sh.ready ? "Enter how much you ate to continue." : "Choose a photo of the label to continue.";
+    return "Add a name and calories to continue.";
+  }
+  function addValid() {
+    // with a picked food or a read label the amount drives the numbers, so an empty amount is not addable
+    if (sh && sh.amt && ((sh.tab === "find" && sh.pick) || (sh.tab === "photo" && sh.label && sh.ready)) && !(sh.amt.n > 0)) return false;
+    return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
 
   function viewAdd() {
     var d = sh.draft, ex = S.extras[TODAY] || [], tab = sh.tab;
@@ -10094,11 +10144,11 @@
     }).join("") + "</div>" : "";
     return phead("Off-plan food", "Counts toward today", false) +
       '<div class="pbody">' + seg + top + form + err + list + "</div>" +
-      '<div class="pfoot"><button class="bigbtn" id="fAdd"' + (addValid() ? "" : " disabled") + '>Add to today</button></div>';
+      '<div class="pfoot"><button class="bigbtn' + (addValid() ? " active-ready" : "") + '" id="fAdd"' + (addValid() ? "" : " disabled") + ">" + addLabel() + '</button><p class="addhint" id="fHint">' + addHint() + "</p></div>";
   }
 
   function toForm() {
-    var el = document.querySelector("#panel .lblhead") || document.querySelector("#panel label[for=fName]");
+    var el = document.querySelector("#panel .lblhead, #panel .picked") || document.querySelector("#panel label[for=fName]");
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: RM() ? "auto" : "smooth" });
   }
   function paintSheet() {
@@ -10194,7 +10244,7 @@
       for (var k in map) { var el = document.getElementById(k); if (el && isFinite(sh.amt.n) && sh.amt.n > 0) el.value = sh.draft[map[k]]; }
       var nn = document.getElementById("aNote"); if (nn) nn.textContent = sh.note;
     } else syncAdd();
-    var b = document.getElementById("fAdd"); if (b) b.disabled = !addValid();
+    paintAdd();
   });
   $("panel").addEventListener("change", function (ev) {
     var dn = ev.target.getAttribute("data-done"), eg = ev.target.getAttribute("data-eggs");
@@ -10207,7 +10257,7 @@
     var map = { fName: "name", fKcal: "k", fP: "p", fF: "f", fC: "c" };
     for (var k in map) { var el = document.getElementById(k); if (el) el.value = sh.draft[map[k]]; }
     var n = document.getElementById("aNote"); if (n) n.textContent = sh.note;
-    var b = document.getElementById("fAdd"); if (b) b.disabled = !addValid();
+    paintAdd();
   }
   $("panel").addEventListener("keydown", function (ev) {
     if (ev.key === "Enter" && ev.target.id === "dText") { ev.preventDefault(); syncAdd(); askDescribe(); }
@@ -10335,9 +10385,19 @@
   function hitsHtml() {
     if (!sh.q || !sh.q.trim()) return '<p class="aihint" style="margin-top:12px">Type a food, like orange juice or chicken breast. Values are USDA, per 100 g.</p>';
     if (!sh.hits.length) return '<p class="aihint" style="margin-top:12px">Nothing matches that. Try fewer words, or use Describe or Label.</p>';
-    return '<div class="fgroup" style="margin-top:12px">' + sh.hits.map(function (r, i) {
-      return '<button class="opt" data-hit="' + i + '"><span class="ob"><span class="on1">' + esc(cleanName(r.d)) + '</span><span class="on2">per 100 g · ' + r.k + " kcal · " + r.p + "P " + r.f + "F " + r.c + "C</span></span></button>";
+    return '<div class="hit-cap">Per 100 g, USDA</div><div class="fgroup-enhanced">' + sh.hits.map(function (r, i) {
+      return '<button class="opt-hit" data-hit="' + i + '">' + hitBody(r) + '<span class="hit-add-icon" aria-hidden="true">+</span></button>';
     }).join("") + "</div>";
+  }
+  // "Orange juice, chilled, with added calcium" -> title "Orange juice", subtitle "chilled, with added calcium"
+  function hitBody(r) {
+    // USDA leads with a category ("Fish, salmon, chum, raw"): drop it where the next word is the food, join it for cuts of meat
+    var parts = cleanName(r.d).split(/,\s*/);
+    if (parts.length > 1 && /^(fish|nuts|seeds|oil|cereals|beverages|snacks|candies|crackers|soup|spices)$/i.test(parts[0])) parts.shift();
+    else if (parts.length > 1 && /^(beef|pork|lamb|veal|sauce)$/i.test(parts[0])) parts.splice(0, 2, parts[0] + " " + parts[1]);
+    var t = parts[0].charAt(0).toUpperCase() + parts[0].slice(1), sub = parts.slice(1).join(", ");
+    return '<span class="ob"><span class="hit-title">' + esc(t) + (sub ? ' <span class="hit-sub">' + esc(sub) + "</span>" : "") + "</span>" +
+      '<span class="hit-macros"><span class="m-badge kcal">' + r.k + ' kcal</span><span class="m-badge p">' + r.p + 'g P</span><span class="m-badge f">' + r.f + 'g F</span><span class="m-badge c">' + r.c + "g C</span></span></span>";
   }
   // The portions a food comes with: cup, tbsp, slice and so on, each as grams for one.
   function unitsOf(r) {
@@ -10356,11 +10416,11 @@
     return u;
   }
   function findBlock() {
-    var q = '<label class="flabel" for="qIn">Search foods</label>' +
+    var q = '<label class="flabel" for="qIn">Search USDA Database</label>' +
       '<input id="qIn" type="search" autocomplete="off" enterkeyhint="search" placeholder="Orange juice, chicken breast, oats…" value="' + esc(sh.q || "") + '">';
     if (sh.pick) {
       var r = sh.pick;
-      return '<div class="lblhead"><b>' + esc(cleanName(r.d)) + '</b><span>USDA per 100 g · ' + r.k + " kcal · " + r.p + "P " + r.f + "F " + r.c + 'C</span></div>' +
+      return '<div class="hit-cap">Per 100 g, USDA</div><div class="fgroup-enhanced"><div class="opt-hit sel picked">' + hitBody(r) + '<span class="tick" aria-hidden="true"></span></div></div>' +
         '<button class="sbtn" style="margin-top:10px;flex:none;width:100%" data-unpick>Search for something else</button>';
     }
     return q + '<div id="qRes">' + hitsHtml() + "</div>";

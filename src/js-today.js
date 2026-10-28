@@ -632,7 +632,28 @@
     if ((v = g("fF")) !== null) sh.draft.f = v;
     if ((v = g("fC")) !== null) sh.draft.c = v;
   }
-  function addValid() { return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
+  // The button names what it will add and how much it counts: Add "Orange juice, raw" · 118 kcal
+  function addLabel() {
+    var d = sh && sh.draft; if (!addValid()) return "Add to today";
+    return '<span class="al-n">Add “' + esc(d.name.trim().replace(/\s*\([^)]*\)$/, "")) + '”</span><span class="al-k"> · ' + Math.round(parseFloat(d.k)) + " kcal</span>";
+  }
+  function paintAdd() {
+    var b = document.getElementById("fAdd"); if (!b) return;
+    var ok = addValid(); b.disabled = !ok; b.classList.toggle("active-ready", ok); b.innerHTML = addLabel();
+    var h = document.getElementById("fHint"); if (h) h.textContent = addHint();
+  }
+  // Why the button is off, in the words of the tab you are on. Empty once it is ready.
+  function addHint() {
+    if (addValid() || !sh) return "";
+    if (sh.tab === "find") return sh.pick ? "Enter how much you had to continue." : "Pick a food from the list to continue.";
+    if (sh.tab === "desc") return sh.ready ? "Add a name and calories to continue." : "Describe it and tap Estimate to continue.";
+    if (sh.tab === "photo") return sh.ready ? "Enter how much you ate to continue." : "Choose a photo of the label to continue.";
+    return "Add a name and calories to continue.";
+  }
+  function addValid() {
+    // with a picked food or a read label the amount drives the numbers, so an empty amount is not addable
+    if (sh && sh.amt && ((sh.tab === "find" && sh.pick) || (sh.tab === "photo" && sh.label && sh.ready)) && !(sh.amt.n > 0)) return false;
+    return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
 
   function viewAdd() {
     var d = sh.draft, ex = S.extras[TODAY] || [], tab = sh.tab;
@@ -698,11 +719,11 @@
     }).join("") + "</div>" : "";
     return phead("Off-plan food", "Counts toward today", false) +
       '<div class="pbody">' + seg + top + form + err + list + "</div>" +
-      '<div class="pfoot"><button class="bigbtn" id="fAdd"' + (addValid() ? "" : " disabled") + '>Add to today</button></div>';
+      '<div class="pfoot"><button class="bigbtn' + (addValid() ? " active-ready" : "") + '" id="fAdd"' + (addValid() ? "" : " disabled") + ">" + addLabel() + '</button><p class="addhint" id="fHint">' + addHint() + "</p></div>";
   }
 
   function toForm() {
-    var el = document.querySelector("#panel .lblhead") || document.querySelector("#panel label[for=fName]");
+    var el = document.querySelector("#panel .lblhead, #panel .picked") || document.querySelector("#panel label[for=fName]");
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: RM() ? "auto" : "smooth" });
   }
   function paintSheet() {
@@ -798,7 +819,7 @@
       for (var k in map) { var el = document.getElementById(k); if (el && isFinite(sh.amt.n) && sh.amt.n > 0) el.value = sh.draft[map[k]]; }
       var nn = document.getElementById("aNote"); if (nn) nn.textContent = sh.note;
     } else syncAdd();
-    var b = document.getElementById("fAdd"); if (b) b.disabled = !addValid();
+    paintAdd();
   });
   $("panel").addEventListener("change", function (ev) {
     var dn = ev.target.getAttribute("data-done"), eg = ev.target.getAttribute("data-eggs");
@@ -811,7 +832,7 @@
     var map = { fName: "name", fKcal: "k", fP: "p", fF: "f", fC: "c" };
     for (var k in map) { var el = document.getElementById(k); if (el) el.value = sh.draft[map[k]]; }
     var n = document.getElementById("aNote"); if (n) n.textContent = sh.note;
-    var b = document.getElementById("fAdd"); if (b) b.disabled = !addValid();
+    paintAdd();
   }
   $("panel").addEventListener("keydown", function (ev) {
     if (ev.key === "Enter" && ev.target.id === "dText") { ev.preventDefault(); syncAdd(); askDescribe(); }
