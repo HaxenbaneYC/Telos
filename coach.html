@@ -279,6 +279,7 @@
 
   /* ── bottom sheet ── */
   .sheetwrap { position: fixed; inset: 0; z-index: 60; }
+  .panel:focus { outline: none; }
   .scrim { position: absolute; inset: 0; background: var(--scrim); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity .24s ease; touch-action: none; }
   .panel {
     position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 600px; max-height: 92%;
@@ -475,7 +476,7 @@
   /* ── coach note, add-food sheet ── */
   .trimnote { margin-top: 4px; font-family: var(--mono); font-size: 12.5px; color: var(--bronze); font-variant-numeric: tabular-nums; }
   .seg { display: flex; gap: 4px; padding: 4px; margin-bottom: 4px; background: var(--fill); border-radius: var(--r-ctl); }
-  .segb { flex: 1; min-width: 0; min-height: 40px; border: 0; border-radius: 11px; background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .18s ease, color .18s ease; }
+  .segb { flex: 1; min-width: 0; min-height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .18s ease, color .18s ease; }
   .segb.on { background: var(--card); color: var(--fg); }
   .segb:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
   .aihint { margin: 10px 4px 0; font-size: 13.5px; line-height: 1.45; color: var(--fg-2); }
@@ -646,7 +647,7 @@
 
   .chips { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
-  .chip { flex: none; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-ctl); background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .16s ease, color .16s ease; }
+  .chip { flex: none; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-ctl); background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .16s ease, color .16s ease; }
   .chip.on { background: var(--teal); border-color: var(--teal); color: var(--void); }
   .chip:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
   .rfit { margin: 0 0 8px; font-size: 13.5px; color: var(--fg-3); }
@@ -773,8 +774,8 @@
       <div class="label">This morning</div>
       <div class="card">
         <div class="fld">
-          <div><label for="wIn">Weight, kg</label><input class="inp m" id="wIn" type="number" inputmode="decimal" step="0.05" placeholder="75.00"></div>
-          <div><label for="sIn">Sleep last night, h</label><input class="inp m" id="sIn" type="number" inputmode="decimal" step="0.25" placeholder="6.5"></div>
+          <div><label for="wIn">Weight, kg</label><input class="inp m" id="wIn" type="number" inputmode="decimal" min="30" max="250" step="0.05" placeholder="75.00"></div>
+          <div><label for="sIn">Sleep last night, h</label><input class="inp m" id="sIn" type="number" inputmode="decimal" min="0" max="16" step="0.25" placeholder="6.5"></div>
         </div>
         <button class="bigbtn" id="mLog" style="margin-top:12px">Log</button>
         <p class="ferr" id="mErr" hidden></p>
@@ -797,8 +798,8 @@
       <div class="card">
         <div class="wlead"><div><b class="num" id="mGap">&mdash;</b><span class="u"> cm</span></div><span class="wsub">Shoulders minus waist</span></div>
         <div class="fld" style="margin-top:12px">
-          <div><label for="mWaist">Waist, cm</label><input class="inp m" id="mWaist" type="number" inputmode="decimal" step="0.5" placeholder="82.0"></div>
-          <div><label for="mShoulder">Shoulders, cm</label><input class="inp m" id="mShoulder" type="number" inputmode="decimal" step="0.5" placeholder="113.0"></div>
+          <div><label for="mWaist">Waist, cm</label><input class="inp m" id="mWaist" type="number" inputmode="decimal" min="30" max="250" step="0.5" placeholder="82.0"></div>
+          <div><label for="mShoulder">Shoulders, cm</label><input class="inp m" id="mShoulder" type="number" inputmode="decimal" min="30" max="250" step="0.5" placeholder="113.0"></div>
         </div>
         <button class="bigbtn alt" id="mSave" style="margin-top:12px">Save measurements</button>
         <p class="aihint">Waist at the navel, relaxed. Shoulders at the widest, arms down. The gap widening is the goal, and it moves even when weight doesn&rsquo;t.</p>
@@ -866,7 +867,7 @@
 
 <div class="sheetwrap" id="sheetWrap" hidden>
   <div class="scrim" id="scrim"></div>
-  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Details"></div>
+  <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Details" tabindex="-1"></div>
 </div>
 
 <nav>
@@ -8719,15 +8720,65 @@
   "use strict";
   var PREVIEW = false;   // the build turns this off for the live app: real storage key, no sample data
   var KEY = PREVIEW ? "telos_mock2" : "telos_v1";
-  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  function isObj(v) { return !!v && typeof v === "object" && !Array.isArray(v); }
+  function load() {
+    try { var v = JSON.parse(localStorage.getItem(KEY)); return isObj(v) ? v : {}; } catch (e) { return {}; }
+  }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
-  var S = load();
-  if (!S.weights) S.weights = {};
-  if (!S.eggs) S.eggs = {};
-  if (!S.ticks) S.ticks = {};
-  if (!S.extras) S.extras = {};
-  if (!S.picks) S.picks = {};
-  if (!S.done) S.done = {};
+
+  // Whatever is in storage (an older version, a hand edit, a half-written save) is coerced into the
+  // shape the code reads. Anything that does not fit is dropped, so the app opens instead of throwing.
+  function fin(v) { return typeof v === "number" && isFinite(v) ? v : undefined; }
+  var DAYKEY = /^\d{4}-\d{2}-\d{2}(-[sd])?$/, MEALKEY = /^[a-z][a-z0-9]{0,11}$/;
+  function mapOf(m, leaf, keyOk) {
+    var o = {}, k, v;
+    if (!isObj(m)) return o;
+    for (k in m) if (Object.prototype.hasOwnProperty.call(m, k) && (!keyOk || keyOk.test(k))) { v = leaf(m[k]); if (v !== undefined) o[k] = v; }
+    return o;
+  }
+  function str(v, n) { return typeof v === "string" ? v.slice(0, n) : undefined; }
+  function partOf(x) {
+    return { cat: /^(protein|carb|fat)$/.test(x.cat) ? x.cat : "protein", g: fin(x.g) || 0, n: fin(x.n) !== undefined ? x.n : str(x.n, 40),
+             noun: str(x.noun, 40), sub: str(x.sub, 40), name: str(x.name, 80) || "Food", skip: x.skip ? true : undefined, off: x.off ? true : undefined,
+             t: macros(x.t) || { k: 0, p: 0, f: 0, c: 0 } };
+  }
+  function flags(m, keyOk) { return mapOf(m, function (v) { return v ? true : undefined; }, keyOk); }
+  function macros(t) {
+    if (!isObj(t)) return undefined;
+    var o = { k: fin(t.k), p: fin(t.p), f: fin(t.f), c: fin(t.c) };
+    return o.k === undefined ? undefined : { k: o.k, p: o.p || 0, f: o.f || 0, c: o.c || 0 };
+  }
+  function normalizeState(x) {
+    x.weights = mapOf(x.weights, fin, DAYKEY);
+    x.sleep = mapOf(x.sleep, fin, DAYKEY);
+    x.eggs = mapOf(x.eggs, function (v) { v = fin(v); return v === undefined ? undefined : Math.max(0, Math.min(12, Math.round(v))); }, MEALKEY);
+    x.ticks = mapOf(x.ticks, function (d) { return isObj(d) ? flags(d, MEALKEY) : undefined; }, DAYKEY);
+    x.extras = mapOf(x.extras, function (list) {
+      if (!Array.isArray(list)) return undefined;
+      return list.filter(function (e) { return isObj(e) && fin(e.k) !== undefined; }).map(function (e) {
+        return { n: String(e.n == null ? "Food" : e.n).slice(0, 80), k: Math.min(5000, Math.max(0, e.k)), p: Math.min(800, Math.max(0, fin(e.p) || 0)), f: Math.min(800, Math.max(0, fin(e.f) || 0)), c: Math.min(800, Math.max(0, fin(e.c) || 0)), src: /^(manual|estimate|label|database)$/.test(e.src) ? e.src : "manual" };
+      });
+    }, DAYKEY);
+    x.picks = mapOf(x.picks, function (m) { return isObj(m) ? mapOf(m, function (v) { return str(v, 12); }, MEALKEY) : undefined; }, MEALKEY);
+    x.done = mapOf(x.done, function (v) { return str(v, 20); }, MEALKEY);
+    x.snap = mapOf(x.snap, function (day) {
+      return isObj(day) ? mapOf(day, function (s) {
+        var t = isObj(s) ? macros(s.tot) : undefined;
+        return t ? { tot: t, full: macros(s.full) || t, parts: Array.isArray(s.parts) ? s.parts.filter(isObj).map(partOf) : [] } : undefined;
+      }, MEALKEY) : undefined;
+    }, DAYKEY);
+    x.skip = mapOf(x.skip, function (day) {
+      return isObj(day) ? mapOf(day, function (m) { return isObj(m) ? flags(m, /^\d{1,2}$/) : undefined; }, MEALKEY) : undefined;
+    }, DAYKEY);
+    x.skipped = mapOf(x.skipped, function (day) { return isObj(day) ? flags(day, MEALKEY) : undefined; }, DAYKEY);
+    x.meas = mapOf(x.meas, function (m) { return isObj(m) ? { w: fin(m.w) === undefined ? null : m.w, s: fin(m.s) === undefined ? null : m.s } : undefined; }, DAYKEY);
+    x.photos = (Array.isArray(x.photos) ? x.photos : []).filter(function (p) {
+      return isObj(p) && typeof p.src === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(p.src) && typeof p.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.d);
+    });
+    x.seenWk = fin(x.seenWk) || 0;
+    return x;
+  }
+  var S = normalizeState(load());
 
   var START = "2026-10-28", TARGET = 69;
 
@@ -8783,6 +8834,12 @@
       ["avo", "Avocado",    160,  2,    15, 9]
     ]
   };
+  function hasFood(cat, id) {
+    var a = FOODS[cat];
+    if (!a) return false;
+    for (var i = 0; i < a.length; i++) if (a[i][0] === id) return true;
+    return false;
+  }
   function food(cat, id) {
     var a = FOODS[cat];
     for (var i = 0; i < a.length; i++) if (a[i][0] === id) return a[i];
@@ -8844,7 +8901,7 @@
   }
   function pickFor(mealId) {
     var m = mealById(mealId), saved = (S.picks && S.picks[mealId]) || {}, out = {};
-    m[6].forEach(function (cat) { out[cat] = saved[cat] || m[7][cat]; });
+    m[6].forEach(function (cat) { out[cat] = (saved[cat] && hasFood(cat, saved[cat])) ? saved[cat] : m[7][cat]; });
     return out;
   }
   // Protein hits the protein target. Carb fills the carb gap left after it.
@@ -9066,26 +9123,30 @@
     ["Mustard, vinegar, hot sauce, spices","Free"]
   ];
 
-  function iso(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function iso(d) { return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
   function parseISO(s) { var p = s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
   function dayDiff(a,b) { return Math.round((parseISO(b)-parseISO(a))/86400000); }
   function shift(d,n) { var x = parseISO(d); x.setDate(x.getDate()+n); return iso(x); }
   var TODAY = iso(new Date()), YDAY = shift(TODAY,-1);
 
   function weekNumber() { var d = dayDiff(START,TODAY); return d<0?1:Math.min(13,Math.floor(d/7)+1); }
-  function currentPhase() {
-    var w = weekNumber();
+  function phaseOn(iso) {
+    var d = dayDiff(START, iso), w = d < 0 ? 1 : Math.min(13, Math.floor(d / 7) + 1);
     for (var i=0;i<PHASES.length;i++) if (w>=PHASES[i].w[0]&&w<=PHASES[i].w[1]) return PHASES[i];
     return PHASES[PHASES.length-1];
   }
+  function currentPhase() { return phaseOn(TODAY); }
   function eatenOn(d) {
     var t = S.ticks[d]||{}, o = {k:0,p:0,f:0,c:0};
     MEALS.forEach(function(m){ if(t[m[0]]){ var b=snapTot(d,m[0]); o.k+=b.k;o.p+=b.p;o.f+=b.f;o.c+=b.c; } });
     (S.extras[d]||[]).forEach(function(e){ o.k+=e.k||0;o.p+=e.p||0;o.f+=e.f||0;o.c+=e.c||0; });
+    // whole numbers: extras carry decimals, and a float sum must never reach the screen or an "over?" test
+    o.k=Math.round(o.k); o.p=Math.round(o.p); o.f=Math.round(o.f); o.c=Math.round(o.c);
     return o;
   }
   function carryover() {
-    var ph = currentPhase();
+    var ph = phaseOn(YDAY);
     if (!S.ticks[YDAY] && !(S.extras[YDAY]||[]).length) return 0;
     var over = eatenOn(YDAY).k - ph.kcal;
     return over <= 150 ? 0 : -Math.min(300, Math.round(over));
@@ -9094,7 +9155,7 @@
   function entries() { return Object.keys(S.weights).sort().map(function(k){return {d:k,w:S.weights[k]};}); }
   function mean(a) { return a.reduce(function(s,x){return s+x;},0)/a.length; }
   var $ = function(id){ return document.getElementById(id); };
-  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];}); }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];}); }
 
   function methodsFor(mealId) {
     var pick = pickFor(mealId);
@@ -9433,13 +9494,6 @@
     S.mockSeeded = true; save();
   }
   DAILY.push(["bike", "3 km bike ride", ""]);
-  if (!S.snap) S.snap = {};
-  if (!S.skip) S.skip = {};
-  if (!S.skipped) S.skipped = {};
-  if (!S.sleep) S.sleep = {};
-  if (!S.meas) S.meas = {};
-  if (!S.photos) S.photos = [];
-  if (!S.seenWk) S.seenWk = 0;
 
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   function RM() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
@@ -9469,8 +9523,8 @@
     return parts.map(function (pt, i) {
       var q, w, none = pt.skip || (!pt.noun && pt.g === 0);
       if (none)         { q = "none"; w = esc(pt.name) + '<span class="gs">' + (pt.skip ? "protein covers the fat" : "trimmed for today") + "</span>"; }
-      else if (pt.noun) { q = String(pt.n); w = pt.noun + '<span class="gs">' + pt.sub + "</span>"; }
-      else              { q = pt.g + " g"; w = esc(pt.name); }
+      else if (pt.noun) { q = esc(pt.n); w = esc(pt.noun) + '<span class="gs">' + esc(pt.sub) + "</span>"; }
+      else              { q = esc(pt.g) + " g"; w = esc(pt.name); }
       var off = pt.off || (toggle && sk[i]);
       if (toggle && !none) {
         return '<button class="item tg' + (off ? " off" : "") + '" data-sk="' + i + '" aria-pressed="' + !off + '" aria-label="' + esc(pt.name) + ', ' + (off ? "skipped" : "eating") + '">' +
@@ -9800,9 +9854,13 @@
     save(); refresh();
   }
   function unEat(id, prevSnap) {
-    delete S.ticks[TODAY][id]; delete S.snap[TODAY][id]; clearSkip(id);
+    if (S.ticks[TODAY]) delete S.ticks[TODAY][id];
+    if (S.snap[TODAY]) delete S.snap[TODAY][id];
+    clearSkip(id);
     save(); refresh();
     toast(mealById(id)[2] + " is back to not eaten", function () {
+      if (!S.ticks[TODAY]) S.ticks[TODAY] = {};
+      if (!S.snap[TODAY]) S.snap[TODAY] = {};
       S.ticks[TODAY][id] = true; S.snap[TODAY][id] = prevSnap; save(); refresh();
       if (sh && sh.view === "meal") paintSheet();
     });
@@ -9957,18 +10015,31 @@
   var ICON_X = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>';
   var ICON_BACK = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg>';
 
+  // While a sheet is open the page behind it is not reachable by keyboard or screen reader, and focus
+  // goes back to where it was when the sheet closes.
+  var BEHIND = ["main", "mini"], opener = null;
+  function setBehind(on) {
+    BEHIND.forEach(function (id) { var e = $(id); if (e) { if (on) e.setAttribute("inert", ""); else e.removeAttribute("inert"); } });
+    [].forEach.call(document.querySelectorAll("header, nav"), function (e) { if (on) e.setAttribute("inert", ""); else e.removeAttribute("inert"); });
+  }
   function openSheet(s) {
     if (s.view === "add") { s.tab = "find"; s.q = ""; s.hits = []; s.pick = null; s.units = []; s.draft = { name: "", k: "", p: "", f: "", c: "", src: "manual" }; s.ready = false; s.note = ""; s.err = ""; s.busy = ""; s.dText = ""; s.label = null; s.thumb = ""; }
+    if (!sh) opener = document.activeElement;
     sh = s; paintSheet(); hideToast();
     var w = $("sheetWrap");
     clearTimeout(closeT);
     w.hidden = false; void w.offsetWidth; w.classList.add("open");
+    setBehind(true);
+    try { $("panel").focus({ preventScroll: true }); } catch (e) {}
   }
   function closeSheet() {
     var w = $("sheetWrap");
     if (sh && sh.ctl) { try { sh.ctl.abort(); } catch (e) {} }
     if (sh && sh.thumb) { try { URL.revokeObjectURL(sh.thumb); } catch (e2) {} }
     sh = null; w.classList.remove("open");
+    setBehind(false);
+    if (opener && opener.focus && document.contains(opener)) { try { opener.focus({ preventScroll: true }); } catch (e3) {} }
+    opener = null;
     clearTimeout(closeT);
     closeT = setTimeout(function () { if (!sh) w.hidden = true; }, 340);
   }
@@ -10069,13 +10140,32 @@
   }
   // Why the button is off, in the words of the tab you are on. Empty once it is ready.
   function addHint() {
-    if (addValid() || !sh) return "";
+    if (!sh || !sh.draft) return "";
+    var r = addRange(); if (r) return r;
+    if (addValid()) {   // typed by hand: say so when the calories and the macros disagree
+      var d = sh.draft;
+      return sh.tab === "num" && (d.p !== "" || d.f !== "" || d.c !== "") ? energyWarn(parseFloat(d.k), num(d.p), num(d.f), num(d.c)).trim() : "";
+    }
     if (sh.tab === "find") return sh.pick ? "Enter how much you had to continue." : "Pick a food from the list to continue.";
     if (sh.tab === "desc") return sh.ready ? "Add a name and calories to continue." : "Describe it and tap Estimate to continue.";
     if (sh.tab === "photo") return sh.ready ? "Enter how much you ate to continue." : "Choose a photo of the label to continue.";
     return "Add a name and calories to continue.";
   }
+  // Ranges for what can be added. Typing 1e9 kcal or a negative macro would wreck the day's totals.
+  var LIM = { k: 5000, m: 800 };
+  function addRange() {
+    var d = sh && sh.draft; if (!d) return "";
+    var k = parseFloat(d.k), keys = [["p", "Protein"], ["f", "Fat"], ["c", "Carbs"]], i, v;
+    if (d.k !== "" && isFinite(k) && (k < 0 || k > LIM.k)) return k < 0 ? "Calories can’t be negative." : "Calories can’t be over " + fmt(LIM.k) + " in one entry.";
+    for (i = 0; i < keys.length; i++) {
+      if (d[keys[i][0]] === "" || d[keys[i][0]] == null) continue;
+      v = parseFloat(d[keys[i][0]]);
+      if (!isFinite(v) || v < 0 || v > LIM.m) return keys[i][1] + " has to be between 0 and " + LIM.m + " g.";
+    }
+    return "";
+  }
   function addValid() {
+    if (addRange()) return false;
     // with a picked food or a read label the amount drives the numbers, so an empty amount is not addable
     if (sh && sh.amt && ((sh.tab === "find" && sh.pick) || (sh.tab === "photo" && sh.label && sh.ready)) && !(sh.amt.n > 0)) return false;
     return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
@@ -10130,11 +10220,11 @@
     var form = "";
     if (showForm) {
       form = amount + '<label class="flabel" for="fName">Name</label><input id="fName" type="text" autocomplete="off" placeholder="Shawarma, 2 biscuits…" value="' + esc(d.name) + '">' +
-        '<label class="flabel" for="fKcal">Calories</label><input id="fKcal" class="m" type="number" inputmode="numeric" step="any" placeholder="kcal" value="' + esc(d.k) + '">' +
+        '<label class="flabel" for="fKcal">Calories</label><input id="fKcal" class="m" type="number" inputmode="numeric" min="0" max="5000" step="any" placeholder="kcal" value="' + esc(d.k) + '">' +
         '<div class="flabel">Macros in grams, if you know them</div>' +
-        '<div class="fin3"><input id="fP" class="m" type="number" inputmode="decimal" step="any" placeholder="Protein" aria-label="Protein grams" value="' + esc(d.p) + '">' +
-        '<input id="fF" class="m" type="number" inputmode="decimal" step="any" placeholder="Fat" aria-label="Fat grams" value="' + esc(d.f) + '">' +
-        '<input id="fC" class="m" type="number" inputmode="decimal" step="any" placeholder="Carbs" aria-label="Carb grams" value="' + esc(d.c) + '"></div>' +
+        '<div class="fin3"><input id="fP" class="m" type="number" inputmode="decimal" min="0" max="800" step="any" placeholder="Protein" aria-label="Protein grams" value="' + esc(d.p) + '">' +
+        '<input id="fF" class="m" type="number" inputmode="decimal" min="0" max="800" step="any" placeholder="Fat" aria-label="Fat grams" value="' + esc(d.f) + '">' +
+        '<input id="fC" class="m" type="number" inputmode="decimal" min="0" max="800" step="any" placeholder="Carbs" aria-label="Carb grams" value="' + esc(d.c) + '"></div>' +
         (sh.note ? '<p class="aihint" id="aNote">' + esc(sh.note) + "</p>" : "");
     }
     var err = sh.err ? '<p class="ferr" id="fErr">' + esc(sh.err) + "</p>" : '<p class="ferr" id="fErr" hidden></p>';
@@ -10159,13 +10249,16 @@
 
   function addExtra() {
     syncAdd();
-    var d = sh.draft, n = d.name.trim(), k = parseFloat(d.k);
+    var d = sh.draft, n = d.name.trim().slice(0, 80), k = parseFloat(d.k), bad = addRange();
+    if (bad) { sh.err = bad; paintSheet(); return; }
     if (!n || !isFinite(k) || k < 0) { sh.err = "Give it a name and a calorie figure. A rough number beats no number."; paintSheet(); return; }
     if (!S.extras[TODAY]) S.extras[TODAY] = [];
-    S.extras[TODAY].push({ n: n, k: Math.round(k), p: r1(num(d.p)), f: r1(num(d.f)), c: r1(num(d.c)), src: d.src || "manual" });
+    var entry = { n: n, k: Math.round(k), p: r1(num(d.p)), f: r1(num(d.f)), c: r1(num(d.c)), src: d.src || "manual" };
+    S.extras[TODAY].push(entry);
     save(); closeSheet(); refresh();
-    toast(n + " added · " + Math.round(k) + " kcal", function () {
-      var l = S.extras[TODAY]; if (l && l.length) { l.pop(); save(); refresh(); }
+    toast(n + " added · " + Math.round(k) + " kcal", function () {   // undo takes out this entry, not just the last one
+      var l = S.extras[TODAY], i = l ? l.indexOf(entry) : -1;
+      if (i >= 0) { l.splice(i, 1); save(); refresh(); }
     });
   }
 
@@ -10682,6 +10775,7 @@
   $("mSave").addEventListener("click", function () {
     var w = parseFloat($("mWaist").value), s2 = parseFloat($("mShoulder").value);
     if (!isFinite(w) && !isFinite(s2)) { $("mWaist").focus(); return; }
+    if ((isFinite(w) && (w < 30 || w > 250)) || (isFinite(s2) && (s2 < 30 || s2 > 250))) { toast("Measurements are in centimetres, between 30 and 250."); return; }
     S.meas[TODAY] = { w: isFinite(w) ? w : null, s: isFinite(s2) ? s2 : null };
     save(); $("mWaist").value = ""; $("mShoulder").value = ""; renderMeas(); renderReview();
     toast("Measurements saved");
@@ -10812,8 +10906,11 @@
     var b = ev.target.closest("[data-chip]"); if (!b) return;
     recChip = b.getAttribute("data-chip"); renderRecipes();
   });
+  var foodBuilt = false;
   function renderFood() {
     renderRecipes();
+    if (foodBuilt) return;   // the tables below are static and move into the accordion once; a second pass has nothing to find
+    foodBuilt = true;
     var cls = { a: "a", b: "b", c: "" };
     $("proteins").innerHTML = PROTEINS.map(function (gr) {
       return '<div class="pgrp"><div class="pgt ' + cls[gr.cls] + '">' + gr.g + '</div><div class="pgn">' + gr.note + "</div>" +
@@ -10825,8 +10922,8 @@
     }).join("");
     $("swaps").innerHTML = SWAPS.map(function (s2) { return '<div class="sw"><div class="a">' + s2[0] + '</div><div class="b">' + s2[1] + "</div></div>"; }).join("");
     $("swapAcc").innerHTML = accHtml("sw1", false, "Swaps and the food rule", "Protein swaps, the rule, everything else", "", '<div class="acc-in" id="swapIn" style="padding-top:0"></div>');
-    var h = document.querySelector(".swapholder");
-    while (h.firstChild) $("swapIn").appendChild(h.firstChild);
+    var h = document.querySelector(".swapholder"), si = $("swapIn");
+    if (h && si) while (h.firstChild) si.appendChild(h.firstChild);
   }
 
   // ── Train ──
@@ -10919,5 +11016,21 @@
   initAI();
   var h0 = (location.hash || "").replace("#", "");
   if (VIEWS.indexOf(h0) > 0) showTab(h0, true);
+
+  // Another tab or window saved: take its state instead of overwriting it with ours on the next save.
+  window.addEventListener("storage", function (ev) {
+    if (ev.key !== null && ev.key !== KEY) return;
+    var n = normalizeState(load()), k;
+    for (k in S) if (Object.prototype.hasOwnProperty.call(S, k)) delete S[k];
+    for (k in n) if (Object.prototype.hasOwnProperty.call(n, k)) S[k] = n[k];
+    if (sh) closeSheet();
+    renderTop(); refresh(); renderFood(); renderTrain(); renderTrend(); renderNewWk();
+  });
+
+  // The phone keeps the page alive overnight. Past midnight "today" is a new day, so start it fresh.
+  function rolled() { return iso(new Date()) !== TODAY; }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && rolled()) location.reload(); });
+  window.addEventListener("pageshow", function () { if (rolled()) location.reload(); });
+  setInterval(function () { if (!document.hidden && rolled()) location.reload(); }, 60000);
 })();
 </script>

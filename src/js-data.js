@@ -52,6 +52,12 @@
       ["avo", "Avocado",    160,  2,    15, 9]
     ]
   };
+  function hasFood(cat, id) {
+    var a = FOODS[cat];
+    if (!a) return false;
+    for (var i = 0; i < a.length; i++) if (a[i][0] === id) return true;
+    return false;
+  }
   function food(cat, id) {
     var a = FOODS[cat];
     for (var i = 0; i < a.length; i++) if (a[i][0] === id) return a[i];
@@ -113,7 +119,7 @@
   }
   function pickFor(mealId) {
     var m = mealById(mealId), saved = (S.picks && S.picks[mealId]) || {}, out = {};
-    m[6].forEach(function (cat) { out[cat] = saved[cat] || m[7][cat]; });
+    m[6].forEach(function (cat) { out[cat] = (saved[cat] && hasFood(cat, saved[cat])) ? saved[cat] : m[7][cat]; });
     return out;
   }
   // Protein hits the protein target. Carb fills the carb gap left after it.
@@ -335,26 +341,30 @@
     ["Mustard, vinegar, hot sauce, spices","Free"]
   ];
 
-  function iso(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function iso(d) { return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
   function parseISO(s) { var p = s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
   function dayDiff(a,b) { return Math.round((parseISO(b)-parseISO(a))/86400000); }
   function shift(d,n) { var x = parseISO(d); x.setDate(x.getDate()+n); return iso(x); }
   var TODAY = iso(new Date()), YDAY = shift(TODAY,-1);
 
   function weekNumber() { var d = dayDiff(START,TODAY); return d<0?1:Math.min(13,Math.floor(d/7)+1); }
-  function currentPhase() {
-    var w = weekNumber();
+  function phaseOn(iso) {
+    var d = dayDiff(START, iso), w = d < 0 ? 1 : Math.min(13, Math.floor(d / 7) + 1);
     for (var i=0;i<PHASES.length;i++) if (w>=PHASES[i].w[0]&&w<=PHASES[i].w[1]) return PHASES[i];
     return PHASES[PHASES.length-1];
   }
+  function currentPhase() { return phaseOn(TODAY); }
   function eatenOn(d) {
     var t = S.ticks[d]||{}, o = {k:0,p:0,f:0,c:0};
     MEALS.forEach(function(m){ if(t[m[0]]){ var b=snapTot(d,m[0]); o.k+=b.k;o.p+=b.p;o.f+=b.f;o.c+=b.c; } });
     (S.extras[d]||[]).forEach(function(e){ o.k+=e.k||0;o.p+=e.p||0;o.f+=e.f||0;o.c+=e.c||0; });
+    // whole numbers: extras carry decimals, and a float sum must never reach the screen or an "over?" test
+    o.k=Math.round(o.k); o.p=Math.round(o.p); o.f=Math.round(o.f); o.c=Math.round(o.c);
     return o;
   }
   function carryover() {
-    var ph = currentPhase();
+    var ph = phaseOn(YDAY);
     if (!S.ticks[YDAY] && !(S.extras[YDAY]||[]).length) return 0;
     var over = eatenOn(YDAY).k - ph.kcal;
     return over <= 150 ? 0 : -Math.min(300, Math.round(over));
@@ -363,7 +373,7 @@
   function entries() { return Object.keys(S.weights).sort().map(function(k){return {d:k,w:S.weights[k]};}); }
   function mean(a) { return a.reduce(function(s,x){return s+x;},0)/a.length; }
   var $ = function(id){ return document.getElementById(id); };
-  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];}); }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];}); }
 
   function methodsFor(mealId) {
     var pick = pickFor(mealId);

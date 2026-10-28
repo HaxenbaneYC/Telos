@@ -8,13 +8,6 @@
     S.mockSeeded = true; save();
   }
   DAILY.push(["bike", "3 km bike ride", ""]);
-  if (!S.snap) S.snap = {};
-  if (!S.skip) S.skip = {};
-  if (!S.skipped) S.skipped = {};
-  if (!S.sleep) S.sleep = {};
-  if (!S.meas) S.meas = {};
-  if (!S.photos) S.photos = [];
-  if (!S.seenWk) S.seenWk = 0;
 
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   function RM() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
@@ -44,8 +37,8 @@
     return parts.map(function (pt, i) {
       var q, w, none = pt.skip || (!pt.noun && pt.g === 0);
       if (none)         { q = "none"; w = esc(pt.name) + '<span class="gs">' + (pt.skip ? "protein covers the fat" : "trimmed for today") + "</span>"; }
-      else if (pt.noun) { q = String(pt.n); w = pt.noun + '<span class="gs">' + pt.sub + "</span>"; }
-      else              { q = pt.g + " g"; w = esc(pt.name); }
+      else if (pt.noun) { q = esc(pt.n); w = esc(pt.noun) + '<span class="gs">' + esc(pt.sub) + "</span>"; }
+      else              { q = esc(pt.g) + " g"; w = esc(pt.name); }
       var off = pt.off || (toggle && sk[i]);
       if (toggle && !none) {
         return '<button class="item tg' + (off ? " off" : "") + '" data-sk="' + i + '" aria-pressed="' + !off + '" aria-label="' + esc(pt.name) + ', ' + (off ? "skipped" : "eating") + '">' +
@@ -375,9 +368,13 @@
     save(); refresh();
   }
   function unEat(id, prevSnap) {
-    delete S.ticks[TODAY][id]; delete S.snap[TODAY][id]; clearSkip(id);
+    if (S.ticks[TODAY]) delete S.ticks[TODAY][id];
+    if (S.snap[TODAY]) delete S.snap[TODAY][id];
+    clearSkip(id);
     save(); refresh();
     toast(mealById(id)[2] + " is back to not eaten", function () {
+      if (!S.ticks[TODAY]) S.ticks[TODAY] = {};
+      if (!S.snap[TODAY]) S.snap[TODAY] = {};
       S.ticks[TODAY][id] = true; S.snap[TODAY][id] = prevSnap; save(); refresh();
       if (sh && sh.view === "meal") paintSheet();
     });
@@ -532,18 +529,31 @@
   var ICON_X = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>';
   var ICON_BACK = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg>';
 
+  // While a sheet is open the page behind it is not reachable by keyboard or screen reader, and focus
+  // goes back to where it was when the sheet closes.
+  var BEHIND = ["main", "mini"], opener = null;
+  function setBehind(on) {
+    BEHIND.forEach(function (id) { var e = $(id); if (e) { if (on) e.setAttribute("inert", ""); else e.removeAttribute("inert"); } });
+    [].forEach.call(document.querySelectorAll("header, nav"), function (e) { if (on) e.setAttribute("inert", ""); else e.removeAttribute("inert"); });
+  }
   function openSheet(s) {
     if (s.view === "add") { s.tab = "find"; s.q = ""; s.hits = []; s.pick = null; s.units = []; s.draft = { name: "", k: "", p: "", f: "", c: "", src: "manual" }; s.ready = false; s.note = ""; s.err = ""; s.busy = ""; s.dText = ""; s.label = null; s.thumb = ""; }
+    if (!sh) opener = document.activeElement;
     sh = s; paintSheet(); hideToast();
     var w = $("sheetWrap");
     clearTimeout(closeT);
     w.hidden = false; void w.offsetWidth; w.classList.add("open");
+    setBehind(true);
+    try { $("panel").focus({ preventScroll: true }); } catch (e) {}
   }
   function closeSheet() {
     var w = $("sheetWrap");
     if (sh && sh.ctl) { try { sh.ctl.abort(); } catch (e) {} }
     if (sh && sh.thumb) { try { URL.revokeObjectURL(sh.thumb); } catch (e2) {} }
     sh = null; w.classList.remove("open");
+    setBehind(false);
+    if (opener && opener.focus && document.contains(opener)) { try { opener.focus({ preventScroll: true }); } catch (e3) {} }
+    opener = null;
     clearTimeout(closeT);
     closeT = setTimeout(function () { if (!sh) w.hidden = true; }, 340);
   }
@@ -644,13 +654,32 @@
   }
   // Why the button is off, in the words of the tab you are on. Empty once it is ready.
   function addHint() {
-    if (addValid() || !sh) return "";
+    if (!sh || !sh.draft) return "";
+    var r = addRange(); if (r) return r;
+    if (addValid()) {   // typed by hand: say so when the calories and the macros disagree
+      var d = sh.draft;
+      return sh.tab === "num" && (d.p !== "" || d.f !== "" || d.c !== "") ? energyWarn(parseFloat(d.k), num(d.p), num(d.f), num(d.c)).trim() : "";
+    }
     if (sh.tab === "find") return sh.pick ? "Enter how much you had to continue." : "Pick a food from the list to continue.";
     if (sh.tab === "desc") return sh.ready ? "Add a name and calories to continue." : "Describe it and tap Estimate to continue.";
     if (sh.tab === "photo") return sh.ready ? "Enter how much you ate to continue." : "Choose a photo of the label to continue.";
     return "Add a name and calories to continue.";
   }
+  // Ranges for what can be added. Typing 1e9 kcal or a negative macro would wreck the day's totals.
+  var LIM = { k: 5000, m: 800 };
+  function addRange() {
+    var d = sh && sh.draft; if (!d) return "";
+    var k = parseFloat(d.k), keys = [["p", "Protein"], ["f", "Fat"], ["c", "Carbs"]], i, v;
+    if (d.k !== "" && isFinite(k) && (k < 0 || k > LIM.k)) return k < 0 ? "Calories can’t be negative." : "Calories can’t be over " + fmt(LIM.k) + " in one entry.";
+    for (i = 0; i < keys.length; i++) {
+      if (d[keys[i][0]] === "" || d[keys[i][0]] == null) continue;
+      v = parseFloat(d[keys[i][0]]);
+      if (!isFinite(v) || v < 0 || v > LIM.m) return keys[i][1] + " has to be between 0 and " + LIM.m + " g.";
+    }
+    return "";
+  }
   function addValid() {
+    if (addRange()) return false;
     // with a picked food or a read label the amount drives the numbers, so an empty amount is not addable
     if (sh && sh.amt && ((sh.tab === "find" && sh.pick) || (sh.tab === "photo" && sh.label && sh.ready)) && !(sh.amt.n > 0)) return false;
     return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
@@ -705,11 +734,11 @@
     var form = "";
     if (showForm) {
       form = amount + '<label class="flabel" for="fName">Name</label><input id="fName" type="text" autocomplete="off" placeholder="Shawarma, 2 biscuits…" value="' + esc(d.name) + '">' +
-        '<label class="flabel" for="fKcal">Calories</label><input id="fKcal" class="m" type="number" inputmode="numeric" step="any" placeholder="kcal" value="' + esc(d.k) + '">' +
+        '<label class="flabel" for="fKcal">Calories</label><input id="fKcal" class="m" type="number" inputmode="numeric" min="0" max="5000" step="any" placeholder="kcal" value="' + esc(d.k) + '">' +
         '<div class="flabel">Macros in grams, if you know them</div>' +
-        '<div class="fin3"><input id="fP" class="m" type="number" inputmode="decimal" step="any" placeholder="Protein" aria-label="Protein grams" value="' + esc(d.p) + '">' +
-        '<input id="fF" class="m" type="number" inputmode="decimal" step="any" placeholder="Fat" aria-label="Fat grams" value="' + esc(d.f) + '">' +
-        '<input id="fC" class="m" type="number" inputmode="decimal" step="any" placeholder="Carbs" aria-label="Carb grams" value="' + esc(d.c) + '"></div>' +
+        '<div class="fin3"><input id="fP" class="m" type="number" inputmode="decimal" min="0" max="800" step="any" placeholder="Protein" aria-label="Protein grams" value="' + esc(d.p) + '">' +
+        '<input id="fF" class="m" type="number" inputmode="decimal" min="0" max="800" step="any" placeholder="Fat" aria-label="Fat grams" value="' + esc(d.f) + '">' +
+        '<input id="fC" class="m" type="number" inputmode="decimal" min="0" max="800" step="any" placeholder="Carbs" aria-label="Carb grams" value="' + esc(d.c) + '"></div>' +
         (sh.note ? '<p class="aihint" id="aNote">' + esc(sh.note) + "</p>" : "");
     }
     var err = sh.err ? '<p class="ferr" id="fErr">' + esc(sh.err) + "</p>" : '<p class="ferr" id="fErr" hidden></p>';
@@ -734,13 +763,16 @@
 
   function addExtra() {
     syncAdd();
-    var d = sh.draft, n = d.name.trim(), k = parseFloat(d.k);
+    var d = sh.draft, n = d.name.trim().slice(0, 80), k = parseFloat(d.k), bad = addRange();
+    if (bad) { sh.err = bad; paintSheet(); return; }
     if (!n || !isFinite(k) || k < 0) { sh.err = "Give it a name and a calorie figure. A rough number beats no number."; paintSheet(); return; }
     if (!S.extras[TODAY]) S.extras[TODAY] = [];
-    S.extras[TODAY].push({ n: n, k: Math.round(k), p: r1(num(d.p)), f: r1(num(d.f)), c: r1(num(d.c)), src: d.src || "manual" });
+    var entry = { n: n, k: Math.round(k), p: r1(num(d.p)), f: r1(num(d.f)), c: r1(num(d.c)), src: d.src || "manual" };
+    S.extras[TODAY].push(entry);
     save(); closeSheet(); refresh();
-    toast(n + " added · " + Math.round(k) + " kcal", function () {
-      var l = S.extras[TODAY]; if (l && l.length) { l.pop(); save(); refresh(); }
+    toast(n + " added · " + Math.round(k) + " kcal", function () {   // undo takes out this entry, not just the last one
+      var l = S.extras[TODAY], i = l ? l.indexOf(entry) : -1;
+      if (i >= 0) { l.splice(i, 1); save(); refresh(); }
     });
   }
 
