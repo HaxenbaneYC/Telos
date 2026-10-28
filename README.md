@@ -6,3 +6,5 @@ My health tracking app. A phone-first, single-file web app for food, training an
 - Edit `src/`, then run `python3 build.py` to rebuild `coach.html` (`--preview` makes `coach-preview.html` with sample data).
 - `data/foods.tsv` is the offline USDA food table; `data/build-foods.py` regenerates it.
 - `CLAUDE.md` has the full project notes.
+- `docs/` is the installable phone app (manifest, icons, offline service worker). Publish it with GitHub Pages (Settings, Pages, deploy from `main` `/docs`) or any static host, then Add to Home Screen.
+- `tests/` has the Playwright checks: `node tests/day-accuracy.js`, `storage-fuzz.js`, `injection.js`, `mobile-scan.js`.

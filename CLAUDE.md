@@ -77,6 +77,16 @@ To redeploy, publish the built file to the same artifact URL.
 **Logging starts today only.** The live build has no sample data: food and
 training are empty until he logs them.
 
+### The phone app
+
+`python3 build.py` also writes `docs/index.html` and `docs/sw.js`: the same app as a complete page with a
+manifest, icons (`tools/make-icons.py`) and an offline service worker. Serve `docs/` over https (GitHub
+Pages from main /docs, or any static host) and "Add to Home Screen" gives a full-screen app that opens
+without signal. Data stays in that phone's browser storage; the install is a separate copy from the Claude
+artifact, so logs do not carry over. Describe and Label need Claude, so they are hidden in the installed
+app. A new build changes the service worker's version; the app picks it up on the next online open.
+Pages publishes only `docs/`, so keep personal notes (this file, `data/`, `src/`) out of it.
+
 ### Data
 
 Everything lives in `localStorage` under `telos_v1`. Nothing is uploaded
