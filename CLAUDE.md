@@ -39,7 +39,9 @@ Start 2026-10-28, target 69 kg, 13 weeks.
 | 9     | Diet break | 2,700 | 185 | 85 | 285 | Maintenance over Christmas, deliberate   |
 | 10–13 | The finish | 2,150 | 195 | 70 | 185 | Steps 10–12k, hold volume, no extra cardio |
 
-Training: push / pull / legs / upper, plus a delts-arms-abs-neck day.
+Training is a seven-day **rotation**, not weekdays: Push, Pull, Legs, 5K run or bike,
+Upper, Delts/arms/abs/neck, Rest, then round again. Day one (Wed 28 Oct 2026) is Push.
+Plus a **daily 3 km bike ride**, logged from the first day.
 Supplements he already takes: D3+K2, omega 3, magnesium, zinc, selenium,
 tongkat ali, boron, creatine 5 g daily.
 
@@ -51,124 +53,146 @@ fine — the recipes exist so he doesn't quit out of boredom by week three.
 
 ## The app
 
-One file: `coach.html`. Self-contained — markup, styles and script in the same
-file, no build step, no framework, no dependencies except the Google Fonts
-link. Open it in a browser and it runs.
+The shipped file is still one self-contained `coach.html`: markup, styles, script
+and the food table in a single file, no framework, no dependencies except the
+Google Fonts link. Open it in a browser and it runs.
 
-Published as a private Claude artifact. To redeploy, publish the same file to
-the same artifact URL.
+It is now **built from `src/`** so it stays editable:
+
+```
+python3 build.py             # coach.html          (live: no sample data, key telos_v1)
+python3 build.py --preview   # coach-preview.html  (sample data, key telos_mock2)
+```
+
+Edit `src/*`, never the generated HTML. `build.py` concatenates `head.html`
+(CSS, markup, state), `js-data.js` (meal engine, recipes, plan data),
+`js-today.js`, `js-search.js`, `js-tabs.js`, `js-init.js`, and embeds
+`data/foods.tsv` in a `<script type="text/plain" id="foodsDB">` block. Vanilla
+ES5 `var` JS throughout. `PREVIEW` at the top of the script switches the
+storage key and the seeding.
+
+Published as a private Claude artifact (the live build, titled "Telos Redesign").
+To redeploy, publish the built file to the same artifact URL.
+
+**Logging starts today only.** The live build has no sample data: food and
+training are empty until he logs them.
 
 ### Data
 
-Everything lives in `localStorage` under the key `telos_v1`. Nothing is
-uploaded anywhere, including the weekly progress photos, which are resized to
-~50 KB JPEGs on the client and stored locally. **Keep it that way.** He did not
-ask for an account and does not want one.
+Everything lives in `localStorage` under `telos_v1`. Nothing is uploaded
+anywhere, including weekly photos (resized to <=440 px JPEG on the client).
+**Keep it that way.** Every read and write is wrapped in try/catch; the app
+must render with storage empty.
 
-Every read and write is wrapped in try/catch. The app must render correctly
-when storage comes back empty.
+The only thing that leaves the device is a Claude call he triggers himself
+(Describe, Label photo), through the artifact `sample` capability. It asks for
+consent per call, the photo is never stored, and the buttons are hidden when
+the capability is missing.
 
 ### Structure
 
-Four tabs: Today, Trend, Food, Train.
+Four tabs, in this order: **Today, Train, Food, Trend.** Today and Train come
+first on purpose; Trend is last.
 
-- **Today** — the macro totals, the five meal slots, the daily checklist,
-  supplements. The weigh-in is deliberately *not* here; he objected to being
-  asked for his weight every time he opened the app.
-- **Trend** — weight, measurements (waist, shoulders, and the taper gap between
-  them), weekly photos, and the weekly analysis.
-- **Food** — the rule, the recipe library, protein swaps.
-- **Train** — the week's split and each session.
+- **Today** - summary card with the one-sentence finding, 13-week strip, the
+  next meal as an open card (everything else is a row), a folded "Eaten" group,
+  off-plan food, checklist, supplements, and a mini sticky calorie/macro bar that
+  slides in on scroll. Meals open in a bottom sheet. Every change has an undo toast.
+- **Train** - today's session from the rotation, a 7-day "Next 7 days" list, the
+  daily 3 km bike tick, back-from-time-off notes.
+- **Food** - recipes only: search, chips (Pasta, Rice, Potato, Eggs and yogurt,
+  Sauces), "healthy but fun" plus the simple staples. The food rule and protein
+  swaps live in one accordion at the bottom. He does not want a Food tab that is
+  just reference tables.
+- **Trend** - weight (chart fitted to the data), measurements and taper gap,
+  photos, weekly analysis, phases. The weigh-in is a morning log here, not on Today.
 
-### How a meal is built
+### Meals, partial meals, skipped meals
 
-`MEALS` holds five slots. Each slot stores its macros as a **share of the day**,
-not as fixed grams, so every slot rescales automatically when the phase changes.
-The shares sum to 1.00 on each macro.
+`MEALS` holds five slots as a **share of the day**, so they rescale when the phase
+changes. `buildMeal()` solves in three passes (carb and fat sources carry protein
+of their own). Portions are rounded to how they are served before macros are counted.
+`PIECE` counts eggs, slices, bananas; `egx` is the mixed-eggs composite.
 
-`buildMeal()` solves in three passes, because carb and fat sources carry protein
-of their own — rice, sourdough and peanuts were putting the day ~24 g of protein
-and ~90 kcal over target before this was fixed. Protein is solved against what
-is left *after* the carb and fat sources, not against the raw target.
+Items in a meal are toggles. Tap what you did not eat: the meal's numbers drop.
+Untick **every** item and the card offers "Skip <meal>", which marks it skipped
+(`S.skipped`, with undo). On an already-eaten meal, unticking items in the sheet
+edits what counts, and unticking the last one returns the meal to not eaten.
+"Undo eaten" restores the whole meal. Eaten meals are frozen in snapshots
+(`S.snap[date][mealId]`) so later coaching never rewrites history.
 
-Every portion is rounded to how it is actually served **before** its macros are
-counted, so the numbers match what he ate rather than a half-egg fiction.
+### Off-plan food
 
-### Pieces vs grams
+Add from the sheet by four routes: **Search** (7,831 USDA foods, offline, per
+100 g, with portions and ml via density), **Describe** (type what and how much;
+Claude estimates), **Label** (photo of the nutrition panel; Claude reads it),
+**Numbers** (type kcal and macros). Off-plan rows can be removed with undo. The
+USDA table is built by `data/build-foods.py` from his nutrition database.
 
-`PIECE` maps a food id to the weight of one piece. Foods in that map are
-counted, not weighed: eggs, egg whites, sourdough slices, bananas, dates. The
-row shows the count on the left and the piece noun on the right, with the gram
-weight small and grey beside it so a scale still agrees.
+### The coach rule
 
-`Eggs — mixed` (id `egx`) is a composite handled specially in `solveProtein()`:
-it takes the number of whole eggs he asked for (a per-meal dropdown, default 3),
-then tops the protein up with whites. It matches the egg recipes via a
-`egx → egg` mapping in `methodsFor()`.
+He wants flexible, not too flexible. If a day is projected over target:
+
+- 150 kcal or less over: no change.
+- Beyond that, the meals still to eat give up the difference today: fat first
+  (up to half of the fat left), then carbs (up to a quarter, never the pre-gym
+  meal), never protein. Capped at 250 kcal.
+- Whatever is still over 150 comes off tomorrow's target, up to 300.
+
+These numbers (`COACH`) are judgment, adjustable.
 
 ### Recipes
 
-`LIB` holds 35 complete-meal methods plus 5 finishers. They are **complete
-meals** — protein and carb cooked together with interleaved timing — not
-separate "here's how to cook chicken" fragments. He complained about that
-specifically.
+`LIB` (methods) plus `FIN` (finishers) and `RECIPES` (sauces and bases). They are
+**complete meals**, protein and carb cooked together, not fragments. `methodsFor()`
+matches protein and carb and falls back to protein-only with `swap: true`.
+Recipes open as in-place accordions. White-sauce pasta (cornflour, milk, garlic,
+parmesan, or yogurt base) is the example of the style he wants: healthy but fun.
+He will supply a recipe book; add from it, keep the simple ones.
 
-`methodsFor()` matches protein AND carb. When no exact pairing exists it falls
-back to protein-only and sets `swap: true`, which shows a note saying the method
-was written for a different carb. 82 exact pairings, 71 fallbacks, no empty
-combinations.
-
-Recipes open as **in-place accordions** inside the meal card. Not a separate
-page, not a swipe carousel — both were tried and rejected.
-
-### Writing recipes
-
-Research the technique, then write the method in your own words. Do not
-reproduce a recipe's text from a website.
+Write methods in your own words. Do not reproduce a book's or website's text.
 
 ---
 
 ## Design
 
-The look was arrived at over many rejected rounds. Don't drift from it.
+Redesigned as a **phone-first personal app** (Oct 2026). He approved the glass
+look "if implemented right". The skills installed for design (impeccable,
+design-taste-frontend, ui-ux-pro-max) were explicitly allowed to override the
+earlier look; the identity below stayed.
 
-### Palette
+### Identity that stays
 
-| Token    | Hex       | Use                                         |
-|----------|-----------|---------------------------------------------|
-| Basalt   | `#0A0C0B` | Page ground                                 |
-| Teal     | `#2A9D8A` | Primary accent, figures, active state       |
-| Bronze   | `#B08455` | Secondary accent, times, recipe labels      |
-| Chalk    | `#D8D2C4` | The mark on teal                            |
-| Red      | `#FF5C45` | **Over target. Nothing else, ever.**        |
+| Token  | Hex       | Use                                      |
+|--------|-----------|------------------------------------------|
+| Basalt | `#0A0C0B` | Page ground                              |
+| Teal   | `#2A9D8A` | Primary accent, active state, good       |
+| Bronze | `#B08455` | Secondary accent, times, caution         |
+| Chalk  | `#D8D2C4` | The mark on teal                         |
+| Red    | `#FF5C45` | **Over target. Nothing else, ever.**     |
 
-Red earns its meaning by appearing nowhere else. Do not use it for decoration,
-emphasis, errors, or anything but a macro going past its number.
+Red is used only for a macro or calorie figure going past its number. It is
+not used on Trend or Food at all (teal good, bronze caution, ink stop).
+Dark-first with a light theme; tokens declared for `:root`, the dark media
+query guarded by `:root:not([data-theme="light"])`, and `[data-theme="dark"]`.
 
 ### Type
 
-IBM Plex Mono for display, labels and figures. IBM Plex Sans for prose.
-He asked for bigger text once already — don't shrink it back.
+IBM Plex Sans for labels and prose (sentence case). IBM Plex Mono for figures
+only. Keep text large; he asked for bigger text already.
 
-### The glass
+### Glass and motion
 
-Glass on the chrome (header, nav) and the hero panel. Solid under data, because
-blurred backgrounds behind numbers hurt legibility. An ambient radial-gradient
-ground sits behind every tab, masked so it fades out by 92 % of the container —
-it used to fade at 106 % and the glow was cut off by `overflow: hidden`, which
-he spotted and hated.
+Glass on the chrome (header, nav) and the summary card over a soft wash. Solid
+under data: sheets and cards stay opaque so numbers are legible. Motion is
+feedback (number tweens, FLIP row moves, sheet slide) and respects
+`prefers-reduced-motion`.
 
-Every theme token is declared three times: `:root`, then
-`@media (prefers-color-scheme: dark)` guarded by `:root:not([data-theme="light"])`,
-then `:root[data-theme="dark"]`.
+### Phone rules
 
-### Things already asked for
-
-- Seamless edges, no hard-clipped glows
-- Colour and glow throughout the whole app, not just one screen
-- A nav bar that is alive, not "dead"
-- Smooth animation on clicking
-- Bigger text
+Targets of 44 px and up, no horizontal scroll from 320 to 430 px, "Ate it"
+visible on the first screen down to 360x740, keyboard-aware sheets
+(visualViewport). Real-device keyboard behaviour is still unverified.
 
 ---
 
@@ -195,20 +219,24 @@ Wordmark: TELOS in IBM Plex Mono, 0.26em letter-spacing, uppercase.
 
 ## Working rules
 
-- Self-contained HTML, one file. No build step, no framework, no npm install.
-- Vanilla JS, `var`, no transpiling. It has to run by double-clicking the file.
-- Test before claiming it works. Render it in a real browser and look at it —
-  a progress bar that silently did nothing for days (an inline `<span>` ignoring
-  `width`) and a recipe sheet whose `display: flex` beat the browser's `hidden`
-  attribute both shipped because nobody opened the page.
-- Keep it simple. His words: KISS.
-- Don't add features he didn't ask for.
+- The deliverable is one self-contained HTML file. Edit `src/`, run `build.py`.
+  No npm, no framework.
+- Vanilla JS, `var`, no transpiling.
+- Test before claiming it works. Render it in a real browser (Playwright
+  chromium is available) at 320, 360, 390 and 430 px and look at it. Past
+  failures all shipped because nobody opened the page.
+- Keep it simple. His words: KISS. Don't add features he didn't ask for.
+- Logo exploration is deliberately **last**; the mark is untouched for now.
 
 ---
 
 ## Not done yet
 
-- **The website** — the next phase, not started.
-- **Notifications** to remind him to log — he explicitly deferred these.
-- **Body fat baseline** — he still owes a DEXA or InBody reading.
+- **Recipes from his book**: he will supply it; convert to recipes with macros
+  from the USDA table.
+- **The website**: the next phase, not started.
+- **Notifications** to remind him to log: deferred by him.
+- **Body fat baseline**: he still owes a DEXA or InBody reading.
 - Protein powder and creatine were to be bought "from next Monday".
+- **Logo exploration** (last).
+- Real-device check of the on-screen keyboard in the sheets.
