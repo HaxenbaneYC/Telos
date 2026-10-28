@@ -95,12 +95,16 @@
     ["m5", "21:30", "Dinner",        0.32, 0.22, 0.28, ["protein","carb","fat"], { protein:"chk", carb:"pot", fat:"oil" }]
   ];
 
-  // a slot's absolute targets for today's phase
-  function slotTarget(m) {
+  // a slot's absolute targets for the phase, before any coach trim
+  function planTarget(m) {
     var ph = currentPhase();
-    var f = ph.f * m[4], c = ph.c * m[5];
-    if (TRIM.on && !handled(m[0])) { f *= 1 - TRIM.fatFrac; if (m[0] !== "m4") c *= 1 - TRIM.carbFrac; }
-    return { p: ph.p * m[3], f: f, c: c };
+    return { p: ph.p * m[3], f: ph.f * m[4], c: ph.c * m[5] };
+  }
+  // ...and with today's trim on the slots still to come
+  function slotTarget(m) {
+    var t = planTarget(m);
+    if (TRIM.on && !handled(m[0])) { t.f *= 1 - TRIM.fatFrac; if (m[0] !== "m4") t.c *= 1 - TRIM.carbFrac; }
+    return t;
   }
 
   function mealById(id) {
@@ -116,8 +120,8 @@
   // Fat fills only what the first two have not already brought.
   // Every portion is rounded to how it is served — pieces or 5 g — before
   // its macros are counted, so the numbers match what you actually eat.
-  function buildMeal(mealId) {
-    var m = mealById(mealId), pick = pickFor(mealId), tgt = slotTarget(m);
+  function buildMealT(mealId, over) {
+    var m = mealById(mealId), pick = pickFor(mealId), tgt = over || slotTarget(m);
     var tP = tgt.p, tF = tgt.f, tC = tgt.c;
     var NIL = { parts: [], t: { k:0, p:0, f:0, c:0 } };
 
@@ -168,10 +172,81 @@
 
     var tot = { k: P.t.k+C.t.k+F.t.k, p: P.t.p+C.t.p+F.t.p,
                 f: P.t.f+C.t.f+F.t.f, c: P.t.c+C.t.c+F.t.c };
+    var raw = { k: tot.k, p: tot.p, f: tot.f, c: tot.c };
     tot.k = Math.round(tot.k); tot.p = Math.round(tot.p);
     tot.f = Math.round(tot.f); tot.c = Math.round(tot.c);
-    return { parts: parts, tot: tot, m: m };
+    return { parts: parts, tot: tot, raw: raw, m: m };
   }
+
+  // The day has to add up. Each slot is solved against its own share, but a slot cannot always
+  // deliver it: breakfast has no fat source for its fat share, and a banana or a slice of bread is
+  // a coarse step. So the meals are built together, and what the day is still short of or over by
+  // goes to the slots that can take it in small steps (rice, potato, oil, chicken, yogurt, nuts).
+  // Pieces (eggs, bread, bananas) never absorb it.
+  // The plan does not depend on what you have eaten: only the coach's trim changes the slots still
+  // to come, and then the slots already eaten stay exactly as the plan had them.
+  function isPiece(id) { return !!PIECE[id] || id === "egx"; }
+  var CAT = { p: "protein", f: "fat", c: "carb" }, SH = { p: 3, f: 4, c: 5 };
+  function reconcile(ms, base, adj) {
+    var want = { p: 0, f: 0, c: 0 }, best = null, bestErr = 1e9;
+    ms.forEach(function (m) { var t = base[m[0]], a = adj[m[0]]; want.p += t.p + a.p; want.f += t.f + a.f; want.c += t.c + a.c; });
+    for (var it = 0; it < 8; it++) {
+      var out = {}, got = { p: 0, f: 0, c: 0 };
+      ms.forEach(function (m) {
+        var b = base[m[0]], a = adj[m[0]];
+        var r = buildMealT(m[0], { p: Math.max(0, b.p + a.p), f: Math.max(0, b.f + a.f), c: Math.max(0, b.c + a.c) });
+        out[m[0]] = r; got.p += r.raw.p; got.f += r.raw.f; got.c += r.raw.c;
+      });
+      var res = { p: want.p - got.p, f: want.f - got.f, c: want.c - got.c };
+      // Fat that is already over, with no fat source left to cut (fatty meat, eggs, nuts), cannot go
+      // lower. The calories still have to add up, so the carbs take that difference instead.
+      var fatCut = ms.some(function (m) {
+        return pickFor(m[0]).fat && m[4] > 0 && out[m[0]].parts.some(function (x) { return x.cat === "fat" && x.g > 0; });
+      });
+      var stuck = res.f < -1 && !fatCut;
+      if (stuck) res.c += res.f * 9 / 4;
+      var err = Math.abs(res.p) * 4 + (stuck ? 0 : Math.abs(res.f) * 9) + Math.abs(res.c) * 4;
+      if (err < bestErr) { bestErr = err; best = out; }
+      if (err < 8) break;
+      ["p", "f", "c"].forEach(function (k) {
+        var can = ms.filter(function (m) {
+          var pk = pickFor(m[0])[CAT[k]];
+          return m[SH[k]] > 0 && pk && !isPiece(pk);
+        });
+        var tw = 0; can.forEach(function (m) { tw += m[SH[k]]; });
+        if (!tw) return;
+        can.forEach(function (m) {
+          // a slot gives up at most half its carbs or 40% of its protein: past that it is no longer that meal
+          var floor = k === "c" ? -0.5 * base[m[0]].c : k === "p" ? -0.4 * base[m[0]].p : -base[m[0]].f;
+          adj[m[0]][k] = Math.max(floor, adj[m[0]][k] + res[k] * m[SH[k]] / tw);
+        });
+      });
+    }
+    return best;
+  }
+  var PLAN = { key: "", v: null }, PLAIN = { key: "", v: null };
+  function plainPlan() {
+    var key = JSON.stringify([S.picks, S.eggs, currentPhase().n]);
+    if (PLAIN.key === key && PLAIN.v) return PLAIN.v;
+    var base = {}, adj = {};
+    MEALS.forEach(function (m) { base[m[0]] = planTarget(m); adj[m[0]] = { p: 0, f: 0, c: 0 }; });
+    PLAIN.v = { out: reconcile(MEALS, base, adj), adj: adj }; PLAIN.key = key;
+    return PLAIN.v;
+  }
+  function dayPlan() {
+    var plain = plainPlan();
+    if (!TRIM.on) return plain.out;
+    var hs = MEALS.map(function (m) { return handled(m[0]) ? 1 : 0; }).join("");
+    var key = JSON.stringify([PLAIN.key, TRIM.fatFrac, TRIM.carbFrac, hs]);
+    if (PLAN.key === key && PLAN.v) return PLAN.v;
+    var open = MEALS.filter(function (m) { return !handled(m[0]); }), base = {}, adj = {};
+    open.forEach(function (m) { base[m[0]] = slotTarget(m); adj[m[0]] = { p: plain.adj[m[0]].p, f: plain.adj[m[0]].f, c: plain.adj[m[0]].c }; });
+    var out = reconcile(open, base, adj), res = {};
+    MEALS.forEach(function (m) { res[m[0]] = out[m[0]] || plain.out[m[0]]; });
+    PLAN.key = key; PLAN.v = res;
+    return res;
+  }
+  function buildMeal(mealId) { return dayPlan()[mealId]; }
 
   var DAILY = [
     ["protein", "Protein hit", ""],
