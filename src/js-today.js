@@ -640,8 +640,20 @@
   function paintAdd() {
     var b = document.getElementById("fAdd"); if (!b) return;
     var ok = addValid(); b.disabled = !ok; b.classList.toggle("active-ready", ok); b.innerHTML = addLabel();
+    var h = document.getElementById("fHint"); if (h) h.textContent = addHint();
   }
-  function addValid() { return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
+  // Why the button is off, in the words of the tab you are on. Empty once it is ready.
+  function addHint() {
+    if (addValid() || !sh) return "";
+    if (sh.tab === "find") return sh.pick ? "Enter how much you had to continue." : "Pick a food from the list to continue.";
+    if (sh.tab === "desc") return sh.ready ? "Add a name and calories to continue." : "Describe it and tap Estimate to continue.";
+    if (sh.tab === "photo") return sh.ready ? "Enter how much you ate to continue." : "Choose a photo of the label to continue.";
+    return "Add a name and calories to continue.";
+  }
+  function addValid() {
+    // with a picked food or a read label the amount drives the numbers, so an empty amount is not addable
+    if (sh && sh.amt && ((sh.tab === "find" && sh.pick) || (sh.tab === "photo" && sh.label && sh.ready)) && !(sh.amt.n > 0)) return false;
+    return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
 
   function viewAdd() {
     var d = sh.draft, ex = S.extras[TODAY] || [], tab = sh.tab;
@@ -707,7 +719,7 @@
     }).join("") + "</div>" : "";
     return phead("Off-plan food", "Counts toward today", false) +
       '<div class="pbody">' + seg + top + form + err + list + "</div>" +
-      '<div class="pfoot"><button class="bigbtn' + (addValid() ? " active-ready" : "") + '" id="fAdd"' + (addValid() ? "" : " disabled") + ">" + addLabel() + "</button></div>";
+      '<div class="pfoot"><button class="bigbtn' + (addValid() ? " active-ready" : "") + '" id="fAdd"' + (addValid() ? "" : " disabled") + ">" + addLabel() + '</button><p class="addhint" id="fHint">' + addHint() + "</p></div>";
   }
 
   function toForm() {
