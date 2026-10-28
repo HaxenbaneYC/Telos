@@ -12,7 +12,7 @@ const st={extras:{[D]:[{n:P1,k:100,p:1,f:1,c:1,src:P2},{n:P2,k:50,p:0,f:0,c:0,sr
   snap:{[D]:{m1:{tot:{k:300,p:20,f:10,c:10},parts:[{n:P1,name:P2,noun:P3,sub:P1,g:50,cat:P1}]}}},
   ticks:{[D]:{m1:true}},photos:[{d:P1,src:'data:image/jpeg;base64,AAAA'}],weights:{[D]:75},meas:{[D]:{w:75,s:100}}};
 let ctx=await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});await ctx.addInitScript(VP);
-await ctx.addInitScript(`try{localStorage.setItem('telos_v1',${JSON.stringify(JSON.stringify(st))})}catch(e){}`);
+await ctx.addInitScript(`try{localStorage.setItem('telos_v2',${JSON.stringify(JSON.stringify(st))})}catch(e){}`);
 let p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(String(e).slice(0,100)));
 await p.goto(F);await p.waitForTimeout(600);
 for(const t of ['train','food','trend','today']){await p.evaluate(t=>document.querySelector('nav [data-tab='+t+']').click(),t);await p.waitForTimeout(200)}
