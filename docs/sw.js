@@ -2,7 +2,7 @@
    The page is fetched fresh when there is a connection (so a new version arrives on its own) and
    falls back to the saved copy when there is not. Everything else is saved on first use.
    build.py puts the version in; a new build makes a new cache and the old one is deleted. */
-var V = "cbe334fbce";
+var V = "8ba92394a0";
 var CORE = "telos-" + V, FONTS = "telos-fonts";
 var SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
@@ -15,6 +15,16 @@ self.addEventListener("activate", function (e) {
   }).then(function () { return self.clients.claim(); }));
 });
 
+// A launch must not wait on the network: show the saved page now, fetch the new one for next time.
+function pageFirst(e) {
+  return caches.open(CORE).then(function (c) {
+    return c.match("index.html").then(function (hit) {
+      var net = fetch(e.request).then(function (res) { if (res && res.ok) c.put("index.html", res.clone()); return res; }, function () { return null; });
+      if (hit) { e.waitUntil(net); return hit; }
+      return net.then(function (res) { return res || Response.error(); });
+    });
+  });
+}
 function networkFirst(req) {
   return new Promise(function (resolve) {
     var settled = false;
@@ -44,7 +54,7 @@ self.addEventListener("fetch", function (e) {
   var u = new URL(req.url);
   if (u.hostname === "fonts.googleapis.com" || u.hostname === "fonts.gstatic.com") { e.respondWith(staleWhileRevalidate(req, FONTS)); return; }
   if (u.origin !== self.location.origin) return;
-  if (req.mode === "navigate" || /\.html?$/.test(u.pathname) || /\/$/.test(u.pathname)) { e.respondWith(networkFirst(req)); return; }
+  if (req.mode === "navigate" || /\.html?$/.test(u.pathname) || /\/$/.test(u.pathname)) { e.respondWith(pageFirst(e)); return; }
   e.respondWith(caches.match(req).then(function (hit) { return hit || fetch(req).then(function (res) {
     if (res && res.ok) { var copy = res.clone(); caches.open(CORE).then(function (c) { c.put(req, copy); }); }
     return res;

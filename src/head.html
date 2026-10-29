@@ -1,7 +1,41 @@
 <title>Telos Redesign</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Crect width='256' height='256' rx='56' fill='%232A9D8A'/%3E%3Cpath fill='%23D8D2C4' d='M102 26H154L147 180H109Z M22 180h212v46H22Z'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<script>
+/* First, before anything can stall: fonts load without blocking the first paint (a stalled request
+   used to leave the screen black), and if the app has not started after a few seconds the person
+   sees why and gets a way back. The log lives in localStorage and is never touched here. */
+(function () {
+  var errs = [];
+  try { var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"; document.head.appendChild(l); } catch (e) {}
+  window.addEventListener("error", function (e) { if (e && e.message) errs.push(e.message + (e.lineno ? " (line " + e.lineno + ")" : "")); });
+  function box() {
+    var d = document.getElementById("bootfail"); if (d) return d;
+    d = document.createElement("div"); d.id = "bootfail";
+    d.style.cssText = "position:fixed;left:0;right:0;top:0;bottom:0;z-index:99999;background:#0A0C0B;color:#EDEAE2;font:16px/1.5 -apple-system,system-ui,sans-serif;padding:max(24px,env(safe-area-inset-top)) 24px 24px;display:flex;flex-direction:column;justify-content:center;gap:14px";
+    (document.body || document.documentElement).appendChild(d); return d;
+  }
+  function show() {
+    var d = box(), b;
+    d.innerHTML = "";
+    var h = document.createElement("b"); h.style.fontSize = "20px"; h.textContent = "Telos didn\u2019t start"; d.appendChild(h);
+    var p = document.createElement("span"); p.textContent = errs.length ? errs[0] : "It took too long to open."; p.style.opacity = ".8"; d.appendChild(p);
+    b = document.createElement("button"); b.textContent = "Reload the app";
+    b.style.cssText = "min-height:52px;border:0;border-radius:14px;background:#2A9D8A;color:#0A0C0B;font:600 17px -apple-system,system-ui,sans-serif";
+    b.addEventListener("click", function () {
+      var jobs = [];
+      try { if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (r) { return Promise.all(r.map(function (x) { return x.unregister(); })); })); } catch (e) {}
+      try { if (window.caches) jobs.push(caches.keys().then(function (k) { return Promise.all(k.map(function (x) { return caches.delete(x); })); })); } catch (e2) {}
+      Promise.all(jobs).then(function () { location.reload(); }, function () { location.reload(); });
+    });
+    d.appendChild(b);
+    var n = document.createElement("span"); n.textContent = "Your log is safe on this phone. This only clears the saved copy of the app."; n.style.cssText = "font-size:14px;opacity:.6"; d.appendChild(n);
+  }
+  setTimeout(function () { if (!window.__telosReady) show(); }, 6000);
+  window.__telosHideFail = function () { var d = document.getElementById("bootfail"); if (d && d.parentNode) d.parentNode.removeChild(d); };
+})();
+</script>
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"></noscript>
 <style>
   /* Layout: operate-mode phone screen. Title, then the 13-week strip, then one
      summary container (lead figure, one sentence, three macros), then the day as a
