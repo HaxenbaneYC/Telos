@@ -118,6 +118,15 @@ first on purpose; Trend is last.
 - **Trend** - weight (chart fitted to the data), measurements and taper gap,
   photos, weekly analysis, phases. The weigh-in is a morning log here, not on Today.
 
+### Other days
+
+The Today screen can show any day since the start: arrows step a day, the date opens a "Days" list
+(calories against target for each day, a 7-day average). `DAY` is the day being viewed; every meal,
+off-plan and checklist control works on it, so a past day can be reviewed, filled in, corrected or
+cleared ("Clear this day's food", with undo). The plan, target and carry-over are computed for that
+day's phase. No coach trimming on past days; an overshoot yesterday still lowers today's target.
+Weight, training and trend stay on today. `tests/day-history.js` covers it.
+
 ### Meals, partial meals, skipped meals
 
 `MEALS` holds five slots as a **share of the day**, so they rescale when the phase
