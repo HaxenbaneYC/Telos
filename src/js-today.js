@@ -11,8 +11,8 @@
 
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   function RM() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
-  function isDone(id) { return !!(S.ticks[TODAY] && S.ticks[TODAY][id]); }
-  function isSkipped(id) { return !!(S.skipped[TODAY] && S.skipped[TODAY][id]); }
+  function isDone(id) { return !!(S.ticks[DAY] && S.ticks[DAY][id]); }
+  function isSkipped(id) { return !!(S.skipped[DAY] && S.skipped[DAY][id]); }
   function handled(id) { return isDone(id) || isSkipped(id); }   // eaten, or deliberately not eaten
   function nextMeal() {
     for (var i = 0; i < MEALS.length; i++) if (!handled(MEALS[i][0])) return MEALS[i][0];
@@ -67,12 +67,12 @@
   function snapOf(d, id) { return S.snap && S.snap[d] && S.snap[d][id]; }
   function snapTot(d, id) { var s = snapOf(d, id); return s ? s.tot : buildMeal(id).tot; }
   function mealView(id) {
-    var s = isDone(id) && snapOf(TODAY, id);
+    var s = isDone(id) && snapOf(DAY, id);
     return s ? { tot: s.tot, parts: s.parts } : buildMeal(id);
   }
   function mix(a, b) { var o = {}, k; for (k in a) o[k] = a[k]; for (k in b) o[k] = b[k]; return o; }
   // Partial meals: untick what you did not eat. Only the ticked items count.
-  function skipOf(id) { return (S.skip[TODAY] && S.skip[TODAY][id]) || {}; }
+  function skipOf(id) { return (S.skip[DAY] && S.skip[DAY][id]) || {}; }
   function eatable(pt) { return !pt.skip && pt.t && !(!pt.noun && pt.g === 0); }
   function selView(id) {
     var b = buildMeal(id), sk = skipOf(id), t = { k: 0, p: 0, f: 0, c: 0 }, off = [], n = 0;
@@ -85,7 +85,7 @@
     if (!off.length) t = b.tot; else t = { k: Math.round(t.k), p: Math.round(t.p), f: Math.round(t.f), c: Math.round(t.c) };
     return { tot: t, parts: b.parts, off: off, n: n, full: b.tot, sk: sk, allOff: n > 0 && off.length === n };
   }
-  function clearSkip(id) { if (S.skip[TODAY]) delete S.skip[TODAY][id]; }
+  function clearSkip(id) { if (S.skip[DAY]) delete S.skip[DAY][id]; }
 
   // ── The coach ──
   // Inside 150 kcal over, nothing changes: that is noise. Beyond it, the meals still
@@ -109,7 +109,8 @@
   }
   function coachRefresh() {
     TRIM.on = false; TRIM.fatFrac = 0; TRIM.carbFrac = 0; TRIM.goal = 0; TRIM.achieved = 0; TRIM.fatG = 0; TRIM.carbG = 0;
-    var tg = todayTarget(), eatenK = eatenOn(TODAY).k, plain = remTot();
+    if (DAY !== TODAY) return;   // no trimming a day that is already over
+    var tg = todayTarget(), eatenK = eatenOn(DAY).k, plain = remTot();
     TRIM.over = eatenK + plain.k - tg.k;   // where the day lands if the rest of the plan is eaten as written
     if (TRIM.over <= COACH.margin || plain.k === 0) return;
     TRIM.goal = Math.min(TRIM.over, COACH.today);
@@ -134,7 +135,7 @@
 
   // ── title, the thirteen weeks ──
   function renderTop() {
-    $("hDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+    renderDayNav();
     var wk = weekNumber(), ph = currentPhase();
     var d = Math.max(0, dayDiff(START, TODAY)), frac = Math.round(Math.min(1, ((d % 7) + 1) / 7) * 100);
     var html = "";
@@ -154,7 +155,11 @@
   function finding(tg, e, left) {
     var todo = 0;
     MEALS.forEach(function (m) { if (!handled(m[0])) todo++; });
-    var pLeft = tg.p - e.p, off = (S.extras[TODAY] || []).length;
+    var pLeft = tg.p - e.p, off = (S.extras[DAY] || []).length;
+    if (DAY !== TODAY) {
+      if (!hasLog(DAY)) return "Nothing logged for this day. Tick the meals you ate.";
+      return (left >= 0 ? fmt(left) + " kcal under" : fmt(-left) + " kcal over") + " the target. " + (pLeft > 0 ? "Protein is " + pLeft + " g short." : "Protein is covered.");
+    }
     if (left < 0) {
       var over = -left;
       return over <= COACH.margin ? "Inside the 150 kcal margin, so tomorrow stays the same."
@@ -176,16 +181,16 @@
   }
 
   function renderHero() {
-    var tg = todayTarget(), e = eatenOn(TODAY), left = tg.k - e.k, over = left < 0;
+    var tg = todayTarget(), e = eatenOn(DAY), left = tg.k - e.k, over = left < 0;
     tween($("rLeft"), Math.abs(left));
-    $("rUnit").textContent = over ? "kcal over" : "kcal left";
+    $("rUnit").textContent = over ? "kcal over" : (DAY === TODAY ? "kcal left" : "kcal under");
     $("sum").className = "sum" + (over ? " over" : "") + ($("sum").classList.contains("open") ? " open" : "");
     $("rEaten").textContent = fmt(e.k) + " of " + fmt(tg.k);
     $("kFill").style.width = Math.min(100, e.k / tg.k * 100) + "%";
     $("rFind").textContent = finding(tg, e, left);
     $("sumLine").textContent = "P " + e.p + "/" + tg.p + " · F " + e.f + "/" + tg.f + " · C " + e.c + "/" + tg.c;
     var kp = Math.min(100, e.k / tg.k * 100);
-    $("m-k").textContent = fmt(Math.abs(left)); $("m-ku").textContent = over ? "over" : "left";
+    $("m-k").textContent = fmt(Math.abs(left)); $("m-ku").textContent = over ? "over" : (DAY === TODAY ? "left" : "under");
     $("mf-k").style.width = kp + "%"; $("mc-k").className = "mc4 k" + (over ? " over" : "");
     [["p", e.p, tg.p], ["f", e.f, tg.f], ["c", e.c, tg.c]].forEach(function (d) {
       tween($("v-" + d[0]), d[1]);
@@ -203,7 +208,7 @@
   function rowHtml(m) {
     var id = m[0], b = mealView(id), pick = pickFor(id), done = isDone(id), skd = isSkipped(id);
     var names = m[6].map(function (cat) { return shortName(cat, pick[cat]); }).join(" · ");
-    var sn = done && snapOf(TODAY, id);
+    var sn = done && snapOf(DAY, id);
     if (sn) {
       var off = [], on = [];
       sn.parts.forEach(function (pt) { if (pt.off) off.push(pt.name.toLowerCase()); else if (eatable(pt)) on.push(pt.name.split(",")[0]); });
@@ -227,7 +232,7 @@
       : "Tap anything you didn’t eat.") + "</div>";
   }
   function doneSlot(id) {
-    var sn = snapOf(TODAY, id), off = [];
+    var sn = snapOf(DAY, id), off = [];
     if (sn) sn.parts.forEach(function (pt) { if (pt.off) off.push(pt.name); });
     return '<div class="skipslot">' + (off.length ? "Not eaten: " + esc(off.join(", ").toLowerCase()) + " · −" + ((sn.full || sn.tot).k - sn.tot.k) + " kcal" : "Tap an item you didn’t eat to take it off.") + "</div>";
   }
@@ -289,17 +294,18 @@
   }
 
   function renderMore() {
-    var d = count(DAILY, TODAY + "-d"), s = count(SUPPS, TODAY + "-s");
+    var d = count(DAILY, DAY + "-d"), s = count(SUPPS, DAY + "-s");
     function row(kind, name, val, cls) {
       return '<button class="srow" data-sheet="' + kind + '"><span class="sk">' + name + '</span><span class="sv' + (cls ? " " + cls : "") + '">' + val + '</span><i class="chev"></i></button>';
     }
     $("more").innerHTML =
       row("d", "Checklist", d + " / " + DAILY.length, d === DAILY.length ? "on" : "") +
-      row("s", "Supplements", s + " / " + SUPPS.length, s === SUPPS.length ? "on" : "");
+      row("s", "Supplements", s + " / " + SUPPS.length, s === SUPPS.length ? "on" : "") +
+      (hasLog(DAY) ? '<button class="srow" data-clearday><span class="sk">Clear this day’s food</span></button>' : "");
   }
   // Off-plan food sits right on Today: see it, remove it in one tap, add more.
   function renderOffPlan() {
-    var ex = S.extras[TODAY] || [], tot = 0;
+    var ex = S.extras[DAY] || [], tot = 0;
     ex.forEach(function (e) { tot += e.k || 0; });
     $("offTot").textContent = ex.length ? "+" + fmt(tot) + " kcal" : "";
     $("offplan").innerHTML = ex.map(function (e, i) {
@@ -311,9 +317,9 @@
   $("offplan").addEventListener("click", function (ev) {
     var d = ev.target.closest("[data-od]");
     if (d) {
-      var i = +d.getAttribute("data-od"), e = S.extras[TODAY].splice(i, 1)[0];
+      var i = +d.getAttribute("data-od"), e = S.extras[DAY].splice(i, 1)[0];
       save(); refresh();
-      toast(e.n + " removed", function () { S.extras[TODAY].splice(i, 0, e); save(); refresh(); });
+      toast(e.n + " removed", function () { S.extras[DAY].splice(i, 0, e); save(); refresh(); });
       return;
     }
     var s = ev.target.closest("[data-sheet]"); if (s) openSheet({ view: s.getAttribute("data-sheet") });
@@ -341,17 +347,17 @@
   });
 
   function toggleSkip(id, idx) {
-    if (!S.skip[TODAY]) S.skip[TODAY] = {};
-    if (!S.skip[TODAY][id]) S.skip[TODAY][id] = {};
-    var sk = S.skip[TODAY][id];
+    if (!S.skip[DAY]) S.skip[DAY] = {};
+    if (!S.skip[DAY][id]) S.skip[DAY][id] = {};
+    var sk = S.skip[DAY][id];
     if (sk[idx]) delete sk[idx]; else sk[idx] = true;
     save(); renderMeals();
   }
   // Items can be ticked on a meal that is already logged. Take the last one off and the meal is simply not eaten.
   function ensureSnap(id) {
-    if (!S.snap[TODAY]) S.snap[TODAY] = {};
-    if (!S.snap[TODAY][id]) { var b = buildMeal(id); S.snap[TODAY][id] = { tot: b.tot, full: b.tot, parts: b.parts }; }
-    return S.snap[TODAY][id];
+    if (!S.snap[DAY]) S.snap[DAY] = {};
+    if (!S.snap[DAY][id]) { var b = buildMeal(id); S.snap[DAY][id] = { tot: b.tot, full: b.tot, parts: b.parts }; }
+    return S.snap[DAY][id];
   }
   function toggleEatenItem(id, idx) {
     var sn = ensureSnap(id), prev = JSON.parse(JSON.stringify(sn)), pt = sn.parts[idx];
@@ -368,38 +374,38 @@
     save(); refresh();
   }
   function unEat(id, prevSnap) {
-    if (S.ticks[TODAY]) delete S.ticks[TODAY][id];
-    if (S.snap[TODAY]) delete S.snap[TODAY][id];
+    if (S.ticks[DAY]) delete S.ticks[DAY][id];
+    if (S.snap[DAY]) delete S.snap[DAY][id];
     clearSkip(id);
     save(); refresh();
     toast(mealById(id)[2] + " is back to not eaten", function () {
-      if (!S.ticks[TODAY]) S.ticks[TODAY] = {};
-      if (!S.snap[TODAY]) S.snap[TODAY] = {};
-      S.ticks[TODAY][id] = true; S.snap[TODAY][id] = prevSnap; save(); refresh();
+      if (!S.ticks[DAY]) S.ticks[DAY] = {};
+      if (!S.snap[DAY]) S.snap[DAY] = {};
+      S.ticks[DAY][id] = true; S.snap[DAY][id] = prevSnap; save(); refresh();
       if (sh && sh.view === "meal") paintSheet();
     });
   }
   function toggleItem(id, idx) { if (isDone(id)) toggleEatenItem(id, idx); else toggleSkip(id, idx); }
   // A meal you did not eat at all: it counts nothing and the day moves on.
   function skipMeal(id) {
-    if (!S.skipped[TODAY]) S.skipped[TODAY] = {};
-    S.skipped[TODAY][id] = true; clearSkip(id); save(); refresh();
+    if (!S.skipped[DAY]) S.skipped[DAY] = {};
+    S.skipped[DAY][id] = true; clearSkip(id); save(); refresh();
     toast(mealById(id)[2] + " skipped", function () { unskipMeal(id); });
   }
   function unskipMeal(id) {
-    if (S.skipped[TODAY]) delete S.skipped[TODAY][id];
+    if (S.skipped[DAY]) delete S.skipped[DAY][id];
     save(); refresh();
     if (sh && sh.view === "meal") paintSheet();
   }
   function toggleAte(id, silent) {
     var prev = snapshot(), was = isDone(id), b = null;
-    if (!S.ticks[TODAY]) S.ticks[TODAY] = {};
-    if (!S.snap[TODAY]) S.snap[TODAY] = {};
-    if (was) { delete S.ticks[TODAY][id]; delete S.snap[TODAY][id]; clearSkip(id); }   // undo puts the whole meal back
+    if (!S.ticks[DAY]) S.ticks[DAY] = {};
+    if (!S.snap[DAY]) S.snap[DAY] = {};
+    if (was) { delete S.ticks[DAY][id]; delete S.snap[DAY][id]; clearSkip(id); }   // undo puts the whole meal back
     else {
       b = selView(id);                                     // built before the tick, so any trim is included
-      S.snap[TODAY][id] = { tot: b.tot, full: b.full, parts: b.parts.map(function (pt, i) { return (b.sk[i] && eatable(pt)) ? mix(pt, { off: true }) : pt; }) };
-      S.ticks[TODAY][id] = true; justAte = id; clearSkip(id);
+      S.snap[DAY][id] = { tot: b.tot, full: b.full, parts: b.parts.map(function (pt, i) { return (b.sk[i] && eatable(pt)) ? mix(pt, { off: true }) : pt; }) };
+      S.ticks[DAY][id] = true; justAte = id; clearSkip(id);
     }
     save();
     revealNext = !was;
@@ -529,6 +535,58 @@
   var ICON_X = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>';
   var ICON_BACK = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg>';
 
+  // ── looking at other days ──
+  function dayName(d) { return parseISO(d).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }); }
+  function hasLog(d) {
+    var t = S.ticks[d] || {}, k = S.skipped[d] || {}, i;
+    for (i = 0; i < MEALS.length; i++) if (t[MEALS[i][0]] || k[MEALS[i][0]]) return true;
+    return !!(S.extras[d] && S.extras[d].length);
+  }
+  function renderDayNav() {
+    var past = DAY !== TODAY;
+    $("dayTitle").textContent = DAY === TODAY ? "Today" : (DAY === YDAY ? "Yesterday" : parseISO(DAY).toLocaleDateString(undefined, { weekday: "long" }));
+    $("hDate").textContent = dayName(DAY);
+    $("dPrev").disabled = dayDiff(START, DAY) <= 0;
+    $("dNext").disabled = DAY >= TODAY;
+    $("daybar").hidden = !past;
+  }
+  function setDay(d) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || dayDiff(START, d) < 0 || d > TODAY) return;
+    if (sh) closeSheet();
+    hideToast(); DAY = d; justAte = null; eatenOpen = false; revealNext = false;
+    renderDayNav(); refresh();
+    var m = $("main"); if (m) m.scrollTop = 0;
+  }
+  $("dPrev").addEventListener("click", function () { setDay(shift(DAY, -1)); });
+  $("dNext").addEventListener("click", function () { setDay(shift(DAY, 1)); });
+  $("dBack").addEventListener("click", function () { setDay(TODAY); });
+  $("hDate").addEventListener("click", function () { openSheet({ view: "days" }); });
+  function viewDays() {
+    var rows = [], d = TODAY, n = 0, logged = 0, sum = 0, i;
+    while (dayDiff(START, d) >= 0 && n < 120) {
+      var e = eatenOn(d), t = targetOn(d), has = hasLog(d), over = e.k > t.k;
+      if (n < 7 && has) { logged++; sum += e.k; }
+      rows.push('<button class="dayrow' + (d === DAY ? " cur" : "") + '" data-day="' + d + '"><span class="dr1"><span class="dn">' + esc(dayName(d)) + (d === TODAY ? " · today" : "") + '</span>' +
+        (has ? '<span class="dk' + (over ? " over" : "") + '">' + fmt(e.k) + " / " + fmt(t.k) + " kcal</span>" : '<span class="dk none">Not logged</span>') + "</span>" +
+        (has ? '<span class="bar"><i style="width:' + Math.min(100, Math.round(e.k / t.k * 100)) + "%" + (over ? ";background:var(--signal)" : "") + '"></i></span>' : "") + "</button>");
+      d = shift(d, -1); n++;
+    }
+    var avg = logged ? "Last 7 days: " + logged + " logged, " + fmt(Math.round(sum / logged)) + " kcal a day on average." : "Nothing logged in the last 7 days yet.";
+    return phead("Days", "Open one to review or fill it in", false) +
+      '<div class="pbody"><p class="daysum">' + avg + '</p><div class="fgroup" style="margin-top:10px">' + rows.join("") + "</div></div>";
+  }
+  function clearDay() {
+    var d = DAY, clone = function (v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); };
+    var prev = { t: clone(S.ticks[d]), snap: clone(S.snap[d]), skip: clone(S.skip[d]), sk: clone(S.skipped[d]), ex: clone(S.extras[d]) };
+    delete S.ticks[d]; delete S.snap[d]; delete S.skip[d]; delete S.skipped[d]; delete S.extras[d];
+    save(); refresh();
+    toast(dayName(d) + " cleared", function () {
+      if (prev.t) S.ticks[d] = prev.t; if (prev.snap) S.snap[d] = prev.snap; if (prev.skip) S.skip[d] = prev.skip;
+      if (prev.sk) S.skipped[d] = prev.sk; if (prev.ex) S.extras[d] = prev.ex;
+      save(); refresh();
+    });
+  }
+
   // While a sheet is open the page behind it is not reachable by keyboard or screen reader, and focus
   // goes back to where it was when the sheet closes.
   var BEHIND = ["main", "mini"], opener = null;
@@ -618,7 +676,7 @@
   }
 
   function viewList(kind) {
-    var items = kind === "d" ? DAILY : SUPPS, key = TODAY + "-" + kind, st = S.ticks[key] || {}, n = count(items, key);
+    var items = kind === "d" ? DAILY : SUPPS, key = DAY + "-" + kind, st = S.ticks[key] || {}, n = count(items, key);
     var rows = items.map(function (it) {
       return '<button class="trow' + (st[it[0]] ? " on" : "") + '" data-tick="' + kind + ":" + it[0] + '" aria-pressed="' + !!st[it[0]] + '"><span class="chk2"></span>' +
         '<span class="tb"><b>' + it[1] + "</b>" + (it[2] ? "<i>" + it[2] + "</i>" : "") + "</span></button>";
@@ -685,7 +743,7 @@
     return !!(sh && sh.draft && sh.draft.name.trim() && isFinite(parseFloat(sh.draft.k)) && parseFloat(sh.draft.k) >= 0); }
 
   function viewAdd() {
-    var d = sh.draft, ex = S.extras[TODAY] || [], tab = sh.tab;
+    var d = sh.draft, ex = S.extras[DAY] || [], tab = sh.tab;
     var tabs = [["find", "Search"]];
     if (AI.text) tabs.push(["desc", "Describe"]);
     if (AI.images) tabs.push(["photo", "Label"]);
@@ -746,7 +804,7 @@
       return '<div class="xrow"><div class="xb"><b>' + esc(e.n) + "</b><span>" + (e.p || 0) + "P · " + (e.f || 0) + "F · " + (e.c || 0) + "C" + (e.src === "estimate" ? " · estimate" : (e.src === "label" ? " · label" : "")) + '</span></div><span class="xk">' + (e.k || 0) +
         ' kcal</span><button class="pbtn" data-xdel="' + i + '" aria-label="Remove ' + esc(e.n) + '">' + ICON_X + "</button></div>";
     }).join("") + "</div>" : "";
-    return phead("Off-plan food", "Counts toward today", false) +
+    return phead("Off-plan food", "Counts toward " + (DAY === TODAY ? "today" : dayName(DAY)), false) +
       '<div class="pbody">' + seg + top + form + err + list + "</div>" +
       '<div class="pfoot"><button class="bigbtn' + (addValid() ? " active-ready" : "") + '" id="fAdd"' + (addValid() ? "" : " disabled") + ">" + addLabel() + '</button><p class="addhint" id="fHint">' + addHint() + "</p></div>";
   }
@@ -757,7 +815,7 @@
   }
   function paintSheet() {
     var h = sh.view === "meal" ? viewMeal() : sh.view === "pick" ? viewPick() : sh.view === "rec" ? viewRec()
-          : sh.view === "add" ? viewAdd() : sh.view === "photo" ? viewPhoto() : viewList(sh.view);
+          : sh.view === "add" ? viewAdd() : sh.view === "photo" ? viewPhoto() : sh.view === "days" ? viewDays() : viewList(sh.view);
     $("panel").innerHTML = h;
   }
 
@@ -766,18 +824,18 @@
     var d = sh.draft, n = d.name.trim().slice(0, 80), k = parseFloat(d.k), bad = addRange();
     if (bad) { sh.err = bad; paintSheet(); return; }
     if (!n || !isFinite(k) || k < 0) { sh.err = "Give it a name and a calorie figure. A rough number beats no number."; paintSheet(); return; }
-    if (!S.extras[TODAY]) S.extras[TODAY] = [];
+    if (!S.extras[DAY]) S.extras[DAY] = [];
     var entry = { n: n, k: Math.round(k), p: r1(num(d.p)), f: r1(num(d.f)), c: r1(num(d.c)), src: d.src || "manual" };
-    S.extras[TODAY].push(entry);
+    S.extras[DAY].push(entry);
     save(); closeSheet(); refresh();
     toast(n + " added · " + Math.round(k) + " kcal", function () {   // undo takes out this entry, not just the last one
-      var l = S.extras[TODAY], i = l ? l.indexOf(entry) : -1;
+      var l = S.extras[DAY], i = l ? l.indexOf(entry) : -1;
       if (i >= 0) { l.splice(i, 1); save(); refresh(); }
     });
   }
 
   $("panel").addEventListener("click", function (ev) {
-    var t = ev.target.closest("[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-cat],[data-food],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
+    var t = ev.target.closest("[data-day],[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-cat],[data-food],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
     if (!t) return;
     if (t.hasAttribute("data-hit")) { pickFood(+t.getAttribute("data-hit")); return; }
     if (t.hasAttribute("data-unpick")) { syncAdd(); sh.pick = null; sh.ready = false; sh.note = ""; paintSheet(); return; }
@@ -786,6 +844,7 @@
       S.photos.splice(sh.i, 1); save(); closeSheet(); renderPhotos(); return;
     }
     if (t.hasAttribute("data-skipmeal")) { skipMeal(t.getAttribute("data-skipmeal")); closeSheet(); return; }
+    if (t.hasAttribute("data-day")) { setDay(t.getAttribute("data-day")); return; }
     if (t.hasAttribute("data-unskip")) { unskipMeal(t.getAttribute("data-unskip")); paintSheet(); return; }
     if (t.hasAttribute("data-sk")) { toggleItem(sh.meal, t.getAttribute("data-sk")); paintSheet(); return; }
     if (t.hasAttribute("data-close")) { closeSheet(); return; }
@@ -815,7 +874,7 @@
       return;
     }
     if (t.hasAttribute("data-tick")) {
-      var p = t.getAttribute("data-tick").split(":"), key = TODAY + "-" + p[0];
+      var p = t.getAttribute("data-tick").split(":"), key = DAY + "-" + p[0];
       if (!S.ticks[key]) S.ticks[key] = {};
       if (S.ticks[key][p[1]]) delete S.ticks[key][p[1]]; else S.ticks[key][p[1]] = true;
       t.classList.toggle("on", !!S.ticks[key][p[1]]);
@@ -825,7 +884,7 @@
       save(); renderMore(); return;
     }
     if (t.hasAttribute("data-xdel")) {
-      syncAdd(); S.extras[TODAY].splice(+t.getAttribute("data-xdel"), 1); save(); paintSheet(); refresh(); return;
+      syncAdd(); S.extras[DAY].splice(+t.getAttribute("data-xdel"), 1); save(); paintSheet(); refresh(); return;
     }
     if (t.hasAttribute("data-tab")) {
       syncAdd(); sh.tab = t.getAttribute("data-tab"); sh.err = ""; sh.pick = null;
@@ -889,6 +948,7 @@
     openSheet({ view: "meal", meal: t.getAttribute("data-open") });
   });
   $("more").addEventListener("click", function (ev) {
+    if (ev.target.closest("[data-clearday]")) { clearDay(); return; }
     var t = ev.target.closest("[data-sheet]");
     if (t) openSheet({ view: t.getAttribute("data-sheet") });
   });

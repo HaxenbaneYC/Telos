@@ -103,7 +103,7 @@
 
   // a slot's absolute targets for the phase, before any coach trim
   function planTarget(m) {
-    var ph = currentPhase();
+    var ph = phaseOn(DAY);
     return { p: ph.p * m[3], f: ph.f * m[4], c: ph.c * m[5] };
   }
   // ...and with today's trim on the slots still to come
@@ -232,7 +232,7 @@
   }
   var PLAN = { key: "", v: null }, PLAIN = { key: "", v: null };
   function plainPlan() {
-    var key = JSON.stringify([S.picks, S.eggs, currentPhase().n]);
+    var key = JSON.stringify([S.picks, S.eggs, phaseOn(DAY).n]);
     if (PLAIN.key === key && PLAIN.v) return PLAIN.v;
     var base = {}, adj = {};
     MEALS.forEach(function (m) { base[m[0]] = planTarget(m); adj[m[0]] = { p: 0, f: 0, c: 0 }; });
@@ -347,6 +347,7 @@
   function dayDiff(a,b) { return Math.round((parseISO(b)-parseISO(a))/86400000); }
   function shift(d,n) { var x = parseISO(d); x.setDate(x.getDate()+n); return iso(x); }
   var TODAY = iso(new Date()), YDAY = shift(TODAY,-1);
+  var DAY = TODAY;   // the day the Today screen is showing: today, or an earlier one being reviewed or filled in
 
   function weekNumber() { var d = dayDiff(START,TODAY); return d<0?1:Math.min(13,Math.floor(d/7)+1); }
   function phaseOn(iso) {
@@ -363,13 +364,14 @@
     o.k=Math.round(o.k); o.p=Math.round(o.p); o.f=Math.round(o.f); o.c=Math.round(o.c);
     return o;
   }
-  function carryover() {
-    var ph = phaseOn(YDAY);
-    if (!S.ticks[YDAY] && !(S.extras[YDAY]||[]).length) return 0;
-    var over = eatenOn(YDAY).k - ph.kcal;
+  function carryover(day) {
+    var prev = shift(day || DAY, -1), ph = phaseOn(prev);
+    if (!S.ticks[prev] && !(S.extras[prev]||[]).length) return 0;
+    var over = eatenOn(prev).k - ph.kcal;
     return over <= 150 ? 0 : -Math.min(300, Math.round(over));
   }
-  function todayTarget() { var ph = currentPhase(); return {k: ph.kcal + carryover(), p: ph.p, f: ph.f, c: ph.c}; }
+  function targetOn(d) { var ph = phaseOn(d); return {k: ph.kcal + carryover(d), p: ph.p, f: ph.f, c: ph.c}; }
+  function todayTarget() { return targetOn(DAY); }
   function entries() { return Object.keys(S.weights).sort().map(function(k){return {d:k,w:S.weights[k]};}); }
   function mean(a) { return a.reduce(function(s,x){return s+x;},0)/a.length; }
   var $ = function(id){ return document.getElementById(id); };

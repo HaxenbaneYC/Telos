@@ -118,6 +118,30 @@
   .titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-top: 16px; }
   .titlerow h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
   .titlerow .dt { font-size: 14.5px; color: var(--fg-2); }
+  /* day switcher: step back and forward, or tap the date for the list of days */
+  .daynav { display: flex; align-items: center; margin-right: -10px; }
+  .dnb { width: 44px; height: 44px; border: 0; background: none; color: var(--fg-2); display: grid; place-items: center; cursor: pointer; border-radius: 12px; }
+  .dnb svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .dnb:disabled { opacity: 0.28; cursor: default; }
+  .dnb:not(:disabled):active { background: var(--fill); }
+  .dpick { min-height: 44px; padding: 0 6px; border: 0; background: none; color: var(--fg); font: 500 14.5px var(--sans); cursor: pointer; border-radius: 12px; white-space: nowrap; }
+  .dpick:active { background: var(--fill); }
+  .dnb:focus-visible, .dpick:focus-visible, #dBack:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .daybar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 2px 4px 2px 14px; background: var(--fill); border-radius: var(--r-ctl); font-size: 13.5px; color: var(--fg-2); line-height: 1.35; }
+  .daybar[hidden] { display: none; }
+  #dBack { flex: none; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--teal); font: 600 14.5px var(--sans); cursor: pointer; }
+  /* the Days sheet */
+  .dayrow { width: 100%; display: block; padding: 12px 16px; background: none; border: 0; border-top: 1px solid var(--line); text-align: left; color: var(--fg); font-family: var(--sans); cursor: pointer; min-height: 62px; }
+  .dayrow:first-child { border-top: 0; }
+  .dayrow:active { background: var(--card); }
+  .dayrow .dr1 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .dayrow .dn { font-size: 16.5px; font-weight: 600; }
+  .dayrow .dk { font-family: var(--mono); font-size: 13.5px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+  .dayrow .dk.over { color: var(--signal); }
+  .dayrow .dk.none { color: var(--fg-3); font-family: var(--sans); }
+  .dayrow .bar { display: block; height: 4px; margin-top: 8px; }
+  .dayrow.cur .dn { color: var(--teal); }
+  .daysum { margin: 12px 4px 0; font-size: 14.5px; color: var(--fg-2); }
   .weeks { display: flex; gap: 3px; margin-top: 12px; }
   .wk { flex: 1; height: 6px; border-radius: 3px; background: var(--track); min-width: 0; overflow: hidden; }
   .wk.gap { margin-left: 5px; }
@@ -730,7 +754,14 @@
 <main id="main">
   <section class="view" id="v-today">
     <div class="gut">
-      <div class="titlerow"><h1>Today</h1><span class="dt" id="hDate"></span></div>
+      <div class="titlerow"><h1 id="dayTitle">Today</h1>
+        <div class="daynav">
+          <button class="dnb" id="dPrev" aria-label="Previous day"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button class="dpick" id="hDate" aria-label="Choose a day"></button>
+          <button class="dnb" id="dNext" aria-label="Next day"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+      <div class="daybar" id="daybar" hidden><span>A past day. What you change counts toward that day.</span><button id="dBack">Back to today</button></div>
       <div class="weeks" id="weeks" role="img" aria-label="Week 1 of 13"></div>
       <div class="wkcap"><span id="wkL">Week 1 of 13</span><span class="k" id="wkR"></span></div>
       <button class="newwk" id="newWk" hidden><span class="nt" id="newWkTxt"></span><i class="chev" aria-hidden="true"></i></button>
