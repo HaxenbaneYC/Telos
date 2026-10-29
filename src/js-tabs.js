@@ -400,6 +400,52 @@
     $("trBike").innerHTML = '<button class="trow' + (on ? " on" : "") + '" id="bikeBtn" aria-pressed="' + on + '"><span class="chk2"></span><span class="tb"><b>3 km bike ride</b><i>' +
       (n ? n + (n === 1 ? " ride" : " rides") + " in the last 7 days · " + (n * 3) + " km" : "Tick it on the days you ride") + "</i></span></button>";
   }
+  // Other activity: a run, ride, scooter or walk on top of the gym and the daily 3 km. It is logged for today and counted in km, not in calories.
+  var ACTS = [["run", "Run"], ["bike", "Bike"], ["scooter", "Scooter"], ["walk", "Walk"]], actType = "run";
+  function actName(t) { for (var i = 0; i < ACTS.length; i++) if (ACTS[i][0] === t) return ACTS[i][1]; return "Activity"; }
+  function actText(a) { return (a.km ? +a.km.toFixed(1) + " km" : "") + (a.km && a.min ? " · " : "") + (a.min ? a.min + " min" : ""); }
+  function renderAct() {
+    $("actType").innerHTML = ACTS.map(function (a) { return '<button class="chip' + (a[0] === actType ? " on" : "") + '" data-at="' + a[0] + '" aria-pressed="' + (a[0] === actType) + '">' + a[1] + "</button>"; }).join("");
+    var list = S.acts[TODAY] || [], n = 0, km = 0, i, d, l;
+    $("actList").hidden = !list.length;
+    $("actList").innerHTML = list.map(function (a, j) {
+      return '<div class="xrow"><div class="xb"><b>' + actName(a.t) + "</b><span>" + actText(a) + '</span></div><button class="pbtn" data-ad="' + j + '" aria-label="Remove ' + actName(a.t) + '">' + ICON_X + "</button></div>";
+    }).join("");
+    for (i = 0; i < 7; i++) { l = S.acts[shift(TODAY, -i)] || []; for (d = 0; d < l.length; d++) { n++; km += l[d].km; } }
+    $("actNote").textContent = n ? "Last 7 days: " + n + (n === 1 ? " activity" : " activities") + (km ? " · " + +km.toFixed(1) + " km" : "") + ". Counted in distance, not calories." : "Anything on top of the gym and the daily ride. Counted in distance, not calories.";
+  }
+  $("actType").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-at]"); if (!b) return;
+    actType = b.getAttribute("data-at"); renderAct();
+  });
+  $("aAdd").addEventListener("click", function () {
+    var km = parseFloat($("aKm").value), mn = parseFloat($("aMin").value), er = $("aErr");
+    km = isFinite(km) ? km : 0; mn = isFinite(mn) ? mn : 0;
+    if (km <= 0 && mn <= 0) { er.textContent = "Enter a distance, a time, or both."; er.hidden = false; return; }
+    if (km > 500 || mn > 1440) { er.textContent = "That looks too big. Use kilometres and minutes."; er.hidden = false; return; }
+    er.hidden = true;
+    if (!S.acts[TODAY]) S.acts[TODAY] = [];
+    var a = { t: actType, km: Math.round(km * 10) / 10, min: Math.round(mn) };
+    S.acts[TODAY].push(a);
+    $("aKm").value = ""; $("aMin").value = "";
+    save(); renderAct();
+    toast(actName(a.t) + " added · " + actText(a), function () {
+      var l = S.acts[TODAY] || [], i = l.indexOf(a); if (i >= 0) l.splice(i, 1);
+      if (!l.length) delete S.acts[TODAY];
+      save(); renderAct();
+    });
+  });
+  $("actList").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-ad]"); if (!b) return;
+    var l = S.acts[TODAY] || [], i = +b.getAttribute("data-ad"), a = l.splice(i, 1)[0];
+    if (!a) return;
+    if (!l.length) delete S.acts[TODAY];
+    save(); renderAct();
+    toast(actName(a.t) + " removed", function () {
+      if (!S.acts[TODAY]) S.acts[TODAY] = [];
+      S.acts[TODAY].splice(Math.min(i, S.acts[TODAY].length), 0, a); save(); renderAct();
+    });
+  });
   function renderTrain() {
     var plan = WEEKPLAN[cycleIdx(TODAY)], ph = currentPhase(), s2 = sessionFor(plan[1]);
     $("trDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long" });
@@ -410,7 +456,7 @@
       (plan[2] ? '<div class="tsub">' + plan[2] + "</div>" : "") +
       (s2 ? '<div class="exs">' + exHtml(s2) + "</div>" : '<p class="lede" style="margin:8px 0 14px">' + (plan[1] === "Rest" ? "Rest is part of the plan." : "No gym today.") + "</p>") +
       '<button class="bigbtn' + (done ? " on" : "") + '" id="trDone">' + (done ? (s2 ? "Trained · tap to undo" : "Done · tap to undo") : (s2 ? "Mark as trained" : (plan[1] === "Rest" ? "Mark rest done" : "Mark as done"))) + "</button>";
-    renderBike();
+    renderBike(); renderAct();
     var rows = "";
     for (var k = 0; k < 7; k++) {
       var date = shift(TODAY, k), d = WEEKPLAN[cycleIdx(date)], ss = sessionFor(d[1]), today = k === 0;

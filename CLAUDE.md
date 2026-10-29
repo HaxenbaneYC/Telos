@@ -104,6 +104,8 @@ first on purpose; Trend is last.
   Sauces), "healthy but fun" plus the simple staples. The food rule and protein
   swaps live in one accordion at the bottom. He does not want a Food tab that is
   just reference tables.
+- **Other activity** (bottom of the Train tab's top block) - a run, bike, scooter or walk with km and/or minutes,
+  for today (`S.acts[date]`, list of `{t, km, min}`). Counted in distance only, never in calories; the daily 3 km tick stays separate.
 - **Trend** - weight (chart fitted to the data), measurements and taper gap,
   photos, weekly analysis, phases. The weigh-in is a morning log here, not on Today.
 
@@ -256,7 +258,7 @@ the same shape; change all three together. Wordmark in the app header stays live
 - The deliverable is one self-contained HTML file. Edit `src/`, run `build.py`.
   No npm, no framework.
 - Vanilla JS, `var`, no transpiling.
-- Test before claiming it works. `tests/` has day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
+- Test before claiming it works. `tests/` has activity, day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
   (Playwright). Render it in a real browser at 320, 360, 390 and 430 px and look at it. Past
   failures all shipped because nobody opened the page.
 - Keep it simple. His words: KISS. Don't add features he didn't ask for.

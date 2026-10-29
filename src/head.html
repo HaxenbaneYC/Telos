@@ -932,6 +932,18 @@
       <p class="lede" id="trPhase"></p>
       <div class="card tcard" id="trToday" style="margin-top:14px"></div>
       <div class="list" id="trBike" style="margin-top:12px"></div>
+      <div class="label">Other activity</div>
+      <div class="list" id="actList" hidden></div>
+      <div class="card" id="actForm" style="margin-top:8px">
+        <div class="chips" id="actType" role="group" aria-label="Type of activity" style="flex-wrap:wrap;overflow:visible;margin-top:0"></div>
+        <div class="fld" style="margin-top:12px">
+          <div><label for="aKm">Distance, km</label><input class="inp m" id="aKm" type="number" inputmode="decimal" min="0" max="500" step="0.1" placeholder="5"></div>
+          <div><label for="aMin">Time, min</label><input class="inp m" id="aMin" type="number" inputmode="numeric" min="0" max="1440" step="1" placeholder="30"></div>
+        </div>
+        <button class="bigbtn" id="aAdd" style="margin-top:12px">Add activity</button>
+        <p class="ferr" id="aErr" hidden></p>
+        <p class="aihint" id="actNote"></p>
+      </div>
       <div class="label">Next 7 days</div>
       <div class="list" id="weekPlan"></div>
       <p class="aihint" style="padding:0 4px">Push and Pull are Nippard. Upper and Legs are your boxing plan. The delts, arms, abs and neck day is new: your two plans give about 5 lateral and 2 bicep sets a week, which won&rsquo;t build the shoulders and arms you want. The week runs as a rotation that started on Push, 28 Oct.</p>
@@ -1013,6 +1025,12 @@
         var t = isObj(s) ? macros(s.tot) : undefined;
         return t ? { tot: t, full: macros(s.full) || t, parts: Array.isArray(s.parts) ? s.parts.filter(isObj).map(partOf) : [] } : undefined;
       }, MEALKEY) : undefined;
+    }, DAYKEY);
+    x.acts = mapOf(x.acts, function (list) {
+      if (!Array.isArray(list)) return undefined;
+      return list.filter(function (a) { return isObj(a) && /^(run|bike|scooter|walk)$/.test(a.t) && (fin(a.km) || fin(a.min)); }).slice(0, 20).map(function (a) {
+        return { t: a.t, km: fin(a.km) ? Math.min(500, Math.max(0, a.km)) : 0, min: fin(a.min) ? Math.min(1440, Math.max(0, Math.round(a.min))) : 0 };
+      });
     }, DAYKEY);
     x.skip = mapOf(x.skip, function (day) {
       return isObj(day) ? mapOf(day, function (m) { return isObj(m) ? flags(m, /^\d{1,2}$/) : undefined; }, MEALKEY) : undefined;
