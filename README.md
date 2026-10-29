@@ -8,3 +8,4 @@ My health tracking app. A phone-first, single-file web app for food, training an
 - `CLAUDE.md` has the full project notes.
 - `docs/` is the installable phone app (manifest, icons, offline service worker). Publish it with GitHub Pages (Settings, Pages, deploy from `main` `/docs`) or any static host, then Add to Home Screen.
 - `tests/` has the Playwright checks: `node tests/day-accuracy.js`, `storage-fuzz.js`, `injection.js`, `mobile-scan.js`.
+- Live app: https://haxenbaneyc.github.io/Telos/ (open on a phone, then Add to Home Screen).

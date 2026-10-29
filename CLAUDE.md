@@ -85,7 +85,8 @@ Pages from main /docs, or any static host) and "Add to Home Screen" gives a full
 without signal. Data stays in that phone's browser storage; the install is a separate copy from the Claude
 artifact, so logs do not carry over. Describe and Label need Claude, so they are hidden in the installed
 app. A new build changes the service worker's version; the app picks it up on the next online open.
-Pages publishes only `docs/`, so keep personal notes (this file, `data/`, `src/`) out of it.
+Live at **https://haxenbaneyc.github.io/Telos/** (capital T: the path is case-sensitive; GitHub Pages, main /docs,
+repo is public). A push to main redeploys it in about a minute. Pages publishes only `docs/`.
 
 ### Data
 
