@@ -15,6 +15,16 @@ self.addEventListener("activate", function (e) {
   }).then(function () { return self.clients.claim(); }));
 });
 
+// A launch must not wait on the network: show the saved page now, fetch the new one for next time.
+function pageFirst(e) {
+  return caches.open(CORE).then(function (c) {
+    return c.match("index.html").then(function (hit) {
+      var net = fetch(e.request).then(function (res) { if (res && res.ok) c.put("index.html", res.clone()); return res; }, function () { return null; });
+      if (hit) { e.waitUntil(net); return hit; }
+      return net.then(function (res) { return res || Response.error(); });
+    });
+  });
+}
 function networkFirst(req) {
   return new Promise(function (resolve) {
     var settled = false;
@@ -44,7 +54,7 @@ self.addEventListener("fetch", function (e) {
   var u = new URL(req.url);
   if (u.hostname === "fonts.googleapis.com" || u.hostname === "fonts.gstatic.com") { e.respondWith(staleWhileRevalidate(req, FONTS)); return; }
   if (u.origin !== self.location.origin) return;
-  if (req.mode === "navigate" || /\.html?$/.test(u.pathname) || /\/$/.test(u.pathname)) { e.respondWith(networkFirst(req)); return; }
+  if (req.mode === "navigate" || /\.html?$/.test(u.pathname) || /\/$/.test(u.pathname)) { e.respondWith(pageFirst(e)); return; }
   e.respondWith(caches.match(req).then(function (hit) { return hit || fetch(req).then(function (res) {
     if (res && res.ok) { var copy = res.clone(); caches.open(CORE).then(function (c) { c.put(req, copy); }); }
     return res;

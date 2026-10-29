@@ -67,6 +67,14 @@ app. A new build changes the service worker's version; the app picks it up on th
 Live at **https://haxenbaneyc.github.io/Telos/** (capital T: the path is case-sensitive; GitHub Pages, main /docs,
 repo is public). A push to main redeploys it in about a minute. Pages publishes only `docs/`.
 
+### Launch safety (installed app)
+
+A cold start must paint at once. Google Fonts load from a script, never a render-blocking `<link>`: a stalled
+request used to leave the screen black. The service worker serves the saved page first and fetches the new one for
+next time (an update shows on the second open). If the app has not started after 6 s, a plain screen shows the error
+and a "Reload the app" button that clears the saved app files; the log (localStorage) is never touched.
+On iOS the installed app has its own storage: deleting the home-screen icon deletes the log.
+
 ### Data
 
 Everything lives in `localStorage` under `telos_v2` (v1 held the test entries and is erased on first open;

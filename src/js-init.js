@@ -22,5 +22,6 @@
   document.addEventListener("visibilitychange", function () { if (!document.hidden && rolled()) location.reload(); });
   window.addEventListener("pageshow", function () { if (rolled()) location.reload(); });
   setInterval(function () { if (!document.hidden && rolled()) location.reload(); }, 60000);
+  window.__telosReady = true; if (window.__telosHideFail) window.__telosHideFail();
 })();
 </script>
