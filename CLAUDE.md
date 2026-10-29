@@ -233,22 +233,21 @@ visible on the first screen down to 360x740, keyboard-aware sheets
 
 ## The logo
 
-A tapered stem arriving on a base bar — the moment of arrival, since *telos*
-means the end a thing is aimed at. The taper is the V-taper, built into the
-geometry.
+The **tau**, the Greek first letter of *telos*: a bar whose right end turns down where the path arrives,
+the end a thing is aimed at. Replaced the tapered-stem mark (now in `brand/previous/`) in Oct 2026. Full kit
+in `brand/`: lockups (horizontal, stacked), symbol, wordmark, one-colour versions, a small-size cut,
+favicon set and a one-page guide (`brand/TELOS-LOGO-GUIDE.md`). `tools/build-logo-kit.py` regenerates the SVGs from numbers.
+
+Small-size cut (used for the app icon, header mark and favicon), 256 grid:
 
 ```
-M102 26H154L147 180H109Z M22 180h212v46H22Z
+M34 50H146A76 76 0 0 1 222 126V170H178V126A32 32 0 0 0 146 94H34ZM68 88H112V218H68Z
 ```
 
-viewBox `0 0 256 256`. One path. Chalk on teal, 56 px corner radius as an icon.
-Lives in the app header as an inline SVG and as a data-URI favicon.
-
-Two earlier rounds were rejected outright. A third concept — a T carved out of
-a solid square — audited perfectly and was dropped anyway because it sat beside
-npm's icon as visibly the same family.
-
-Wordmark: TELOS in IBM Plex Mono, 0.26em letter-spacing, uppercase.
+Icon and header: basalt `#0A0C0B` tau on a teal `#2A9D8A` tile (5.9:1; chalk on teal is only 2.2:1, so not
+that). On dark grounds the symbol is teal with a chalk wordmark; on light, deep teal `#0F6B5E` with basalt.
+The inline SVG in `src/head.html` (header mark and data-URI favicon) and `tools/make-icons.py` (PWA icons) hold
+the same shape; change all three together. Wordmark in the app header stays live text, IBM Plex Mono, 0.26em, uppercase.
 
 ---
 
@@ -261,7 +260,6 @@ Wordmark: TELOS in IBM Plex Mono, 0.26em letter-spacing, uppercase.
   (Playwright). Render it in a real browser at 320, 360, 390 and 430 px and look at it. Past
   failures all shipped because nobody opened the page.
 - Keep it simple. His words: KISS. Don't add features he didn't ask for.
-- Logo exploration is deliberately **last**; the mark is untouched for now.
 
 ---
 
@@ -270,5 +268,4 @@ Wordmark: TELOS in IBM Plex Mono, 0.26em letter-spacing, uppercase.
 - **Recipes from a recipe book**: to be supplied; convert to recipes with macros from the USDA table.
 - **The website**: the next phase, not started.
 - **Notifications** to remind him to log: deferred.
-- **Logo exploration** (last).
 - Real-device check of the on-screen keyboard in the sheets.
