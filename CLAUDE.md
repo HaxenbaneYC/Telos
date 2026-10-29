@@ -1,36 +1,16 @@
 # Telos
 
-A personal training and nutrition app Youssef built for himself, plus a website
-to follow. One user. Not a product, not a startup. Keep it that way.
+A personal training and nutrition app, one user. Not a product, not a startup. Keep it that way.
 
----
-
-## Who this is for
-
-Youssef Christofides, 25, architectural engineer in Dubai. Desk job, office
-hours 10:00–19:00, gym after work. Started a 13-week cut on **28 Oct 2026** at
-75 kg, aiming for ~68–69 kg at 12–13 % body fat. Aesthetic goal, in his words:
-six pack, V taper, lean but still full.
-
-He is not a developer. Explain a change in one line, not a lecture.
-
-### How he wants to be talked to
-
-- Direct. No fluff, no preamble, no restating the request.
-- Pushback over agreement. If an idea is wrong, say so and say why.
-- Backed by evidence, not by theory and not over-explained. One sentence of
-  reasoning, not a paragraph of citations.
-- He will ask to cut harder than is sensible. Hold the line and explain the
-  trade in one sentence. He has asked for water fasts before; the answer was
-  no, and it stays no.
-- "Not woke" nutrition, his phrase: five whole eggs is fine, no cholesterol
-  hand-wringing, red meat and saturated fat are not villains.
+Notes about the owner (who he is, how he wants to be talked to, body goals, health items) are kept
+privately, not in this public repo. Style that matters here: direct, short, no fluff; explain a change
+in one line; he is not a developer; pushback over agreement.
 
 ---
 
 ## The plan this app runs on
 
-Start 2026-10-28, target 69 kg, 13 weeks.
+Start 2026-10-28, 13 weeks.
 
 | Weeks | Phase      | kcal  | P   | F  | C   | Notes                                    |
 |-------|------------|-------|-----|----|-----|------------------------------------------|
@@ -42,8 +22,7 @@ Start 2026-10-28, target 69 kg, 13 weeks.
 Training is a seven-day **rotation**, not weekdays: Push, Pull, Legs, 5K run or bike,
 Upper, Delts/arms/abs/neck, Rest, then round again. Day one (Wed 28 Oct 2026) is Push.
 Plus a **daily 3 km bike ride**, logged from the first day.
-Supplements he already takes: D3+K2, omega 3, magnesium, zinc, selenium,
-tongkat ali, boron, creatine 5 g daily.
+
 
 Food rule: real food, cooked by himself. No cream, no bottled dressings, no
 packaged sauces, no protein bars. Chicken and rice is the default and that is
@@ -270,11 +249,8 @@ Wordmark: TELOS in IBM Plex Mono, 0.26em letter-spacing, uppercase.
 
 ## Not done yet
 
-- **Recipes from his book**: he will supply it; convert to recipes with macros
-  from the USDA table.
+- **Recipes from a recipe book**: to be supplied; convert to recipes with macros from the USDA table.
 - **The website**: the next phase, not started.
-- **Notifications** to remind him to log: deferred by him.
-- **Body fat baseline**: he still owes a DEXA or InBody reading.
-- Protein powder and creatine were to be bought "from next Monday".
+- **Notifications** to remind him to log: deferred.
 - **Logo exploration** (last).
 - Real-device check of the on-screen keyboard in the sheets.
