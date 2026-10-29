@@ -310,7 +310,7 @@
     $("offTot").textContent = ex.length ? "+" + fmt(tot) + " kcal" : "";
     $("offplan").innerHTML = ex.map(function (e, i) {
       return '<div class="xrow"><div class="xb"><b>' + esc(e.n) + "</b><span>" + (e.k || 0) + " kcal · " + (e.p || 0) + "P " + (e.f || 0) + "F " + (e.c || 0) + "C" +
-        (e.src === "estimate" ? " · estimate" : (e.src === "label" ? " · label" : (e.src === "database" ? " · USDA" : ""))) + '</span></div>' +
+        (e.src === "estimate" ? " · estimate" : (e.src === "label" ? " · label" : (e.src === "database" ? " · USDA" : (e.src === "web" ? " · web" : "")))) + '</span></div>' +
         '<button class="pbtn" data-od="' + i + '" aria-label="Remove ' + esc(e.n) + '">' + ICON_X + "</button></div>";
     }).join("") + '<button class="srow" data-sheet="add"><span class="sk">' + (ex.length ? "Add more" : "Add off-plan food") + '</span><i class="chev"></i></button>';
   }
@@ -418,10 +418,87 @@
   }
 
   // ── Claude, when this page runs inside Claude. Everywhere else these features stay hidden. ──
-  var AI = { fn: null, text: false, images: false, types: "image/*" };
+  var AI = { fn: null, text: false, images: false, types: "image/*", standalone: false, web: false };
+
+  // ── Outside Claude (the installed phone app) there is no Claude to ask, so the app asks Anthropic directly
+  // with the person's own API key. The key lives only in this phone's storage and goes only to api.anthropic.com.
+  // Describe also searches the web, because restaurant and brand items are not in any offline table.
+  var KEYSTORE = "telos_apikey", API = { url: "https://api.anthropic.com/v1/messages", model: "claude-sonnet-5-5" };
+  function getKey() { try { return localStorage.getItem(KEYSTORE) || ""; } catch (e) { return ""; } }
+  function setKey(k) { try { if (k) localStorage.setItem(KEYSTORE, k); else localStorage.removeItem(KEYSTORE); } catch (e) {} }
+  // A phone photo is several MB; the API takes under 5 MB, and a label reads fine at 1600 px.
+  function shrinkPhoto(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var sc = Math.min(1, 1600 / Math.max(img.width, img.height)), cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * sc); cv.height = Math.round(img.height * sc);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url);
+        try { resolve(cv.toDataURL("image/jpeg", 0.85).split(",")[1]); } catch (e) { reject({ code: "image_rejected" }); }
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject({ code: "image_rejected" }); };
+      img.src = url;
+    });
+  }
+  function apiError(status, j) {
+    var msg = (j && j.error && j.error.message) || "";
+    if (status === 401 || status === 403) return { code: "bad_key" };
+    if (status === 429) return { code: "rate_limited" };
+    if (status === 400 && /credit balance/i.test(msg)) return { code: "no_credit" };
+    if (status === 400 && /web.?search/i.test(msg)) return { code: "no_search" };
+    if (status === 529 || status >= 500) return { code: "busy" };
+    return { code: "api_error", message: msg };
+  }
+  function callClaude(prompt, opts) {
+    var key = getKey(), o = opts || {};
+    if (!key) return Promise.reject({ code: "no_key" });
+    return Promise.all((o.images || []).map(shrinkPhoto)).then(function (b64) {
+      var content = b64.map(function (d) { return { type: "image", source: { type: "base64", media_type: "image/jpeg", data: d } }; });
+      content.push({ type: "text", text: prompt });
+      var tools = [], messages = [{ role: "user", content: content }], turns = 0, noSearch = false;
+      if (o.search) {
+        var tool = { type: "web_search_20260209", name: "web_search", max_uses: 3 };
+        try { var tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if (tz) tool.user_location = { type: "approximate", timezone: tz }; } catch (e) {}
+        tools.push(tool);
+      }
+      function once() {
+        var body = { model: API.model, max_tokens: 4000, output_config: { effort: "medium" }, messages: messages };
+        if (tools.length) body.tools = tools;
+        return fetch(API.url, {
+          method: "POST", signal: o.signal,
+          headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          body: JSON.stringify(body)
+        }).then(function (r) {
+          return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }, function () { return { ok: r.ok, status: r.status, j: null }; });
+        }, function (e) { throw (e && e.name === "AbortError") ? { code: "cancelled" } : { code: "offline" }; }).then(function (x) {
+          if (!x.ok) {
+            var er = apiError(x.status, x.j);
+            if (er.code === "no_search" && tools.length) { tools = []; noSearch = true; return once(); }   // account has web search off: estimate without it, and say so
+            throw er;
+          }
+          var j = x.j || {};
+          if (j.stop_reason === "pause_turn" && turns++ < 4) { messages = messages.concat([{ role: "assistant", content: j.content }]); return once(); }
+          if (j.stop_reason === "refusal") throw { code: "refused" };
+          var text = (j.content || []).filter(function (b) { return b.type === "text"; }).map(function (b) { return b.text; }).join("\n");
+          var a = text.indexOf("{"), z = text.lastIndexOf("}"), out;
+          if (a < 0 || z < a) throw { code: "bad_reply" };
+          try { out = JSON.parse(text.slice(a, z + 1)); } catch (e2) { throw { code: "bad_reply" }; }
+          if (out && noSearch) out._noSearch = true;
+          return out;
+        });
+      }
+      return once();
+    });
+  }
+  function apiAdapter() { return { json: callClaude, limits: function () { return Promise.resolve({ images: true }); } }; }
+
   function initAI() {
     try {
-      if (!window.claude || !window.claude.use) return;
+      if (!window.claude || !window.claude.use) {          // not inside Claude: the phone app
+        AI.standalone = true; AI.text = true; AI.images = true; AI.web = true;
+        if (getKey()) AI.fn = apiAdapter();
+        return;
+      }
       window.claude.use("sample").then(function (fn) {
         if (!fn) return;
         AI.fn = fn; AI.text = true;
@@ -443,6 +520,12 @@
     }
     if (c === "images_unavailable") { AI.images = false; return "Photos aren’t available here. Describe it or use Numbers."; }
     if (c === "rate_limited") return "Too many requests just now. Wait a minute, or use Numbers.";
+    if (c === "no_key") return "Add your Anthropic key first.";
+    if (c === "bad_key") return "Anthropic rejected that key. Remove it and paste a new one.";
+    if (c === "no_credit") return "Your Anthropic account is out of credit. Add some at console.anthropic.com, or use Numbers.";
+    if (c === "offline") return "No connection. Try again with signal, or use Numbers.";
+    if (c === "busy") return "Claude is busy right now. Try again in a minute.";
+    if (c === "api_error" && e.message) return "Anthropic said: " + String(e.message).slice(0, 120);
     if (c === "image_rejected") return "That file can’t be read as a photo. Try another one.";
     if (c === "session_expired") return "Sign in to Claude again, then retry.";
     return "Couldn’t read that one. Try again, or use Numbers.";
@@ -462,16 +545,18 @@
       "Reply with only one JSON object: " +
       '{"name": string (short, title case), "amountText": string (the amount you assumed, like "300 ml"), "kcal": number, "protein": number, "fat": number, "carbs": number, "confidence": "high" | "medium" | "low", "note": string}\n' +
       "Rules: the figures are for the WHOLE amount described, not per 100 g. Carbs means total carbohydrate. Use typical values for the plain food. " +
-      "If no amount is given, assume one typical serving. The note is one short sentence saying what you assumed. Round kcal to the nearest 5 and grams to the nearest 0.5.";
+      "If no amount is given, assume one typical serving. The note is one short sentence saying what you assumed. Round kcal to the nearest 5 and grams to the nearest 0.5." +
+      (AI.web ? ' Add "source": string | null, the site the figures came from. For a restaurant, café or packaged-brand item, search the web for its real nutrition (the official nutrition page first, then a reputable database) and give the figures for one serving as sold. If you cannot find it, estimate and say so in the note.' : "");
     var mine = sh;
-    AI.fn.json(prompt, { modelTier: "quick", signal: sh.ctl.signal }).then(function (r) {
+    AI.fn.json(prompt, { modelTier: "quick", signal: sh.ctl.signal, search: AI.web }).then(function (r) {
       if (sh !== mine) return;
       sh.busy = "";
       if (!r || !okNum(r.kcal, 5000) || !okNum(r.protein, 400) || !okNum(r.fat, 400) || !okNum(r.carbs, 800)) {
         sh.err = "Couldn’t read that one. Try again, or use Numbers."; paintSheet(); return;
       }
       sh.draft = { name: String(r.name || text).slice(0, 60), k: String(Math.round(r.kcal)), p: String(r1(r.protein)), f: String(r1(r.fat)), c: String(r1(r.carbs)), src: "estimate" };
-      sh.note = "Estimate, " + String(r.confidence || "medium") + " confidence. " + String(r.note || "") + energyWarn(r.kcal, r.protein, r.fat, r.carbs);
+      sh.note = "Estimate, " + String(r.confidence || "medium") + " confidence. " + String(r.note || "") + (r.source ? " Source: " + String(r.source).slice(0, 60) + "." : "") +
+        (r._noSearch ? " Your Anthropic account has web search off, so this is from memory, not looked up." : "") + energyWarn(r.kcal, r.protein, r.fat, r.carbs);
       sh.label = null; sh.ready = true; paintSheet(); toForm();
     }, function (e) {
       if (sh !== mine) return;
@@ -754,7 +839,9 @@
     }).join("") + "</div>" : "";
 
     var top = "", showForm = tab === "num" || sh.ready;
-    if (tab === "find") {
+    if ((tab === "desc" || tab === "photo") && AI.standalone && !AI.fn) {
+      top = keyCard(sh.keyErr); showForm = false;
+    } else if (tab === "find") {
       top = findBlock();
     } else if (tab === "desc") {
       top = '<label class="flabel" for="dText">What did you have, and how much?</label>' +
@@ -762,13 +849,15 @@
         (sh.busy === "desc"
           ? '<button class="bigbtn wait" data-stop>Estimating… tap to stop</button>'
           : '<button class="bigbtn alt" id="dGo">Estimate</button>') +
-        '<p class="aihint">Claude estimates this from typical values. Check the numbers before you add it.</p>';
+        '<p class="aihint">' + (AI.web ? "Claude searches the web for restaurant and brand items, then fills in the numbers." : "Claude estimates this from typical values.") + " Check them before you add it.</p>" + keyFoot();
+    } else if (tab === "num") {
+      top = pasteBlock();
     } else if (tab === "photo") {
       top = '<label class="photobtn" for="lblFile">' + (sh.thumb ? "Take or choose another photo" : "Take or choose a photo of the back of the pack") + "</label>" +
         '<input class="vh" type="file" id="lblFile" accept="' + AI.types + '">' +
         (sh.thumb ? '<img class="thumb" src="' + sh.thumb + '" alt="Your label photo">' : "") +
         (sh.busy === "photo" ? '<button class="bigbtn wait" data-stop>Reading the label… tap to stop</button>' : "") +
-        '<p class="aihint">Show the brand and the nutrition table. Claude reads it for this entry. The photo is not saved.</p>';
+        '<p class="aihint">Show the brand and the nutrition table. Claude reads it for this entry. The photo is not saved.</p>' + keyFoot();
     }
     var amount = "";
     if (tab === "photo" && sh.label && sh.ready) {
@@ -809,6 +898,72 @@
       '<div class="pfoot"><button class="bigbtn' + (addValid() ? " active-ready" : "") + '" id="fAdd"' + (addValid() ? "" : " disabled") + ">" + addLabel() + '</button><p class="addhint" id="fHint">' + addHint() + "</p></div>";
   }
 
+  // ── Numbers copied from a web page: "463 calories, 25 g protein, 22 g fat, 42 g carbs", or the same as a
+  // table ("Protein 25g"). Per-serving figures are what is wanted; saturated fat and sugars are skipped.
+  function parseNutrition(text) {
+    var t = " " + String(text).toLowerCase().replace(/\u00a0/g, " ").replace(/(\d),(\d{3})(?!\d)/g, "$1$2").replace(/(\d),(\d)(?!\d{2})/g, "$1.$2") + " ";
+    t = t.replace(/of which\s*\w+[^0-9]{0,12}\d+(?:\.\d+)?\s*g?/g, " ")
+         .replace(/(?:saturates|saturated|trans|polyunsaturated|monounsaturated|sat\.?)\s*(?:fat)?[^0-9]{0,12}\d+(?:\.\d+)?\s*g?/g, " ")
+         .replace(/(?:of which\s*)?(?:total\s*)?sugars?[^0-9]{0,12}\d+(?:\.\d+)?\s*g?/g, " ")
+         .replace(/(?:dietary\s*)?fib(?:er|re)[^0-9]{0,12}\d+(?:\.\d+)?\s*g?/g, " ");
+    var NUM = "(\\d+(?:\\.\\d+)?)", SEP = "[\\s:\\-\u2013|=]{0,4}";
+    // "25 g protein, 22 g fat" (number first) or "Protein 25 g  Fat 22 g" (label first): read it the way it is written,
+    // or each figure is taken for the next label's.
+    var first = /\b(?:protein|(?:total\s+)?fat|(?:total\s+)?carb(?:ohydrate)?s?)\b/.exec(t);
+    var numFirst = !!first && new RegExp("\\d\\s*g\\s*$").test(t.slice(0, first.index));
+    function grab(label) {
+      var nf = new RegExp(NUM + "\\s*g\\s*(?:of\\s+)?" + label + "\\b").exec(t), lf = new RegExp("\\b" + label + SEP + NUM).exec(t);
+      var m = numFirst ? (nf || lf) : (lf || nf);
+      return m ? parseFloat(m[1]) : undefined;
+    }
+    var out = { p: grab("protein"), f: grab("(?:total\\s+)?fat"), c: grab("(?:total\\s+)?carb(?:ohydrate)?s?") };
+    var k = new RegExp(NUM + "\\s*(?:kcal|calories|cal)\\b").exec(t) || new RegExp("\\b(?:calories|kcal|energy|cal)" + SEP + NUM).exec(t);
+    if (k) out.k = parseFloat(k[1]);
+    else { var kj = new RegExp(NUM + "\\s*kj\\b").exec(t); if (kj) out.k = Math.round(parseFloat(kj[1]) / 4.184); }
+    if (out.k > LIM.k) out.k = undefined;
+    ["p", "f", "c"].forEach(function (x) { if (out[x] > LIM.m) out[x] = undefined; });
+    return out;
+  }
+  // Fills the form from pasted text. Returns what to tell the person.
+  function applyPaste(text) {
+    var r = parseNutrition(text), d = sh.draft, bits = [], calc = false;
+    if (r.k === undefined && r.p !== undefined && r.f !== undefined && r.c !== undefined) { r.k = Math.round(4 * r.p + 4 * r.c + 9 * r.f); calc = true; }
+    if (r.k === undefined && r.p === undefined && r.f === undefined && r.c === undefined)
+      return "Couldn’t find numbers in that. Paste the line with the calories and the protein, fat and carbs.";
+    if (r.k !== undefined) { d.k = String(Math.round(r.k)); bits.push(d.k + " kcal" + (calc ? " (worked out)" : "")); }
+    if (r.p !== undefined) { d.p = String(r1(r.p)); bits.push(d.p + " g protein"); }
+    if (r.f !== undefined) { d.f = String(r1(r.f)); bits.push(d.f + " g fat"); }
+    if (r.c !== undefined) { d.c = String(r1(r.c)); bits.push(d.c + " g carbs"); }
+    if (!d.name.trim() && sh.q && sh.q.trim()) { var q = sh.q.trim().slice(0, 60); d.name = q.charAt(0).toUpperCase() + q.slice(1); }
+    d.src = "web";
+    var miss = []; if (r.k === undefined) miss.push("calories"); if (r.p === undefined) miss.push("protein"); if (r.f === undefined) miss.push("fat"); if (r.c === undefined) miss.push("carbs");
+    return "Found " + bits.join(", ") + "." + (miss.length ? " Missing " + miss.join(" and ") + ": fill them in." : "") + " Check them against the page.";
+  }
+  function pasteBlock() {
+    var q = (sh.draft.name || sh.q || "").trim();
+    return '<div class="pastebox"><label class="flabel" for="pasteIn">Found the numbers on the web? Paste them here</label>' +
+      '<textarea id="pasteIn" rows="2" placeholder="463 calories, 25 g protein, 22 g fat, 42 g carbs">' + esc(sh.pasteText || "") + "</textarea>" +
+      '<div class="two"><button class="sbtn" data-paste>Paste from clipboard</button>' +
+      (q ? '<a class="sbtn lookbtn" id="lookLink" href="' + esc(webQuery(q)) + '" target="_blank" rel="noopener">Look it up</a>' : "") + "</div>" +
+      '<p class="aihint" id="pasteNote">' + esc(sh.pasteNote || "Use the per-serving figures, for what you ate.") + "</p></div>";
+  }
+  function pasteDone(text) {
+    sh.pasteText = text; sh.pasteNote = applyPaste(text);
+    var n = document.getElementById("pasteNote"); if (n) n.textContent = sh.pasteNote;
+    syncAddFromDraft();
+  }
+
+  // phone app only: where the person's own key goes in, and how it comes out again
+  function keyCard(err) {
+    return '<div class="keycard"><b>Turn on lookups</b>' +
+      "<p>Describe and Label ask Claude, which can search the web for restaurant and brand items. In the phone app that needs your own Anthropic key. It is saved only on this phone and sent only to Anthropic. Each lookup costs a few cents.</p>" +
+      '<label class="flabel" for="keyIn">Anthropic API key</label>' +
+      '<input id="keyIn" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…">' +
+      (err ? '<p class="ferr" id="keyErr">' + esc(err) + "</p>" : "") +
+      '<button class="bigbtn" id="keySave">Save key</button>' +
+      '<p class="aihint">Get one at console.anthropic.com under API keys. It needs a few dollars of credit, separate from a claude.ai plan. Set a monthly spend limit there. If it asks, switch on web search in the console settings.</p></div>';
+  }
+  function keyFoot() { return AI.standalone ? '<button class="linkbtn" data-keyremove>Remove my key from this phone</button>' : ""; }
   function toForm() {
     var el = document.querySelector("#panel .lblhead, #panel .picked") || document.querySelector("#panel label[for=fName]");
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: RM() ? "auto" : "smooth" });
@@ -835,7 +990,7 @@
   }
 
   $("panel").addEventListener("click", function (ev) {
-    var t = ev.target.closest("[data-day],[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-cat],[data-food],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
+    var t = ev.target.closest("[data-paste],[data-topaste],#keySave,[data-keyremove],[data-day],[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-cat],[data-food],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
     if (!t) return;
     if (t.hasAttribute("data-hit")) { pickFood(+t.getAttribute("data-hit")); return; }
     if (t.hasAttribute("data-unpick")) { syncAdd(); sh.pick = null; sh.ready = false; sh.note = ""; paintSheet(); return; }
@@ -844,6 +999,23 @@
       S.photos.splice(sh.i, 1); save(); closeSheet(); renderPhotos(); return;
     }
     if (t.hasAttribute("data-skipmeal")) { skipMeal(t.getAttribute("data-skipmeal")); closeSheet(); return; }
+    if (t.hasAttribute("data-topaste")) {          // from the Search tab: carry the search words over as the name
+      syncAdd(); sh.tab = "num"; sh.pick = null; sh.ready = false;
+      if (!sh.draft.name.trim() && sh.q && sh.q.trim()) { var qq = sh.q.trim().slice(0, 60); sh.draft.name = qq.charAt(0).toUpperCase() + qq.slice(1); }
+      paintSheet(); var pi = document.getElementById("pasteIn"); if (pi) setTimeout(function () { try { pi.focus(); } catch (e) {} }, 60);
+      return;
+    }
+    if (t.hasAttribute("data-paste")) {
+      var fail = function () { sh.pasteNote = "Your phone didn’t allow that. Press and hold in the box, choose Paste."; var n = document.getElementById("pasteNote"); if (n) n.textContent = sh.pasteNote; var pi2 = document.getElementById("pasteIn"); if (pi2) { try { pi2.focus(); } catch (e) {} } };
+      if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (txt) { var b = document.getElementById("pasteIn"); if (b) b.value = txt; pasteDone(txt); paintAdd(); }, fail); else fail();
+      return;
+    }
+    if (t.id === "keySave") {
+      var kv = ($("keyIn").value || "").trim();
+      if (!/^sk-ant-[A-Za-z0-9_\-]{20,}$/.test(kv)) { sh.keyErr = "That doesn’t look like an Anthropic key. It starts with sk-ant-."; paintSheet(); return; }
+      setKey(kv); AI.fn = apiAdapter(); sh.keyErr = ""; sh.err = ""; paintSheet(); return;
+    }
+    if (t.hasAttribute("data-keyremove")) { setKey(""); AI.fn = null; sh.keyErr = ""; sh.ready = false; paintSheet(); return; }
     if (t.hasAttribute("data-day")) { setDay(t.getAttribute("data-day")); return; }
     if (t.hasAttribute("data-unskip")) { unskipMeal(t.getAttribute("data-unskip")); paintSheet(); return; }
     if (t.hasAttribute("data-sk")) { toggleItem(sh.meal, t.getAttribute("data-sk")); paintSheet(); return; }
@@ -904,6 +1076,7 @@
       var qr = document.getElementById("qRes"); if (qr) qr.innerHTML = hitsHtml();
       return;
     }
+    if (id === "pasteIn") { pasteDone(ev.target.value); paintAdd(); return; }
     if (id === "aAmt") {
       sh.amt.n = parseFloat(ev.target.value); calcAmount();
       var map = { fName: "name", fKcal: "k", fP: "p", fF: "f", fC: "c" };

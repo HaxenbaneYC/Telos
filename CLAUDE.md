@@ -83,10 +83,11 @@ anywhere, including weekly photos (resized to <=440 px JPEG on the client).
 **Keep it that way.** Every read and write is wrapped in try/catch; the app
 must render with storage empty.
 
-The only thing that leaves the device is a Claude call he triggers himself
-(Describe, Label photo), through the artifact `sample` capability. It asks for
-consent per call, the photo is never stored, and the buttons are hidden when
-the capability is missing.
+The only things that leave the device are a lookup he triggers himself. Inside the Claude artifact that is
+Describe and Label through the `sample` capability (consent per call). In the installed phone app there is no
+Claude to ask, so Describe and Label call api.anthropic.com directly with his own API key, kept in this phone's
+storage under `telos_apikey` (never in the log, never in the repo). Photos are shrunk to 1600 px, sent once and
+never stored. Without a key the two tabs show a "Turn on lookups" card; the free web lookup below needs no key.
 
 ### Structure
 
@@ -134,7 +135,16 @@ edits what counts, and unticking the last one returns the meal to not eaten.
 Add from the sheet by four routes: **Search** (7,831 USDA foods, offline, per
 100 g, with portions and ml via density), **Describe** (type what and how much;
 Claude estimates), **Label** (photo of the nutrition panel; Claude reads it),
-**Numbers** (type kcal and macros). Off-plan rows can be removed with undo. The
+**Numbers** (type kcal and macros). Off-plan rows can be removed with undo.
+
+Restaurant and brand items are not in the USDA table, so there is a **free web lookup**: when search finds
+nothing useful, "Look it up on the web" opens a web search in a new tab, he copies the line with the numbers, and
+the Numbers tab has a paste box (and a "Paste from clipboard" button) whose parser (`parseNutrition`) fills
+calories, protein, fat and carbs, reading "25 g protein, 22 g fat" and "Protein 25 g  Fat 22 g" alike and
+skipping saturated fat and sugars. Entries from it are marked "web". The **paid lookup** (phone app, own key)
+calls Sonnet 5.5 with the web search tool (a few cents per lookup) for Describe, and reads a label photo for
+Label; a paused turn is continued, and an account with web search off falls back to an estimate and says so.
+Tests: `tests/paste-numbers.js`, `tests/api-lookup.js` (mock API). The
 USDA table is built by `data/build-foods.py` from his nutrition database.
 
 ### The coach rule
@@ -247,7 +257,7 @@ Wordmark: TELOS in IBM Plex Mono, 0.26em letter-spacing, uppercase.
 - The deliverable is one self-contained HTML file. Edit `src/`, run `build.py`.
   No npm, no framework.
 - Vanilla JS, `var`, no transpiling.
-- Test before claiming it works. `tests/` has day-accuracy, storage-fuzz, injection and mobile-scan
+- Test before claiming it works. `tests/` has day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
   (Playwright). Render it in a real browser at 320, 360, 390 and 430 px and look at it. Past
   failures all shipped because nobody opened the page.
 - Keep it simple. His words: KISS. Don't add features he didn't ask for.
