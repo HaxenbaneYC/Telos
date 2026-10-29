@@ -164,6 +164,13 @@
   .daybar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 2px 4px 2px 14px; background: var(--fill); border-radius: var(--r-ctl); font-size: 13.5px; color: var(--fg-2); line-height: 1.35; }
   .daybar[hidden] { display: none; }
   #dBack { flex: none; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--teal); font: 600 14.5px var(--sans); cursor: pointer; }
+  /* look it up on the web, then paste what you found */
+  a.sbtn { display: flex; align-items: center; justify-content: center; text-decoration: none; text-align: center; padding: 0 10px; }
+  .lookrow, .pastebox { margin-top: 12px; }
+  .lookrow .two, .pastebox .two { display: flex; gap: 10px; margin-top: 8px; }
+  .pbody textarea { width: 100%; min-height: 76px; resize: none; -webkit-appearance: none; appearance: none; background: var(--fill); border: 1px solid transparent; border-radius: var(--r-ctl); color: var(--fg); padding: 12px 14px; font: 500 16px/1.45 var(--sans); }
+  .pbody textarea::placeholder { color: var(--fg-3); }
+  .pbody textarea:focus-visible { outline: 0; border-color: var(--teal); }
   /* phone app: the key card and its small links */
   .keycard { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
   .keycard > b { font-size: 17px; }
@@ -996,7 +1003,7 @@
     x.extras = mapOf(x.extras, function (list) {
       if (!Array.isArray(list)) return undefined;
       return list.filter(function (e) { return isObj(e) && fin(e.k) !== undefined; }).map(function (e) {
-        return { n: String(e.n == null ? "Food" : e.n).slice(0, 80), k: Math.min(5000, Math.max(0, e.k)), p: Math.min(800, Math.max(0, fin(e.p) || 0)), f: Math.min(800, Math.max(0, fin(e.f) || 0)), c: Math.min(800, Math.max(0, fin(e.c) || 0)), src: /^(manual|estimate|label|database)$/.test(e.src) ? e.src : "manual" };
+        return { n: String(e.n == null ? "Food" : e.n).slice(0, 80), k: Math.min(5000, Math.max(0, e.k)), p: Math.min(800, Math.max(0, fin(e.p) || 0)), f: Math.min(800, Math.max(0, fin(e.f) || 0)), c: Math.min(800, Math.max(0, fin(e.c) || 0)), src: /^(manual|estimate|label|database|web)$/.test(e.src) ? e.src : "manual" };
       });
     }, DAYKEY);
     x.picks = mapOf(x.picks, function (m) { return isObj(m) ? mapOf(m, function (v) { return str(v, 12); }, MEALKEY) : undefined; }, MEALKEY);

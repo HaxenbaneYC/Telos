@@ -52,10 +52,18 @@
   function cleanName(d) { return d.replace(/\s*\([^)]*\)/g, "").replace(/\s+/g, " ").trim(); }
   function hitsHtml() {
     if (!sh.q || !sh.q.trim()) return '<p class="aihint" style="margin-top:12px">Type a food, like orange juice or chicken breast. Values are USDA, per 100 g.</p>';
-    if (!sh.hits.length) return '<p class="aihint" style="margin-top:12px">Nothing matches that. Try fewer words, or use Describe or Label.</p>';
+    if (!sh.hits.length) return '<p class="aihint" style="margin-top:12px">Nothing matches that. Try fewer words, or look it up on the web.</p>' + lookRow();
     return '<div class="hit-cap">Per 100 g, USDA</div><div class="fgroup-enhanced">' + sh.hits.map(function (r, i) {
       return '<button class="opt-hit" data-hit="' + i + '">' + hitBody(r) + '<span class="hit-add-icon" aria-hidden="true">+</span></button>';
-    }).join("") + "</div>";
+    }).join("") + "</div>" + lookRow();
+  }
+  // Restaurant and brand items are not in a generic table: search the web, then paste what you found.
+  function webQuery(q) { return "https://www.google.com/search?q=" + encodeURIComponent(String(q || "").trim() + " calories protein fat carbs"); }
+  function lookRow() {
+    if (!sh.q || !sh.q.trim()) return "";
+    return '<div class="lookrow"><p class="aihint">A restaurant or brand item is not in this table. Look it up, copy the line with the numbers, then paste it.</p>' +
+      '<div class="two"><a class="sbtn lookbtn" href="' + esc(webQuery(sh.q)) + '" target="_blank" rel="noopener">Look it up on the web</a>' +
+      '<button class="sbtn" data-topaste>Paste the numbers</button></div></div>';
   }
   // "Orange juice, chilled, with added calcium" -> title "Orange juice", subtitle "chilled, with added calcium"
   function hitBody(r) {

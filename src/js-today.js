@@ -310,7 +310,7 @@
     $("offTot").textContent = ex.length ? "+" + fmt(tot) + " kcal" : "";
     $("offplan").innerHTML = ex.map(function (e, i) {
       return '<div class="xrow"><div class="xb"><b>' + esc(e.n) + "</b><span>" + (e.k || 0) + " kcal · " + (e.p || 0) + "P " + (e.f || 0) + "F " + (e.c || 0) + "C" +
-        (e.src === "estimate" ? " · estimate" : (e.src === "label" ? " · label" : (e.src === "database" ? " · USDA" : ""))) + '</span></div>' +
+        (e.src === "estimate" ? " · estimate" : (e.src === "label" ? " · label" : (e.src === "database" ? " · USDA" : (e.src === "web" ? " · web" : "")))) + '</span></div>' +
         '<button class="pbtn" data-od="' + i + '" aria-label="Remove ' + esc(e.n) + '">' + ICON_X + "</button></div>";
     }).join("") + '<button class="srow" data-sheet="add"><span class="sk">' + (ex.length ? "Add more" : "Add off-plan food") + '</span><i class="chev"></i></button>';
   }
@@ -850,6 +850,8 @@
           ? '<button class="bigbtn wait" data-stop>Estimating… tap to stop</button>'
           : '<button class="bigbtn alt" id="dGo">Estimate</button>') +
         '<p class="aihint">' + (AI.web ? "Claude searches the web for restaurant and brand items, then fills in the numbers." : "Claude estimates this from typical values.") + " Check them before you add it.</p>" + keyFoot();
+    } else if (tab === "num") {
+      top = pasteBlock();
     } else if (tab === "photo") {
       top = '<label class="photobtn" for="lblFile">' + (sh.thumb ? "Take or choose another photo" : "Take or choose a photo of the back of the pack") + "</label>" +
         '<input class="vh" type="file" id="lblFile" accept="' + AI.types + '">' +
@@ -896,6 +898,61 @@
       '<div class="pfoot"><button class="bigbtn' + (addValid() ? " active-ready" : "") + '" id="fAdd"' + (addValid() ? "" : " disabled") + ">" + addLabel() + '</button><p class="addhint" id="fHint">' + addHint() + "</p></div>";
   }
 
+  // ── Numbers copied from a web page: "463 calories, 25 g protein, 22 g fat, 42 g carbs", or the same as a
+  // table ("Protein 25g"). Per-serving figures are what is wanted; saturated fat and sugars are skipped.
+  function parseNutrition(text) {
+    var t = " " + String(text).toLowerCase().replace(/\u00a0/g, " ").replace(/(\d),(\d{3})(?!\d)/g, "$1$2").replace(/(\d),(\d)(?!\d{2})/g, "$1.$2") + " ";
+    t = t.replace(/of which\s*\w+[^0-9]{0,12}\d+(?:\.\d+)?\s*g?/g, " ")
+         .replace(/(?:saturates|saturated|trans|polyunsaturated|monounsaturated|sat\.?)\s*(?:fat)?[^0-9]{0,12}\d+(?:\.\d+)?\s*g?/g, " ")
+         .replace(/(?:of which\s*)?(?:total\s*)?sugars?[^0-9]{0,12}\d+(?:\.\d+)?\s*g?/g, " ")
+         .replace(/(?:dietary\s*)?fib(?:er|re)[^0-9]{0,12}\d+(?:\.\d+)?\s*g?/g, " ");
+    var NUM = "(\\d+(?:\\.\\d+)?)", SEP = "[\\s:\\-\u2013|=]{0,4}";
+    // "25 g protein, 22 g fat" (number first) or "Protein 25 g  Fat 22 g" (label first): read it the way it is written,
+    // or each figure is taken for the next label's.
+    var first = /\b(?:protein|(?:total\s+)?fat|(?:total\s+)?carb(?:ohydrate)?s?)\b/.exec(t);
+    var numFirst = !!first && new RegExp("\\d\\s*g\\s*$").test(t.slice(0, first.index));
+    function grab(label) {
+      var nf = new RegExp(NUM + "\\s*g\\s*(?:of\\s+)?" + label + "\\b").exec(t), lf = new RegExp("\\b" + label + SEP + NUM).exec(t);
+      var m = numFirst ? (nf || lf) : (lf || nf);
+      return m ? parseFloat(m[1]) : undefined;
+    }
+    var out = { p: grab("protein"), f: grab("(?:total\\s+)?fat"), c: grab("(?:total\\s+)?carb(?:ohydrate)?s?") };
+    var k = new RegExp(NUM + "\\s*(?:kcal|calories|cal)\\b").exec(t) || new RegExp("\\b(?:calories|kcal|energy|cal)" + SEP + NUM).exec(t);
+    if (k) out.k = parseFloat(k[1]);
+    else { var kj = new RegExp(NUM + "\\s*kj\\b").exec(t); if (kj) out.k = Math.round(parseFloat(kj[1]) / 4.184); }
+    if (out.k > LIM.k) out.k = undefined;
+    ["p", "f", "c"].forEach(function (x) { if (out[x] > LIM.m) out[x] = undefined; });
+    return out;
+  }
+  // Fills the form from pasted text. Returns what to tell the person.
+  function applyPaste(text) {
+    var r = parseNutrition(text), d = sh.draft, bits = [], calc = false;
+    if (r.k === undefined && r.p !== undefined && r.f !== undefined && r.c !== undefined) { r.k = Math.round(4 * r.p + 4 * r.c + 9 * r.f); calc = true; }
+    if (r.k === undefined && r.p === undefined && r.f === undefined && r.c === undefined)
+      return "Couldn’t find numbers in that. Paste the line with the calories and the protein, fat and carbs.";
+    if (r.k !== undefined) { d.k = String(Math.round(r.k)); bits.push(d.k + " kcal" + (calc ? " (worked out)" : "")); }
+    if (r.p !== undefined) { d.p = String(r1(r.p)); bits.push(d.p + " g protein"); }
+    if (r.f !== undefined) { d.f = String(r1(r.f)); bits.push(d.f + " g fat"); }
+    if (r.c !== undefined) { d.c = String(r1(r.c)); bits.push(d.c + " g carbs"); }
+    if (!d.name.trim() && sh.q && sh.q.trim()) { var q = sh.q.trim().slice(0, 60); d.name = q.charAt(0).toUpperCase() + q.slice(1); }
+    d.src = "web";
+    var miss = []; if (r.k === undefined) miss.push("calories"); if (r.p === undefined) miss.push("protein"); if (r.f === undefined) miss.push("fat"); if (r.c === undefined) miss.push("carbs");
+    return "Found " + bits.join(", ") + "." + (miss.length ? " Missing " + miss.join(" and ") + ": fill them in." : "") + " Check them against the page.";
+  }
+  function pasteBlock() {
+    var q = (sh.draft.name || sh.q || "").trim();
+    return '<div class="pastebox"><label class="flabel" for="pasteIn">Found the numbers on the web? Paste them here</label>' +
+      '<textarea id="pasteIn" rows="2" placeholder="463 calories, 25 g protein, 22 g fat, 42 g carbs">' + esc(sh.pasteText || "") + "</textarea>" +
+      '<div class="two"><button class="sbtn" data-paste>Paste from clipboard</button>' +
+      (q ? '<a class="sbtn lookbtn" id="lookLink" href="' + esc(webQuery(q)) + '" target="_blank" rel="noopener">Look it up</a>' : "") + "</div>" +
+      '<p class="aihint" id="pasteNote">' + esc(sh.pasteNote || "Use the per-serving figures, for what you ate.") + "</p></div>";
+  }
+  function pasteDone(text) {
+    sh.pasteText = text; sh.pasteNote = applyPaste(text);
+    var n = document.getElementById("pasteNote"); if (n) n.textContent = sh.pasteNote;
+    syncAddFromDraft();
+  }
+
   // phone app only: where the person's own key goes in, and how it comes out again
   function keyCard(err) {
     return '<div class="keycard"><b>Turn on lookups</b>' +
@@ -933,7 +990,7 @@
   }
 
   $("panel").addEventListener("click", function (ev) {
-    var t = ev.target.closest("#keySave,[data-keyremove],[data-day],[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-cat],[data-food],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
+    var t = ev.target.closest("[data-paste],[data-topaste],#keySave,[data-keyremove],[data-day],[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-cat],[data-food],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
     if (!t) return;
     if (t.hasAttribute("data-hit")) { pickFood(+t.getAttribute("data-hit")); return; }
     if (t.hasAttribute("data-unpick")) { syncAdd(); sh.pick = null; sh.ready = false; sh.note = ""; paintSheet(); return; }
@@ -942,6 +999,17 @@
       S.photos.splice(sh.i, 1); save(); closeSheet(); renderPhotos(); return;
     }
     if (t.hasAttribute("data-skipmeal")) { skipMeal(t.getAttribute("data-skipmeal")); closeSheet(); return; }
+    if (t.hasAttribute("data-topaste")) {          // from the Search tab: carry the search words over as the name
+      syncAdd(); sh.tab = "num"; sh.pick = null; sh.ready = false;
+      if (!sh.draft.name.trim() && sh.q && sh.q.trim()) { var qq = sh.q.trim().slice(0, 60); sh.draft.name = qq.charAt(0).toUpperCase() + qq.slice(1); }
+      paintSheet(); var pi = document.getElementById("pasteIn"); if (pi) setTimeout(function () { try { pi.focus(); } catch (e) {} }, 60);
+      return;
+    }
+    if (t.hasAttribute("data-paste")) {
+      var fail = function () { sh.pasteNote = "Your phone didn’t allow that. Press and hold in the box, choose Paste."; var n = document.getElementById("pasteNote"); if (n) n.textContent = sh.pasteNote; var pi2 = document.getElementById("pasteIn"); if (pi2) { try { pi2.focus(); } catch (e) {} } };
+      if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (txt) { var b = document.getElementById("pasteIn"); if (b) b.value = txt; pasteDone(txt); paintAdd(); }, fail); else fail();
+      return;
+    }
     if (t.id === "keySave") {
       var kv = ($("keyIn").value || "").trim();
       if (!/^sk-ant-[A-Za-z0-9_\-]{20,}$/.test(kv)) { sh.keyErr = "That doesn’t look like an Anthropic key. It starts with sk-ant-."; paintSheet(); return; }
@@ -1008,6 +1076,7 @@
       var qr = document.getElementById("qRes"); if (qr) qr.innerHTML = hitsHtml();
       return;
     }
+    if (id === "pasteIn") { pasteDone(ev.target.value); paintAdd(); return; }
     if (id === "aAmt") {
       sh.amt.n = parseFloat(ev.target.value); calcAmount();
       var map = { fName: "name", fKcal: "k", fP: "p", fF: "f", fC: "c" };
