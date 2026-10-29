@@ -107,7 +107,8 @@ first on purpose; Trend is last.
 - **Other activity** (bottom of the Train tab's top block) - a run, bike, scooter or walk with km and/or minutes,
   for today (`S.acts[date]`, list of `{t, km, min}`). Counted in distance only, never in calories; the daily 3 km tick stays separate.
 - **Trend** - weight (chart fitted to the data), measurements and taper gap,
-  photos, weekly analysis, phases. The weigh-in is a morning log here, not on Today.
+  photos, weekly analysis, phases. The weigh-in is a morning log here, not on Today; its arrows
+  pick the day, so a missed weight or sleep can be filled in back to the start (`tests/morning-past.js`).
 
 ### Other days
 
@@ -116,7 +117,7 @@ The Today screen can show any day since the start: arrows step a day, the date o
 off-plan and checklist control works on it, so a past day can be reviewed, filled in, corrected or
 cleared ("Clear this day's food", with undo). The plan, target and carry-over are computed for that
 day's phase. No coach trimming on past days; an overshoot yesterday still lowers today's target.
-Weight, training and trend stay on today. `tests/day-history.js` covers it.
+Training and the trend view stay on today (weight and sleep have their own day arrows on Trend). `tests/day-history.js` covers it.
 
 ### Meals, partial meals, skipped meals
 
@@ -258,7 +259,7 @@ the same shape; change all three together. Wordmark in the app header stays live
 - The deliverable is one self-contained HTML file. Edit `src/`, run `build.py`.
   No npm, no framework.
 - Vanilla JS, `var`, no transpiling.
-- Test before claiming it works. `tests/` has activity, day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
+- Test before claiming it works. `tests/` has activity, morning-past, day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
   (Playwright). Render it in a real browser at 320, 360, 390 and 430 px and look at it. Past
   failures all shipped because nobody opened the page.
 - Keep it simple. His words: KISS. Don't add features he didn't ask for.

@@ -136,28 +136,37 @@
   }
   $("newWk").addEventListener("click", function () { S.seenWk = weekNumber(); save(); $("newWk").hidden = true; showTab("trend"); });
 
+  // The weigh-in and sleep go to the day shown here (today, or any earlier day back to the start), so a missed morning can be filled in.
+  var WDAY = TODAY;
   function renderMorning() {
-    var w = S.weights[TODAY], h = S.sleep[TODAY], done = (w != null || h != null);
+    var w = S.weights[WDAY], h = S.sleep[WDAY], done = (w != null || h != null), now = WDAY === TODAY;
     $("wIn").value = w != null ? w.toFixed(2) : "";
     $("sIn").value = h != null ? String(h) : "";
     $("mLog").textContent = done ? "Update" : "Log";
-    $("mNote").textContent = done ? "Logged today." : "First thing, after the toilet, before food or water. Sleep goes here because it belongs to last night.";
+    $("mTitle").textContent = now ? "This morning" : "That morning";
+    $("mDate").textContent = now ? "Today" : (WDAY === shift(TODAY, -1) ? "Yesterday" : dayName(WDAY));
+    $("mPrev").disabled = dayDiff(START, WDAY) <= 0;
+    $("mNext").disabled = WDAY >= TODAY;
+    $("mNote").textContent = done ? (now ? "Logged today." : "Logged for that day.") : (now ? "First thing, after the toilet, before food or water. Sleep goes here because it belongs to last night." : "Weight that morning, and the sleep before it.");
+    $("mErr").hidden = true;
   }
+  $("mPrev").addEventListener("click", function () { WDAY = shift(WDAY, -1); renderMorning(); });
+  $("mNext").addEventListener("click", function () { WDAY = shift(WDAY, 1); renderMorning(); });
   $("mLog").addEventListener("click", function () {
-    var wv = $("wIn").value.trim(), sv = $("sIn").value.trim(), er = $("mErr"), w = parseFloat(wv), h = parseFloat(sv);
-    var pw = S.weights[TODAY], ps = S.sleep[TODAY];
+    var day = WDAY, wv = $("wIn").value.trim(), sv = $("sIn").value.trim(), er = $("mErr"), w = parseFloat(wv), h = parseFloat(sv);
+    var pw = S.weights[day], ps = S.sleep[day];
     function bad(msg) { er.textContent = msg; er.hidden = false; }
     if (wv === "" && sv === "") { bad("Enter your weight, your sleep, or both."); return; }
     if (wv !== "" && (!isFinite(w) || w < 30 || w > 250)) { bad("That weight doesn’t look right. Use kilograms, like 75.2."); return; }
     if (sv !== "" && (!isFinite(h) || h < 0 || h > 16)) { bad("That sleep doesn’t look right. Use hours, like 6.5."); return; }
     er.hidden = true;
     var bits = [];
-    if (wv !== "") { S.weights[TODAY] = Math.round(w * 100) / 100; bits.push(S.weights[TODAY].toFixed(2) + " kg"); }
-    if (sv !== "") { S.sleep[TODAY] = Math.round(h * 4) / 4; bits.push(S.sleep[TODAY] + " h"); }
+    if (wv !== "") { S.weights[day] = Math.round(w * 100) / 100; bits.push(S.weights[day].toFixed(2) + " kg"); }
+    if (sv !== "") { S.sleep[day] = Math.round(h * 4) / 4; bits.push(S.sleep[day] + " h"); }
     save(); renderTrend(); renderNewWk();
-    toast("Logged · " + bits.join(" · "), function () {
-      if (pw == null) delete S.weights[TODAY]; else S.weights[TODAY] = pw;
-      if (ps == null) delete S.sleep[TODAY]; else S.sleep[TODAY] = ps;
+    toast("Logged " + (day === TODAY ? "" : (day === shift(TODAY, -1) ? "yesterday " : dayName(day) + " ")) + "· " + bits.join(" · "), function () {
+      if (pw == null) delete S.weights[day]; else S.weights[day] = pw;
+      if (ps == null) delete S.sleep[day]; else S.sleep[day] = ps;
       save(); renderTrend(); renderNewWk();
     });
   });

@@ -849,7 +849,13 @@
     <div class="gut"><div class="titlerow"><h1>Trend</h1><span class="dt" id="tWk"></span></div></div>
     <div class="hero"><div class="gut"><section class="sum rvc" id="review" aria-label="Weekly review"></section></div></div>
     <div class="gut">
-      <div class="label">This morning</div>
+      <div class="label" style="padding-bottom:0"><span id="mTitle">This morning</span>
+        <div class="daynav">
+          <button class="dnb" id="mPrev" aria-label="Previous day"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <span class="dpick" id="mDate" style="display:grid;align-items:center;cursor:default"></span>
+          <button class="dnb" id="mNext" aria-label="Next day"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
       <div class="card">
         <div class="fld">
           <div><label for="wIn">Weight, kg</label><input class="inp m" id="wIn" type="number" inputmode="decimal" min="30" max="250" step="0.05" placeholder="75.00"></div>
