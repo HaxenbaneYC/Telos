@@ -7,7 +7,7 @@ var html = fs.readFileSync(file, "utf8"), end = html.lastIndexOf("})();");
 html = html.slice(0, end) + "window.__T={buildMeal:buildMeal,MEALS:MEALS,FOODS:FOODS,S:S,currentPhase:currentPhase};\n" + html.slice(end);
 var tmp = path.join(os.tmpdir(), "telos-day-accuracy.html"); fs.writeFileSync(tmp, html);
 var LIMIT = { def: 3, swap: 6 };           // percent of the day's calories
-var dates = { "Re-entry": "2026-10-28T12:00:00", "The work": "2026-11-11T12:00:00", "Diet break": "2026-12-23T12:00:00", "The finish": "2026-12-30T12:00:00" };
+var dates = { "Re-entry": "2026-11-22T12:00:00", "The work": "2026-12-07T12:00:00", "Diet break": "2026-12-23T12:00:00", "The finish": "2027-01-27T12:00:00" };
 (async function () {
   var b = await chromium.launch(), bad = 0;
   for (var ph in dates) {

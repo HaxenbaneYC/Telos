@@ -31,7 +31,7 @@ let bad = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if
     await p.reload(); await p.waitForTimeout(700); await click('nav [data-tab=train]');
     ok((await p.$$('#actList .xrow')).length === 2, w + 'px: both survive a reload');
     // junk
-    await p.evaluate(() => { const k = 'telos_v2', s = JSON.parse(localStorage.getItem(k)); s.acts = { '2026-10-29': [{ t: 'swim', km: 5 }, { t: 'run', km: 'x' }, { t: 'walk', km: 3, min: 99999 }, null, 7], 'bad': [{ t: 'run', km: 1 }] }; s.acts2 = 1; localStorage.setItem(k, JSON.stringify(s)); });
+    await p.evaluate(() => { const k = 'telos_v3', s = JSON.parse(localStorage.getItem(k)); const d = new Date(), t = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); s.acts = { [t]: [{ t: 'swim', km: 5 }, { t: 'run', km: 'x' }, { t: 'walk', km: 3, min: 99999 }, null, 7], 'bad': [{ t: 'run', km: 1 }] }; s.acts2 = 1; localStorage.setItem(k, JSON.stringify(s)); });
     await p.reload(); await p.waitForTimeout(700); await click('nav [data-tab=train]');
     const kept = await p.$$eval('#actList .xb', els => els.map(e => e.textContent));
     ok(kept.length === 1 && /^Walk3 km · 1440 min$/.test(kept[0]), w + 'px: junk dropped, bounds applied ' + JSON.stringify(kept));

@@ -10,17 +10,19 @@ in one line; he is not a developer; pushback over agreement.
 
 ## The plan this app runs on
 
-Start 2026-10-28, 13 weeks.
+Start 2026-11-22, 13 weeks. (Restarted: the first attempt began 28 Oct and stopped after about a week; weight
+on the restart was 77 kg, one weigh-in. The phase numbers were kept: 2 kg moves maintenance by about 50 kcal.)
 
 | Weeks | Phase      | kcal  | P   | F  | C   | Notes                                    |
 |-------|------------|-------|-----|----|-----|------------------------------------------|
 | 1–2   | Re-entry   | 2,350 | 185 | 78 | 215 | Steps 5k→8k, 3–4 RIR, small deficit      |
-| 3–8   | The work   | 2,240 | 191 | 74 | 200 | Steps 10k, full intensity, 1 run/ride wk |
-| 9     | Diet break | 2,700 | 185 | 85 | 285 | Maintenance over Christmas, deliberate   |
+| 3–4   | The work   | 2,240 | 191 | 74 | 200 | Steps 10k, full intensity, 1 run/ride wk |
+| 5     | Diet break | 2,700 | 185 | 85 | 285 | Maintenance over Christmas (20–26 Dec)   |
+| 6–9   | The work   | 2,240 | 191 | 74 | 200 | Back to the deficit, same as weeks 3–4   |
 | 10–13 | The finish | 2,150 | 195 | 70 | 185 | Steps 10–12k, hold volume, no extra cardio |
 
 Training is a seven-day **rotation**, not weekdays: Push, Pull, Legs, 5K run or bike,
-Upper, Delts/arms/abs/neck, Rest, then round again. Day one (Wed 28 Oct 2026) is Push.
+Upper, Delts/arms/abs/neck, Rest, then round again. Day one (Sun 22 Nov 2026) is Push.
 Plus a **daily 3 km bike ride**, logged from the first day.
 
 
@@ -39,7 +41,7 @@ Google Fonts link. Open it in a browser and it runs.
 It is now **built from `src/`** so it stays editable:
 
 ```
-python3 build.py             # coach.html          (live: no sample data, key telos_v2)
+python3 build.py             # coach.html          (live: no sample data, key telos_v3)
 python3 build.py --preview   # coach-preview.html  (sample data, key telos_mock2)
 ```
 
@@ -77,8 +79,8 @@ On iOS the installed app has its own storage: deleting the home-screen icon dele
 
 ### Data
 
-Everything lives in `localStorage` under `telos_v2` (v1 held the test entries and is erased on first open;
-bump the number to start everyone fresh). Nothing is uploaded
+Everything lives in `localStorage` under `telos_v3` (the 22 Nov restart; v2 holds the first attempt and is left
+alone, v1 held test entries and is erased on first open; bump the number to start everyone fresh). Nothing is uploaded
 anywhere, including weekly photos (resized to <=440 px JPEG on the client).
 **Keep it that way.** Every read and write is wrapped in try/catch; the app
 must render with storage empty.

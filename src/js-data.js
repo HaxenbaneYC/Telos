@@ -1,12 +1,14 @@
-  var START = "2026-10-28", TARGET = 69;
+  var START = "2026-11-22", TARGET = 69;
 
   var PHASES = [
     { n: "Re-entry",   w: [1, 2],   kcal: 2350, p: 185, f: 78, c: 215,
       d: "Steps 5k to 8k. 3–4 reps in reserve. Small deficit on purpose." },
-    { n: "The work",   w: [3, 8],   kcal: 2240, p: 191, f: 74, c: 200,
+    { n: "The work",   w: [3, 4],   kcal: 2240, p: 191, f: 74, c: 200,
       d: "Steps 10k. Full intensity. One run or ride weekly." },
-    { n: "Diet break", w: [9, 9],   kcal: 2700, p: 185, f: 85, c: 285,
+    { n: "Diet break", w: [5, 5],   kcal: 2700, p: 185, f: 85, c: 285,
       d: "Maintenance over Christmas, on purpose. Resets hormones and appetite." },
+    { n: "The work",   w: [6, 9],   kcal: 2240, p: 191, f: 74, c: 200,
+      d: "Back to the deficit. Steps 10k, full intensity, one run or ride weekly." },
     { n: "The finish", w: [10, 13], kcal: 2150, p: 195, f: 70, c: 185,
       d: "Steps 10–12k. Hold volume, add no cardio. Abs show here." }
   ];

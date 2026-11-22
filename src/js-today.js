@@ -134,6 +134,7 @@
   }
 
   // ── title, the thirteen weeks ──
+  function isBreakWeek(w) { for (var i = 0; i < PHASES.length; i++) if (PHASES[i].n === "Diet break" && w >= PHASES[i].w[0] && w <= PHASES[i].w[1]) return true; return false; }
   function renderTop() {
     renderDayNav();
     var wk = weekNumber(), ph = currentPhase();
@@ -142,7 +143,7 @@
     for (var w = 1; w <= 13; w++) {
       var first = false;
       PHASES.forEach(function (p) { if (p.w[0] === w && w !== 1) first = true; });
-      var cls = "wk" + (first ? " gap" : "") + (w === 9 ? " brk" : "") + (w < wk ? " past" : (w === wk ? " now" : ""));
+      var cls = "wk" + (first ? " gap" : "") + (isBreakWeek(w) ? " brk" : "") + (w < wk ? " past" : (w === wk ? " now" : ""));
       html += '<i class="' + cls + '"' + (w === wk ? ' style="--f:' + frac + '%"' : "") + "></i>";
     }
     $("weeks").innerHTML = html;

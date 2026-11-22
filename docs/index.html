@@ -965,8 +965,8 @@
       </div>
       <div class="label">Next 7 days</div>
       <div class="list" id="weekPlan"></div>
-      <p class="aihint" style="padding:0 4px">Push and Pull are Nippard. Upper and Legs are your boxing plan. The delts, arms, abs and neck day is new: your two plans give about 5 lateral and 2 bicep sets a week, which won&rsquo;t build the shoulders and arms you want. The week runs as a rotation that started on Push, 28 Oct.</p>
-      <div class="label">Coming back from 6 weeks off</div>
+      <p class="aihint" style="padding:0 4px">Push and Pull are Nippard. Upper and Legs are your boxing plan. The delts, arms, abs and neck day is new: your two plans give about 5 lateral and 2 bicep sets a week, which won&rsquo;t build the shoulders and arms you want. The week runs as a rotation that started on Push, 22 Nov.</p>
+      <div class="label">Coming back from time off</div>
       <div class="list" id="backAcc"></div>
     </div>
   </section>
@@ -8828,7 +8828,7 @@
 (function () {
   "use strict";
   var PREVIEW = false;   // the build turns this off for the live app: real storage key, no sample data
-  var KEY = PREVIEW ? "telos_mock2" : "telos_v2";   // v2 = the fresh start on 28 Oct 2026; v1 held test entries
+  var KEY = PREVIEW ? "telos_mock2" : "telos_v3";   // v3 = the restart on 22 Nov 2026; v2 held the first attempt (28 Oct), v1 test entries
   function isObj(v) { return !!v && typeof v === "object" && !Array.isArray(v); }
   function load() {
     try { var v = JSON.parse(localStorage.getItem(KEY)); return isObj(v) ? v : {}; } catch (e) { return {}; }
@@ -8897,15 +8897,17 @@
   if (!PREVIEW) { try { localStorage.removeItem("telos_v1"); } catch (e) {} }
   var S = normalizeState(load());
 
-  var START = "2026-10-28", TARGET = 69;
+  var START = "2026-11-22", TARGET = 69;
 
   var PHASES = [
     { n: "Re-entry",   w: [1, 2],   kcal: 2350, p: 185, f: 78, c: 215,
       d: "Steps 5k to 8k. 3–4 reps in reserve. Small deficit on purpose." },
-    { n: "The work",   w: [3, 8],   kcal: 2240, p: 191, f: 74, c: 200,
+    { n: "The work",   w: [3, 4],   kcal: 2240, p: 191, f: 74, c: 200,
       d: "Steps 10k. Full intensity. One run or ride weekly." },
-    { n: "Diet break", w: [9, 9],   kcal: 2700, p: 185, f: 85, c: 285,
+    { n: "Diet break", w: [5, 5],   kcal: 2700, p: 185, f: 85, c: 285,
       d: "Maintenance over Christmas, on purpose. Resets hormones and appetite." },
+    { n: "The work",   w: [6, 9],   kcal: 2240, p: 191, f: 74, c: 200,
+      d: "Back to the deficit. Steps 10k, full intensity, one run or ride weekly." },
     { n: "The finish", w: [10, 13], kcal: 2150, p: 195, f: 70, c: 185,
       d: "Steps 10–12k. Hold volume, add no cardio. Abs show here." }
   ];
@@ -9739,6 +9741,7 @@
   }
 
   // ── title, the thirteen weeks ──
+  function isBreakWeek(w) { for (var i = 0; i < PHASES.length; i++) if (PHASES[i].n === "Diet break" && w >= PHASES[i].w[0] && w <= PHASES[i].w[1]) return true; return false; }
   function renderTop() {
     renderDayNav();
     var wk = weekNumber(), ph = currentPhase();
@@ -9747,7 +9750,7 @@
     for (var w = 1; w <= 13; w++) {
       var first = false;
       PHASES.forEach(function (p) { if (p.w[0] === w && w !== 1) first = true; });
-      var cls = "wk" + (first ? " gap" : "") + (w === 9 ? " brk" : "") + (w < wk ? " past" : (w === wk ? " now" : ""));
+      var cls = "wk" + (first ? " gap" : "") + (isBreakWeek(w) ? " brk" : "") + (w < wk ? " past" : (w === wk ? " now" : ""));
       html += '<i class="' + cls + '"' + (w === wk ? ' style="--f:' + frac + '%"' : "") + "></i>";
     }
     $("weeks").innerHTML = html;
