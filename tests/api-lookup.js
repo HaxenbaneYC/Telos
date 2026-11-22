@@ -35,7 +35,7 @@ const TUNA = { name: 'Joe & The Juice Tunacado', amountText: '1 sandwich', kcal:
   ok(/doesn.t look like an Anthropic key/.test(await T('#keyErr')), 'a junk key is refused: ' + await T('#keyErr'));
   await p.fill('#keyIn', KEY); await click('#keySave');
   ok(!!(await p.$('#dText')) && !(await p.$('#keyIn')), 'a valid-looking key turns Describe on');
-  ok((await p.evaluate(() => localStorage.getItem('telos_apikey'))) === KEY && !(await p.evaluate(() => localStorage.getItem('telos_v2') || '')).includes('sk-ant'), 'the key is kept apart from the log');
+  ok((await p.evaluate(() => localStorage.getItem('telos_apikey'))) === KEY && !(await p.evaluate(() => localStorage.getItem('telos_v3') || '')).includes('sk-ant'), 'the key is kept apart from the log');
   // a normal lookup
   await describe('Joe and the Juice tuna sandwich');
   const c = calls[0] || { headers: {}, body: {} };

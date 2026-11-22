@@ -8,7 +8,7 @@ const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) bad++; 
 (async () => {
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-  await ctx.clock.setFixedTime(new Date('2026-10-31T12:00:00')); await ctx.addInitScript(VP);
+  await ctx.clock.setFixedTime(new Date('2026-11-25T12:00:00')); await ctx.addInitScript(VP);
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(String(e)));
   const T = async s => { const e = await p.$(s); return e ? (await e.textContent()).replace(/\s+/g, ' ').trim() : null; };
   const click = async s => { await p.evaluate(s => document.querySelector(s).click(), s); await p.waitForTimeout(450); };
