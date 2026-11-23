@@ -101,12 +101,21 @@ On iOS the installed app has its own storage: deleting the home-screen icon dele
 ### Data
 
 Everything lives in `localStorage` under `telos_v3` (the 22 Nov restart; v2 holds the first attempt and is left
-alone, v1 held test entries and is erased on first open; bump the number to start everyone fresh). Nothing is uploaded
-anywhere, including weekly photos (resized to <=440 px JPEG on the client).
-**Keep it that way.** Every read and write is wrapped in try/catch; the app
-must render with storage empty.
+alone, v1 held test entries and is erased on first open; bump the number to start everyone fresh). Weekly photos are
+resized to <=440 px JPEG on the client. Every read and write is wrapped in try/catch; the app must render with storage empty.
 
-The only things that leave the device are a lookup he triggers himself. Inside the Claude artifact that is
+**Cloud backup (phone app only, his call, Nov 2026).** He lost logs to the restart and to deleting and re-adding the
+icon, and asked for automatic sync, private on GitHub. `src/js-sync.js`: the whole log goes to `telos.json` in his
+private repo **HaxenbaneYC/telos-data** through the GitHub contents API, with a fine-grained token for that repo only
+(Contents: read and write), kept on the phone under `telos_sync` (never in the log). `save()` stamps `telos_sync_at`
+(always later than the last copy taken) and pushes 4 s later; each push is a commit, so git history holds every
+version. Every sync reads first and **newer wins**; a phone with nothing logged, or one being set up again, takes the
+copy online. Re-read on open, on return to the app and on `online`; a waiting push goes out when the app is left.
+Status is a "Cloud backup" row on Today (Off / Backed up hh:mm / Not backed up). Off inside Claude and in the preview.
+`navigator.storage.persist()` is asked for. A domain would not help: storage is per web address, a new one starts empty.
+`tests/sync.js` mocks GitHub. Nothing else is uploaded.
+
+Besides the backup, the only things that leave the device are a lookup he triggers himself. Inside the Claude artifact that is
 Describe and Label through the `sample` capability (consent per call). In the installed phone app there is no
 Claude to ask, so Describe and Label call api.anthropic.com directly with his own API key, kept in this phone's
 storage under `telos_apikey` (never in the log, never in the repo). Photos are shrunk to 1600 px, sent once and
@@ -281,7 +290,7 @@ the same shape; change all three together. Wordmark in the app header stays live
 - The deliverable is one self-contained HTML file. Edit `src/`, run `build.py`.
   No npm, no framework.
 - Vanilla JS, `var`, no transpiling.
-- Test before claiming it works. `tests/` has activity, rotation, morning-past, day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
+- Test before claiming it works. `tests/` has sync, activity, rotation, morning-past, day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
   (Playwright). Render it in a real browser at 320, 360, 390 and 430 px and look at it. Past
   failures all shipped because nobody opened the page.
 - Keep it simple. His words: KISS. Don't add features he didn't ask for.
