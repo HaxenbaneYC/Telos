@@ -488,7 +488,11 @@
       else rows += '<div class="acc wrow' + (today ? " today" : "") + '"><button class="acc-h" data-acc aria-expanded="false"><span class="daytag">' + tag + '</span><span class="ab"><span class="an">' + d[1] + '</span><span class="as">' + d[2] + '</span></span><i class="chev"></i></button><div class="acc-b"><div>' + exHtml(ss) + "</div></div></div>";
     }
     $("weekPlan").innerHTML = rows;
-    $("backAcc").innerHTML = accHtml("back1", false, "How to ease back in", "Why weeks 1–2 are light", "",
+    $("backAcc").innerHTML = accHtml("cardio1", false, "The incline walk", "20 minutes after Push, Pull and Upper", "",
+      '<div class="acc-in"><p>Treadmill at 10–12% incline, about 5 km/h, no holding the rails. Easy enough to talk in full sentences: that is the point. Hard cardio after lifting eats into recovery; easy walking does not.</p>' +
+      "<p>About 150–200 kcal each time. The burn happens while you walk, not after: the after-burn from easy cardio is small, so the walk is worth what it burns and no more. Don’t eat it back; the app doesn’t count it.</p>" +
+      "<p><b style=\"color:var(--fg);font-weight:600\">No treadmill free:</b> stair climber on a low level for 15 min, or the bike easy for 25 min, or a brisk walk up a hill outside.</p></div>") +
+      accHtml("back1", false, "How to ease back in", "Why weeks 1–2 are light", "",
       '<div class="acc-in"><p>Weeks 1–2 at 3–4 reps in reserve, starting near 60% of your old loads. Strength returns in weeks; tendons take longer, and that gap is how people get hurt in week two. Don’t chase soreness. The upside: regaining lost muscle is far faster than building new, so you can drop fat and regain size at once.</p>' +
       "<p><b style=\"color:var(--fg);font-weight:600\">No loaded side bends or weighted obliques.</b> A thicker waist fights the V.</p></div>");
   }

@@ -10,7 +10,7 @@
     { n: "The work",   w: [6, 9],   kcal: 2240, p: 191, f: 74, c: 200,
       d: "Back to the deficit. Steps 10k, full intensity, one run or ride weekly." },
     { n: "The finish", w: [10, 13], kcal: 2150, p: 195, f: 70, c: 185,
-      d: "Steps 10–12k. Hold volume, add no cardio. Abs show here." }
+      d: "Steps 10–12k. Hold volume. Keep the incline walks easy, add nothing harder. Abs show here." }
   ];
 
   // per 100 g before cooking (raw meat, dry rice and pasta): [id, name, kcal, P, F, C]
@@ -360,11 +360,13 @@
     ["Sat", "Delts, arms, abs, neck", "45 min"], ["Sun", "Rest", ""]
   ];
 
+  // Push, Pull and Upper end with 20 minutes of easy incline walking: light enough to talk, so it adds burn
+  // without eating into recovery. Legs is left alone (tired legs), and the 5K day is already cardio.
   var SESSIONS = [
-    { d: "Push", s: "Monday · Nippard", ex: [["Machine shoulder press","3 × 8–10",1],["Cable chest press","2 × 10–12 + drop",0],["Triceps pressdown","2 × 12–15 + drop",0],["Close-grip push-up","1 × failure",0],["DB lateral raise","3 × 12–15",1],["Cable lateral raise","2 × 15–20",1]] },
-    { d: "Pull", s: "Tuesday · Nippard", ex: [["1-arm kneeling pulldown","1 × 10–12",0],["Weighted pull-up","3 × 6–8",1],["Pendlay row","2 × 8–10",1],["Bayesian cable curl","3 × 12–15 ea",1],["Rope face pull","2 × 10–12 + drop",1],["Hammer curl","2 × 12–15",1]] },
+    { d: "Push", s: "Monday · Nippard", ex: [["Machine shoulder press","3 × 8–10",1],["Cable chest press","2 × 10–12 + drop",0],["Triceps pressdown","2 × 12–15 + drop",0],["Close-grip push-up","1 × failure",0],["DB lateral raise","3 × 12–15",1],["Cable lateral raise","2 × 15–20",1],["Incline walk, easy","20 min · 10–12% · 5 km/h",0]] },
+    { d: "Pull", s: "Tuesday · Nippard", ex: [["1-arm kneeling pulldown","1 × 10–12",0],["Weighted pull-up","3 × 6–8",1],["Pendlay row","2 × 8–10",1],["Bayesian cable curl","3 × 12–15 ea",1],["Rope face pull","2 × 10–12 + drop",1],["Hammer curl","2 × 12–15",1],["Incline walk, easy","20 min · 10–12% · 5 km/h",0]] },
     { d: "Legs", s: "Wednesday · one leg day", ex: [["Goblet squat","3 × 8",0],["Romanian deadlift","3 × 8",1],["Walking lunges","3 × 8 ea",0],["Calf raise","3 × 15",0],["Hanging leg raise","3 × 12–15",1],["Plank","3 × 60 s",0]] },
-    { d: "Upper", s: "Friday · boxing plan", ex: [["Lat pulldown","3 × 8",1],["DB bench press","3 × 8",0],["Seated cable row","3 × 10",1],["Incline smith press","3 × 8",0],["Lateral raises","3 × 12–15",1],["Face pulls","3 × 15",1]] },
+    { d: "Upper", s: "Friday · boxing plan", ex: [["Lat pulldown","3 × 8",1],["DB bench press","3 × 8",0],["Seated cable row","3 × 10",1],["Incline smith press","3 × 8",0],["Lateral raises","3 × 12–15",1],["Face pulls","3 × 15",1],["Incline walk, easy","20 min · 10–12% · 5 km/h",0]] },
     { d: "Delts, arms, abs, neck", s: "Saturday · 45 min", ex: [["DB lateral raise","4 × 12–20",1],["Rear delt fly","3 × 15",1],["EZ-bar curl","3 × 12",1],["Incline DB curl","3 × 10",1],["Hammer curl","3 × 12–15",1],["Rope pushdown","2 × 12",0],["Neck curl with plate","3 × 15",1],["Weighted cable crunch","3 × 12",1]] }
   ];
 
