@@ -547,6 +547,7 @@
   /* ── coach note, add-food sheet ── */
   .shopgrp { padding: 14px 16px 6px; font-size: 13.5px; font-weight: 600; color: var(--fg-2); border-top: 1px solid var(--line); }
   .shopgrp:first-child { border-top: 0; }
+  .ex .sr .rpe { display: block; font-size: 12.5px; color: var(--bronze); margin-top: 2px; text-align: right; }
   .prepnote { margin: 0 0 14px; font-size: 14.5px; line-height: 1.45; color: var(--fg-2); }
   .prepnote b { color: var(--fg); font-weight: 600; }
   .trimnote { margin-top: 4px; font-family: var(--mono); font-size: 12.5px; color: var(--bronze); font-variant-numeric: tabular-nums; }
@@ -8883,7 +8884,7 @@
 
   var PHASES = [
     { n: "Re-entry",   w: [1, 2],   kcal: 2350, p: 185, f: 78, c: 215,
-      d: "Steps 5k to 8k. 3–4 reps in reserve. Small deficit on purpose." },
+      d: "Steps 5k to 8k. Heavy from week two; week one stops at RPE 8. Small deficit on purpose." },
     { n: "The work",   w: [3, 4],   kcal: 2240, p: 191, f: 74, c: 200,
       d: "Steps 10k. Full intensity. One run or ride weekly." },
     { n: "Diet break", w: [5, 5],   kcal: 2700, p: 185, f: 85, c: 285,
@@ -9245,12 +9246,17 @@
   // without eating into recovery. Only the minutes change: 20 to start, 25 in the work, 30 in the finish
   // (when food is lowest), 20 over Christmas. Legs is left alone, and the 5K day is already cardio.
   function walkMin(d) { var ph = phaseOn(d); return ph.n === "The work" ? 25 : ph.n === "The finish" ? 30 : 20; }
+  // Each lift carries its RPE (10 = nothing left, 9 = one rep left, 8 = two). Heavy is the point: compounds at 8–9,
+  // isolation and drop sets to 9–10. Week one only, everything stops at RPE 8 while joints catch up after time off.
+  function rpeFor(x, d) { return dayDiff(START, d) < 7 ? "8" : x[3]; }
+  // week one has no drop sets and no sets to failure: they would break the RPE 8 cap
+  function setsFor(x, d) { return dayDiff(START, d) < 7 ? x[1].replace(" + drop", "").replace("failure", "max, 2 short of failure") : x[1]; }
   var SESSIONS = [
-    { d: "Push", s: "Monday · Nippard", ex: [["Machine shoulder press","3 × 8–10",1],["Cable chest press","2 × 10–12 + drop",0],["Triceps pressdown","2 × 12–15 + drop",0],["Close-grip push-up","1 × failure",0],["DB lateral raise","3 × 12–15",1],["Cable lateral raise","2 × 15–20",1],["Incline walk","WALK",0]] },
-    { d: "Pull", s: "Tuesday · Nippard", ex: [["1-arm kneeling pulldown","1 × 10–12",0],["Weighted pull-up","3 × 6–8",1],["Pendlay row","2 × 8–10",1],["Bayesian cable curl","3 × 12–15 ea",1],["Rope face pull","2 × 10–12 + drop",1],["Hammer curl","2 × 12–15",1],["Incline walk","WALK",0]] },
-    { d: "Legs", s: "Wednesday · one leg day", ex: [["Goblet squat","3 × 8",0],["Romanian deadlift","3 × 8",1],["Walking lunges","3 × 8 ea",0],["Calf raise","3 × 15",0],["Hanging leg raise","3 × 12–15",1],["Plank","3 × 60 s",0]] },
-    { d: "Upper", s: "Friday · boxing plan", ex: [["Lat pulldown","3 × 8",1],["DB bench press","3 × 8",0],["Seated cable row","3 × 10",1],["Incline smith press","3 × 8",0],["Lateral raises","3 × 12–15",1],["Face pulls","3 × 15",1],["Incline walk","WALK",0]] },
-    { d: "Delts, arms, abs, neck", s: "Saturday · 45 min", ex: [["DB lateral raise","4 × 12–20",1],["Rear delt fly","3 × 15",1],["EZ-bar curl","3 × 12",1],["Incline DB curl","3 × 10",1],["Hammer curl","3 × 12–15",1],["Rope pushdown","2 × 12",0],["Neck curl with plate","3 × 15",1],["Weighted cable crunch","3 × 12",1]] }
+    { d: "Push", s: "Monday · Nippard", ex: [["Machine shoulder press","3 × 8–10",1,"8–9"],["Cable chest press","2 × 10–12 + drop",0,"10"],["Triceps pressdown","2 × 12–15 + drop",0,"10"],["Close-grip push-up","1 × failure",0,"10"],["DB lateral raise","3 × 12–15",1,"9–10"],["Cable lateral raise","2 × 15–20",1,"9–10"],["Incline walk","WALK",0]] },
+    { d: "Pull", s: "Tuesday · Nippard", ex: [["1-arm kneeling pulldown","1 × 10–12",0,"9"],["Weighted pull-up","3 × 6–8",1,"8–9"],["Pendlay row","2 × 8–10",1,"8–9"],["Bayesian cable curl","3 × 12–15 ea",1,"9–10"],["Rope face pull","2 × 10–12 + drop",1,"10"],["Hammer curl","2 × 12–15",1,"9–10"],["Incline walk","WALK",0]] },
+    { d: "Legs", s: "Wednesday · one leg day", ex: [["Goblet squat","3 × 8",0,"8–9"],["Romanian deadlift","3 × 8",1,"8"],["Walking lunges","3 × 8 ea",0,"8–9"],["Calf raise","3 × 15",0,"9–10"],["Hanging leg raise","3 × 12–15",1,"9"],["Plank","3 × 60 s",0,"8"]] },
+    { d: "Upper", s: "Friday · boxing plan", ex: [["Lat pulldown","3 × 8",1,"8–9"],["DB bench press","3 × 8",0,"8–9"],["Seated cable row","3 × 10",1,"8–9"],["Incline smith press","3 × 8",0,"8–9"],["Lateral raises","3 × 12–15",1,"9–10"],["Face pulls","3 × 15",1,"9"],["Incline walk","WALK",0]] },
+    { d: "Delts, arms, abs, neck", s: "Saturday · 45 min", ex: [["DB lateral raise","4 × 12–20",1,"9–10"],["Rear delt fly","3 × 15",1,"9–10"],["EZ-bar curl","3 × 12",1,"9"],["Incline DB curl","3 × 10",1,"9"],["Hammer curl","3 × 12–15",1,"9–10"],["Rope pushdown","2 × 12",0,"9–10"],["Neck curl with plate","3 × 15",1,"8"],["Weighted cable crunch","3 × 12",1,"9"]] }
   ];
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
@@ -10962,7 +10968,7 @@
 
   // ── Train ──
   function sessionFor(name) { for (var i = 0; i < SESSIONS.length; i++) if (SESSIONS[i].d === name) return SESSIONS[i]; return null; }
-  function exHtml(s2, d) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + (x[1] === "WALK" ? walkMin(d || TODAY) + " min · 12% · 5.0 km/h" : x[1]) + "</span></div>"; }).join(""); }
+  function exHtml(s2, d) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + (x[1] === "WALK" ? walkMin(d || TODAY) + " min · 12% · 5.0 km/h" : setsFor(x, d || TODAY) + '<small class="rpe">RPE ' + rpeFor(x, d || TODAY) + "</small>") + "</span></div>"; }).join(""); }
   // Training is a rotation that started on Push on the first day of the cut, not fixed weekdays.
   function rideCount() {
     var n = 0;
@@ -11074,9 +11080,11 @@
       '<div class="acc-in"><p>Treadmill, 12% incline, 5.0 km/h, ' + walkMin(TODAY) + ' minutes. Hands off the rails. You should be able to talk in full sentences the whole way; if you can’t, drop the speed, not the incline.</p>' +
       "<p>The minutes go up with the plan: 20 now, 25 in the work, 30 in the finish, 20 over Christmas. Speed and incline stay the same.</p>" +
       "<p>About 150–250 kcal each time, burned while you walk; the after-burn from easy cardio is small. The app does not count it, so don’t eat it back. If the treadmills are all taken, the stair climber at an easy pace for the same minutes.</p></div>") +
-      accHtml("back1", false, "How to ease back in", "Why weeks 1–2 are light", "",
-      '<div class="acc-in"><p>Weeks 1–2 at 3–4 reps in reserve, starting near 60% of your old loads. Strength returns in weeks; tendons take longer, and that gap is how people get hurt in week two. Don’t chase soreness. The upside: regaining lost muscle is far faster than building new, so you can drop fat and regain size at once.</p>' +
-      "<p><b style=\"color:var(--fg);font-weight:600\">No loaded side bends or weighted obliques.</b> A thicker waist fights the V.</p></div>");
+      accHtml("rpe1", false, "RPE, how hard each set is", "Heavy: compounds 8–9, the rest 9–10", "",
+        '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">RPE 10</b>: nothing left, the next rep would fail. <b style="color:var(--fg);font-weight:600">9</b>: one more rep was there. <b style="color:var(--fg);font-weight:600">8</b>: two more. Each exercise shows its number.</p>' +
+        "<p>Compounds (presses, pull-ups, rows, squats) at 8–9: as heavy as you can move for the reps with clean form. Isolation, drop sets and the push-ups at 9–10, the last set to failure. Romanian deadlift, plank and neck stay at 8: form first.</p>" +
+        "<p>Hit the top of the rep range at the RPE shown and the weight goes up next time. The cut stays heavy on purpose: heavy loads are what tell your body to keep the muscle while the fat comes off.</p>" +
+        "<p><b style=\"color:var(--fg);font-weight:600\">Week one only:</b> everything stops at RPE 8. Muscle comes back fast after time off, tendons don’t; one week with two reps in hand is what stops a week-two injury.</p></div>");
   }
   $("trBike").addEventListener("click", function (ev) {
     if (!ev.target.closest("#bikeBtn")) return;

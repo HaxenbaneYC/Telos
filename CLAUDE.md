@@ -15,7 +15,7 @@ on the restart was 77 kg, one weigh-in. The phase numbers were kept: 2 kg moves 
 
 | Weeks | Phase      | kcal  | P   | F  | C   | Notes                                    |
 |-------|------------|-------|-----|----|-----|------------------------------------------|
-| 1–2   | Re-entry   | 2,350 | 185 | 78 | 215 | Steps 5k→8k, 3–4 RIR, small deficit      |
+| 1–2   | Re-entry   | 2,350 | 185 | 78 | 215 | Steps 5k→8k, RPE 8 cap in week 1 only, small deficit |
 | 3–4   | The work   | 2,240 | 191 | 74 | 200 | Steps 10k, full intensity, 1 run/ride wk |
 | 5     | Diet break | 2,700 | 185 | 85 | 285 | Maintenance over Christmas (20–26 Dec)   |
 | 6–9   | The work   | 2,240 | 191 | 74 | 200 | Back to the deficit, same as weeks 3–4   |
@@ -30,6 +30,9 @@ also ticks the checklist's "trained"). `tests/rotation.js`.
 Plus a **daily 3 km bike ride**, logged from the first day. Push, Pull and Upper end with an incline walk,
 decided for him (he asked for no options): treadmill 12%, 5.0 km/h, talking pace; 20 min in re-entry and the
 Christmas break, 25 in the work, 30 in the finish (`walkMin()`). Not counted in calories, not eaten back.
+Every lift shows its **RPE** (fourth field in `SESSIONS`, `rpeFor()`): he wants it heavy. Compounds 8–9, isolation
+and drop sets 9–10, RDL, plank and neck 8. Week one alone caps everything at RPE 8 with no drop sets or sets to
+failure (`setsFor()`), because tendons lag after time off. The Train Notes explain RPE.
 
 **Meals are decided, not chosen (KISS, from 23 Nov).** He asked for no food options. Breakfast is eggs,
 sourdough and 360 ml semi-skimmed milk for his coffee, three cappuccinos (`MILK`, counted when breakfast is ticked). Snack is

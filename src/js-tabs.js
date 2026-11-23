@@ -380,7 +380,7 @@
 
   // ── Train ──
   function sessionFor(name) { for (var i = 0; i < SESSIONS.length; i++) if (SESSIONS[i].d === name) return SESSIONS[i]; return null; }
-  function exHtml(s2, d) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + (x[1] === "WALK" ? walkMin(d || TODAY) + " min · 12% · 5.0 km/h" : x[1]) + "</span></div>"; }).join(""); }
+  function exHtml(s2, d) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + (x[1] === "WALK" ? walkMin(d || TODAY) + " min · 12% · 5.0 km/h" : setsFor(x, d || TODAY) + '<small class="rpe">RPE ' + rpeFor(x, d || TODAY) + "</small>") + "</span></div>"; }).join(""); }
   // Training is a rotation that started on Push on the first day of the cut, not fixed weekdays.
   function rideCount() {
     var n = 0;
@@ -492,9 +492,11 @@
       '<div class="acc-in"><p>Treadmill, 12% incline, 5.0 km/h, ' + walkMin(TODAY) + ' minutes. Hands off the rails. You should be able to talk in full sentences the whole way; if you can’t, drop the speed, not the incline.</p>' +
       "<p>The minutes go up with the plan: 20 now, 25 in the work, 30 in the finish, 20 over Christmas. Speed and incline stay the same.</p>" +
       "<p>About 150–250 kcal each time, burned while you walk; the after-burn from easy cardio is small. The app does not count it, so don’t eat it back. If the treadmills are all taken, the stair climber at an easy pace for the same minutes.</p></div>") +
-      accHtml("back1", false, "How to ease back in", "Why weeks 1–2 are light", "",
-      '<div class="acc-in"><p>Weeks 1–2 at 3–4 reps in reserve, starting near 60% of your old loads. Strength returns in weeks; tendons take longer, and that gap is how people get hurt in week two. Don’t chase soreness. The upside: regaining lost muscle is far faster than building new, so you can drop fat and regain size at once.</p>' +
-      "<p><b style=\"color:var(--fg);font-weight:600\">No loaded side bends or weighted obliques.</b> A thicker waist fights the V.</p></div>");
+      accHtml("rpe1", false, "RPE, how hard each set is", "Heavy: compounds 8–9, the rest 9–10", "",
+        '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">RPE 10</b>: nothing left, the next rep would fail. <b style="color:var(--fg);font-weight:600">9</b>: one more rep was there. <b style="color:var(--fg);font-weight:600">8</b>: two more. Each exercise shows its number.</p>' +
+        "<p>Compounds (presses, pull-ups, rows, squats) at 8–9: as heavy as you can move for the reps with clean form. Isolation, drop sets and the push-ups at 9–10, the last set to failure. Romanian deadlift, plank and neck stay at 8: form first.</p>" +
+        "<p>Hit the top of the rep range at the RPE shown and the weight goes up next time. The cut stays heavy on purpose: heavy loads are what tell your body to keep the muscle while the fat comes off.</p>" +
+        "<p><b style=\"color:var(--fg);font-weight:600\">Week one only:</b> everything stops at RPE 8. Muscle comes back fast after time off, tendons don’t; one week with two reps in hand is what stops a week-two injury.</p></div>");
   }
   $("trBike").addEventListener("click", function (ev) {
     if (!ev.target.closest("#bikeBtn")) return;
