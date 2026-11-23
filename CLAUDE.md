@@ -30,13 +30,14 @@ also ticks the checklist's "trained"). `tests/rotation.js`.
 Plus a **daily 3 km bike ride**, logged from the first day.
 
 **Meals are decided, not chosen (KISS, from 23 Nov).** He asked for no food options. Breakfast is eggs,
-sourdough and 500 ml semi-skimmed milk for his coffee (`MILK`, counted when breakfast is ticked). Snack is
+sourdough and 360 ml semi-skimmed milk for his coffee, three cappuccinos (`MILK`, counted when breakfast is ticked). Snack is
 Greek yogurt and peanuts, pre-gym a banana. Dinner comes from `MENU`, seven dinners on a loop from
 `MENU_START`, each with an easy veg; it is cooked for two and **lunch is the box from the night before**
 (`dishFor()`: lunch is yesterday's dish). The box portion is sized for the day it is eaten, so every
 day adds up on its own; the dinner card and the Food tab give the pan total (`cookParts()`: tonight's
 plate plus tomorrow's box). His ingredients: chicken breast and thigh, steak, lean beef mince, rice,
 pasta, potato and sweet potato in the air fryer, wraps, eggs, sourdough, Greek yogurt, milk.
+**All weights are before cooking** (raw meat, dry rice and pasta): that is what he weighs to cook.
 
 
 Food rule: real food, cooked by himself. No cream, no bottled dressings, no
@@ -111,15 +112,15 @@ first on purpose; Trend is last.
 
 - **Today** - summary card with the one-sentence finding, 13-week strip, the
   next meal as an open card (everything else is a row), a folded "Eaten" group,
-  off-plan food, checklist, supplements, and a mini sticky calorie/macro bar that
+  off-plan food, a three-item checklist (protein, steps, trained; no supplements list, he asked
+  for it gone), and a mini sticky calorie/macro bar that
   slides in on scroll. Meals open in a bottom sheet. Every change has an undo toast.
 - **Train** - today's session from the rotation, a 7-day "Next 7 days" list, the
   daily 3 km bike tick, back-from-time-off notes.
-- **Food** - this week's seven dinners first (what to cook for two, and how), then the
-  recipe library: search, chips (Pasta, Rice, Potato, Eggs and yogurt,
-  Sauces), "healthy but fun" plus the simple staples. The food rule and protein
-  swaps live in one accordion at the bottom. He does not want a Food tab that is
-  just reference tables.
+- **Food** - this week's seven dinners (what goes in the pan for two, and how to cook it), then a
+  shopping list for the next seven days (`renderShop()`: every breakfast, snack, banana and dinner pan,
+  weights before cooking, rounded up to what you can buy; ticks are for the trip and not saved).
+  The recipe library, finishers and protein-swap tables were deleted on his say (Nov 2026).
 - **Other activity** (bottom of the Train tab's top block) - a run, bike, scooter or walk with km and/or minutes,
   for today (`S.acts[date]`, list of `{t, km, min}`). Counted in distance only, never in calories; the daily 3 km tick stays separate.
 - **Trend** - weight (chart fitted to the data), measurements and taper gap,
@@ -198,12 +199,9 @@ that save are picked up through the `storage` event; past midnight the page relo
 
 ### Recipes
 
-`LIB` (methods) plus `FIN` (finishers) and `RECIPES` (sauces and bases). They are
-**complete meals**, protein and carb cooked together, not fragments. `methodsFor()`
-matches protein and carb and falls back to protein-only with `swap: true`.
-Recipes open as in-place accordions. White-sauce pasta (cornflour, milk, garlic,
-parmesan, or yogurt base) is the example of the style he wants: healthy but fun.
-He will supply a recipe book; add from it, keep the simple ones.
+The only methods are the seven `MENU` dinners (`methodsFor()` returns the dish's method for dinner and
+nothing else). The old library (`LIB`, `FIN`, `RECIPES`) was deleted to keep it simple; it is in git history.
+If he supplies a recipe book, new dinners go into `MENU` (protein and carb from `FOODS`, one easy veg).
 
 Write methods in your own words. Do not reproduce a book's or website's text.
 
@@ -285,7 +283,7 @@ the same shape; change all three together. Wordmark in the app header stays live
 
 ## Not done yet
 
-- **Recipes from a recipe book**: to be supplied; convert to recipes with macros from the USDA table.
+- **Recipes from a recipe book**: to be supplied; add as `MENU` dinners with macros from the USDA table.
 - **The website**: the next phase, not started.
 - **Notifications** to remind him to log: deferred.
 - Real-device check of the on-screen keyboard in the sheets.

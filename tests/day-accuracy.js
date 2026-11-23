@@ -16,7 +16,7 @@ var LIMIT = { day: 6, protein: 3 };   // percent
       var pl = T.planOn(d).out, ph = T.phaseOn(d), t = { k: 0, p: 0 };
       T.MEALS.forEach(function (m) { t.k += pl[m[0]].tot.k; t.p += pl[m[0]].tot.p; });
       var box = T.planOn(T.shift(d, -1)).out.m5, names = function (m) { return m.parts.map(function (x) { return x.name; }).join("+"); };
-      var carbs = pl.m5.parts.filter(function (x) { return x.cat === "carb" && !x.noun && /Rice|Pasta|Potato/.test(x.name); }).map(function (x) { return x.g; });
+      var carbs = pl.m5.parts.filter(function (x) { return x.cat === "carb" && !x.noun && /Rice|Pasta|Potato/.test(x.name); }).map(function (x) { return Math.round(x.t.k); });
       out.push({ d: d, n: ph.n, err: (t.k - ph.kcal) / ph.kcal * 100, perr: (t.p - ph.p) / ph.p * 100,
                  same: names(pl.m2) === names(box), carb: carbs.length ? Math.min.apply(null, carbs) : 999 });
       d = T.shift(d, 1);
@@ -25,10 +25,10 @@ var LIMIT = { day: 6, protein: 3 };   // percent
   });
   var worst = 0, worstP = 0;
   rows.forEach(function (r) {
-    var lim = LIMIT.day, ok = Math.abs(r.err) <= lim && Math.abs(r.perr) <= LIMIT.protein && r.same && r.carb >= 60;
+    var lim = LIMIT.day, ok = Math.abs(r.err) <= lim && Math.abs(r.perr) <= LIMIT.protein && r.same && r.carb >= 100;
     worst = Math.max(worst, Math.abs(r.err));
     worstP = Math.max(worstP, Math.abs(r.perr));
-    if (!ok) { bad++; console.log("FAIL " + r.d + " " + r.n + ": " + r.err.toFixed(1) + "% kcal, " + r.perr.toFixed(1) + "% protein, lunch is last night's dish: " + r.same + ", smallest carb portion " + r.carb + " g"); }
+    if (!ok) { bad++; console.log("FAIL " + r.d + " " + r.n + ": " + r.err.toFixed(1) + "% kcal, " + r.perr.toFixed(1) + "% protein, lunch is last night's dish: " + r.same + ", smallest carb portion " + r.carb + " kcal"); }
   });
   console.log((bad ? "FAIL " : "ok   ") + rows.length + " days: worst " + worst.toFixed(1) + "% off the calories, worst protein " + worstP.toFixed(1) + "%, lunch always the same dish as last night's dinner");
   await b.close(); process.exit(bad ? 1 : 0);

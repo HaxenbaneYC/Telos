@@ -3,11 +3,9 @@
   function seed() {
     if (S.mockSeeded) return;
     S.ticks[TODAY] = { m1: true, m2: true };
-    S.ticks[TODAY + "-s"] = { d3: true, omega: true, tong: true, crea: true };
-    S.ticks[TODAY + "-d"] = { water: true };
+    S.ticks[TODAY + "-d"] = { steps: true };
     S.mockSeeded = true; save();
   }
-  DAILY.push(["bike", "3 km bike ride", ""]);
 
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   function RM() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
@@ -247,7 +245,7 @@
   function prepNote(id) {
     if (id === "m2") return '<div class="prepnote">Last night’s dinner, from the box. Nothing to cook.</div>';
     if (id !== "m5") return "";
-    return '<div class="prepnote"><b>Cook for two:</b> ' + cookList(cookParts(DAY)) + ". Eat tonight’s amounts above, box the rest for tomorrow’s lunch.</div>";
+    return '<div class="prepnote"><b>Cook for two</b> (weights before cooking): ' + cookList(cookParts(DAY)) + ". Split it in two: one plate tonight, one box for tomorrow’s lunch.</div>";
   }
   // What goes in the pan for two portions, in the units you shop and cook in.
   function cookList(parts) {
@@ -257,8 +255,8 @@
         for (k in PIECE) if (PIECE[k].one === pt.noun || PIECE[k].many === pt.noun) nn = pt.n === 1 ? PIECE[k].one : PIECE[k].many;
         return pt.n + " " + esc(nn);
       }
-      var nm = pt.name.split(",")[0].toLowerCase();
-      return pt.g + " g " + esc(nm) + (/^(rice|pasta)$/.test(nm) ? " cooked (about " + round5(pt.g * 0.355) + " g dry)" : "");
+      var nm = pt.name.toLowerCase().split(", ");
+      return pt.g + " g " + esc(nm[1] === "dry" ? "dry " + nm[0] : nm.join(", "));
     }).join(", ");
   }
   function cardHtml(m) {
@@ -313,13 +311,12 @@
   }
 
   function renderMore() {
-    var d = count(DAILY, DAY + "-d"), s = count(SUPPS, DAY + "-s");
+    var d = count(DAILY, DAY + "-d");
     function row(kind, name, val, cls) {
       return '<button class="srow" data-sheet="' + kind + '"><span class="sk">' + name + '</span><span class="sv' + (cls ? " " + cls : "") + '">' + val + '</span><i class="chev"></i></button>';
     }
     $("more").innerHTML =
       row("d", "Checklist", d + " / " + DAILY.length, d === DAILY.length ? "on" : "") +
-      row("s", "Supplements", s + " / " + SUPPS.length, s === SUPPS.length ? "on" : "") +
       (hasLog(DAY) ? '<button class="srow" data-clearday><span class="sk">Clear this day’s food</span></button>' : "");
   }
   // Off-plan food sits right on Today: see it, remove it in one tap, add more.
@@ -755,20 +752,17 @@
         '<div class="rp-body"><div><ol>' + r.s.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol></div></div></div>";
     }
     return phead("Methods", esc(m[2]) + " · " + esc(combo), true) +
-      '<div class="pbody">' + hits.map(function (r, i) { return block(r, String(i), false); }).join("") +
-      '<div class="rhead">Finishers</div>' + FIN.map(function (f, i) { return block(f, "f" + i, true); }).join("") + "</div>";
+      '<div class="pbody">' + hits.map(function (r, i) { return block(r, String(i), false); }).join("") + "</div>";
   }
 
   function viewList(kind) {
-    var items = kind === "d" ? DAILY : SUPPS, key = DAY + "-" + kind, st = S.ticks[key] || {}, n = count(items, key);
+    var items = DAILY, key = DAY + "-" + kind, st = S.ticks[key] || {}, n = count(items, key);
     var rows = items.map(function (it) {
       return '<button class="trow' + (st[it[0]] ? " on" : "") + '" data-tick="' + kind + ":" + it[0] + '" aria-pressed="' + !!st[it[0]] + '"><span class="chk2"></span>' +
         '<span class="tb"><b>' + it[1] + "</b>" + (it[2] ? "<i>" + it[2] + "</i>" : "") + "</span></button>";
     }).join("");
-    var note = kind === "s"
-      ? '<div class="pnote"><b>Iron is deliberately not here.</b> You eat red meat and don’t lose blood monthly. Get ferritin tested and take it only if it’s low.</div>' : "";
-    return phead(kind === "d" ? "Checklist" : "Supplements", n + " of " + items.length + (kind === "d" ? " done" : " taken"), false) +
-      '<div class="pbody"><div class="fgroup">' + rows + "</div>" + note + "</div>";
+    return phead("Checklist", n + " of " + items.length + " done", false) +
+      '<div class="pbody"><div class="fgroup">' + rows + "</div></div>";
   }
 
   // ── Off-plan food: describe it, photograph the label, or type the numbers ──
@@ -1044,8 +1038,7 @@
       if (S.ticks[key][p[1]]) delete S.ticks[key][p[1]]; else S.ticks[key][p[1]] = true;
       t.classList.toggle("on", !!S.ticks[key][p[1]]);
       t.setAttribute("aria-pressed", String(!!S.ticks[key][p[1]]));
-      var items = p[0] === "d" ? DAILY : SUPPS;
-      $("panel").querySelector(".pt span").textContent = count(items, key) + " of " + items.length + (p[0] === "d" ? " done" : " taken");
+      $("panel").querySelector(".pt span").textContent = count(DAILY, key) + " of " + DAILY.length + " done";
       save(); renderMore(); return;
     }
     if (t.hasAttribute("data-xdel")) {
