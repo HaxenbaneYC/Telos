@@ -36,7 +36,7 @@
     var toggle = !!mealId && n >= 1;
     return parts.map(function (pt, i) {
       var q, w, none = pt.skip || (!pt.noun && pt.g === 0);
-      if (none)         { q = "none"; w = esc(pt.name) + '<span class="gs">' + (pt.skip ? "protein covers the fat" : "trimmed for today") + "</span>"; }
+      if (none)         { q = "none"; w = esc(pt.name) + '<span class="gs">' + (pt.skip ? "protein covers the fat" : TRIM.on && DAY === TODAY ? "trimmed for today" : "not needed today") + "</span>"; }
       else if (pt.noun) { q = esc(pt.n); w = esc(pt.noun) + '<span class="gs">' + esc(pt.sub) + "</span>"; }
       else              { q = esc(pt.g) + " g"; w = esc(pt.name); }
       var off = pt.off || (toggle && sk[i]);
@@ -98,7 +98,8 @@
     MEALS.forEach(function (m) {
       if (handled(m[0])) return;
       var t = buildMeal(m[0]).tot;
-      o.k += t.k; o.f += t.f; o.c += t.c; if (m[0] !== "m4") o.cNoPre += t.c;
+      o.k += t.k; if (m[0] === "m2") return;
+      o.f += t.f; o.c += t.c; if (m[0] !== "m4") o.cNoPre += t.c;
     });
     return o;
   }
@@ -208,7 +209,7 @@
   var justAte = null, revealNext = false, eatenOpen = false;
   function rowHtml(m) {
     var id = m[0], b = mealView(id), pick = pickFor(id), done = isDone(id), skd = isSkipped(id);
-    var names = m[6].map(function (cat) { return shortName(cat, pick[cat]); }).join(" · ");
+    var dish = dishFor(id), names = dish ? (id === "m2" ? "Box · " : "") + dish.n : m[6].map(function (cat) { return shortName(cat, pick[cat]); }).join(" · ") + (id === "m1" ? " · Milk" : "");
     var sn = done && snapOf(DAY, id);
     if (sn) {
       var off = [], on = [];
@@ -242,16 +243,33 @@
     var d = plainBuild(id).tot.k - buildMeal(id).tot.k;
     return d >= 5 ? '<div class="trimnote">−' + d + " kcal to cover your off-plan food</div>" : "";
   }
+  // Lunch is last night's box; dinner says what to cook for two.
+  function prepNote(id) {
+    if (id === "m2") return '<div class="prepnote">Last night’s dinner, from the box. Nothing to cook.</div>';
+    if (id !== "m5") return "";
+    return '<div class="prepnote"><b>Cook for two:</b> ' + cookList(cookParts(DAY)) + ". Eat tonight’s amounts above, box the rest for tomorrow’s lunch.</div>";
+  }
+  // What goes in the pan for two portions, in the units you shop and cook in.
+  function cookList(parts) {
+    return parts.map(function (pt) {
+      if (pt.noun) {
+        var k, nn = pt.noun;
+        for (k in PIECE) if (PIECE[k].one === pt.noun || PIECE[k].many === pt.noun) nn = pt.n === 1 ? PIECE[k].one : PIECE[k].many;
+        return pt.n + " " + esc(nn);
+      }
+      var nm = pt.name.split(",")[0].toLowerCase();
+      return pt.g + " g " + esc(nm) + (/^(rice|pasta)$/.test(nm) ? " cooked (about " + round5(pt.g * 0.355) + " g dry)" : "");
+    }).join(", ");
+  }
   function cardHtml(m) {
     var id = m[0], b = selView(id), hits = methodsFor(id);
     return '<div class="mslot next" data-m="' + id + '"><div class="mcard">' +
       '<div class="mhead"><h3>' + m[2] + '</h3><span class="tm">' + m[1] + "</span></div>" +
       '<div class="mac">' + macLine(b.tot) + "</div>" + trimNote(id) +
-      '<div class="items">' + itemsHtml(b.parts, id) + "</div>" + skipSlot(b) +
+      '<div class="items">' + itemsHtml(b.parts, id) + "</div>" + skipSlot(b) + prepNote(id) +
       (b.allOff ? '<button class="bigbtn skip" data-skipmeal="' + id + '">Skip ' + m[2].toLowerCase() + "</button>" : '<button class="bigbtn" data-ate="' + id + '">Ate it</button>') +
-      '<div class="two"><button class="sbtn" data-open="' + id + '">Change foods</button>' +
-      (hits.length ? '<button class="sbtn rec" data-rec="' + id + '">Recipes · ' + hits.length + "</button>" : "") +
-      "</div></div></div>";
+      (hits.length ? '<button class="sbtn rec" data-rec="' + id + '" style="width:100%;margin-top:10px">How to cook</button>' : "") +
+      "</div></div>";
   }
   // Eaten meals fold into one row, so the open meal stays where you left your thumb.
   function renderMeals() {
@@ -710,41 +728,21 @@
 
   function viewMeal() {
     var id = sh.meal, m = mealById(id), done = isDone(id), skd = isSkipped(id), b = done ? mealView(id) : selView(id), pick = pickFor(id), hits = methodsFor(id);
-    var foods = m[6].map(function (cat) {
-      return '<button class="frow" data-cat="' + cat + '"><span class="fk">' + cat + '</span><span class="fv">' + esc(food(cat, pick[cat])[1]) + '</span><i class="chev"></i></button>';
-    }).join("");
-    if (pick.protein && RED[pick.protein]) {
+    var foods = "";
+    if (pick.protein && RED[pick.protein] && id !== "m2") {
       var cur = S.done[id] || "medium-rare";
       foods += '<label class="frow"><span class="fk">Cooked</span><select class="fsel" data-done="' + id + '" aria-label="How to cook it">' +
         ["rare", "medium-rare", "medium", "medium-well", "well done"].map(function (d) {
           return '<option value="' + d + '"' + (d === cur ? " selected" : "") + ">" + d + "</option>";
         }).join("") + "</select></label>";
     }
-    if (pick.protein === "egx") {
-      var ew = wholeEggs(id);
-      foods += '<label class="frow"><span class="fk">Eggs</span><select class="fsel" data-eggs="' + id + '" aria-label="Whole eggs in the mix">' +
-        [0, 1, 2, 3, 4, 5, 6].map(function (n) {
-          return '<option value="' + n + '"' + (n === ew ? " selected" : "") + ">" + n + " whole, rest whites</option>";
-        }).join("") + "</select></label>";
-    }
     return phead(m[2], m[1] + " · " + macLine(b.tot), false) +
-      '<div class="pbody"><div class="items big">' + itemsHtml(b.parts, skd ? null : id) + "</div>" + (done ? doneSlot(id) : (skd ? "" : skipSlot(b) + trimNote(id))) +
-      '<div class="plabel">Foods</div><div class="fgroup">' + (done ? foods.replace(/data-cat=/g, 'disabled data-x=') : foods) + "</div></div>" +
+      '<div class="pbody"><div class="items big">' + itemsHtml(b.parts, skd ? null : id) + "</div>" + (done ? doneSlot(id) : (skd ? "" : skipSlot(b) + trimNote(id))) + prepNote(id) +
+      (foods ? '<div class="fgroup" style="margin-top:12px">' + foods + "</div>" : "") + "</div>" +
       '<div class="pfoot">' + (skd ? '<button class="bigbtn" data-unskip="' + id + '">Undo skip</button>'
         : (!done && b.allOff ? '<button class="bigbtn skip" data-skipmeal="' + id + '">Skip ' + m[2].toLowerCase() + "</button>"
         : '<button class="bigbtn' + (done ? " on" : "") + '" data-ate="' + id + '">' + (done ? "Undo eaten" : "Ate it") + "</button>")) +
-      (hits.length ? '<button class="sbtn rec" data-rec="' + id + '">Recipes · ' + hits.length + "</button>" : "") + "</div>";
-  }
-
-  function viewPick() {
-    var m = mealById(sh.meal), cur = pickFor(sh.meal)[sh.cat];
-    var opts = FOODS[sh.cat].map(function (f) {
-      var u = sh.cat === "protein" ? f[3] + " g protein" : sh.cat === "carb" ? f[5] + " g carbs" : f[4] + " g fat";
-      return '<button class="opt' + (f[0] === cur ? " sel" : "") + '" data-food="' + f[0] + '"><span class="ob"><span class="on1">' + esc(f[1]) +
-        '</span><span class="on2">per 100 g · ' + f[2] + " kcal · " + u + '</span></span><span class="tick"></span></button>';
-    }).join("");
-    return phead(sh.cat.charAt(0).toUpperCase() + sh.cat.slice(1), m[2], true) +
-      '<div class="pbody"><div class="fgroup">' + opts + "</div></div>";
+      (hits.length ? '<button class="sbtn rec" data-rec="' + id + '">How to cook</button>' : "") + "</div>";
   }
 
   function viewRec() {
@@ -970,7 +968,7 @@
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: RM() ? "auto" : "smooth" });
   }
   function paintSheet() {
-    var h = sh.view === "meal" ? viewMeal() : sh.view === "pick" ? viewPick() : sh.view === "rec" ? viewRec()
+    var h = sh.view === "meal" ? viewMeal() : sh.view === "rec" ? viewRec()
           : sh.view === "add" ? viewAdd() : sh.view === "photo" ? viewPhoto() : sh.view === "days" ? viewDays() : viewList(sh.view);
     $("panel").innerHTML = h;
   }
@@ -991,7 +989,7 @@
   }
 
   $("panel").addEventListener("click", function (ev) {
-    var t = ev.target.closest("[data-paste],[data-topaste],#keySave,[data-keyremove],[data-day],[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-cat],[data-food],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
+    var t = ev.target.closest("[data-paste],[data-topaste],#keySave,[data-keyremove],[data-day],[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
     if (!t) return;
     if (t.hasAttribute("data-hit")) { pickFood(+t.getAttribute("data-hit")); return; }
     if (t.hasAttribute("data-unpick")) { syncAdd(); sh.pick = null; sh.ready = false; sh.note = ""; paintSheet(); return; }
@@ -1027,12 +1025,6 @@
       toggleAte(id, was);
       if (was) paintSheet(); else closeSheet();
       return;
-    }
-    if (t.hasAttribute("data-cat")) { sh = { view: "pick", meal: sh.meal, cat: t.getAttribute("data-cat") }; paintSheet(); return; }
-    if (t.hasAttribute("data-food")) {
-      if (!S.picks[sh.meal]) S.picks[sh.meal] = {};
-      S.picks[sh.meal][sh.cat] = t.getAttribute("data-food");
-      clearSkip(sh.meal); save(); sh = { view: "meal", meal: sh.meal }; paintSheet(); refresh(); return;
     }
     if (t.hasAttribute("data-rec")) { sh = { view: "rec", meal: t.getAttribute("data-rec") }; paintSheet(); return; }
     if (t.hasAttribute("data-pick")) {

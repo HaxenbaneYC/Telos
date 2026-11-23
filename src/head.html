@@ -545,6 +545,8 @@
   .mc4.k.over .bar i { background: var(--signal); }
 
   /* ── coach note, add-food sheet ── */
+  .prepnote { margin: 0 0 14px; font-size: 14.5px; line-height: 1.45; color: var(--fg-2); }
+  .prepnote b { color: var(--fg); font-weight: 600; }
   .trimnote { margin-top: 4px; font-family: var(--mono); font-size: 12.5px; color: var(--bronze); font-variant-numeric: tabular-nums; }
   .seg { display: flex; gap: 4px; padding: 4px; margin-bottom: 4px; background: var(--fill); border-radius: var(--r-ctl); }
   .segb { flex: 1; min-width: 0; min-height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .18s ease, color .18s ease; }
@@ -912,8 +914,11 @@
   <section class="view" id="v-food" hidden>
     <div class="gut">
       <div class="titlerow"><h1>Food</h1><span class="dt" id="recCount"></span></div>
-      <p class="lede">Complete meals, protein and carb cooked together, so week three is not chicken and rice again.</p>
-      <label class="flabel" for="recQ" style="padding-top:14px">Find a recipe</label>
+      <p class="lede">Seven dinners on a loop. Each one is cooked double: dinner tonight, lunch tomorrow.</p>
+      <div class="label">This week’s dinners</div>
+      <div class="list" id="menuList"></div>
+      <div class="label">More recipes</div>
+      <label class="flabel" for="recQ" style="padding-top:0">Find a recipe</label>
       <input class="inp" id="recQ" type="search" autocomplete="off" enterkeyhint="search" placeholder="White sauce, pasta, salmon…">
       <div class="chips" id="recChips" role="group" aria-label="Filter recipes"></div>
       <div class="list" id="recipes" style="margin-top:12px"></div>
@@ -1038,6 +1043,7 @@
         return { t: a.t, km: fin(a.km) ? Math.min(500, Math.max(0, a.km)) : 0, min: fin(a.min) ? Math.min(1440, Math.max(0, Math.round(a.min))) : 0 };
       });
     }, DAYKEY);
+    x.sess = mapOf(x.sess, function (v) { return fin(v) !== undefined && v >= 0 && v <= 6 && v === Math.round(v) ? v : undefined; }, /^\d{4}-\d{2}-\d{2}$/);
     x.skip = mapOf(x.skip, function (day) {
       return isObj(day) ? mapOf(day, function (m) { return isObj(m) ? flags(m, /^\d{1,2}$/) : undefined; }, MEALKEY) : undefined;
     }, DAYKEY);
