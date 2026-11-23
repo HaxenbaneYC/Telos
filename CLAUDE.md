@@ -19,7 +19,7 @@ on the restart was 77 kg, one weigh-in. The phase numbers were kept: 2 kg moves 
 | 3–4   | The work   | 2,240 | 191 | 74 | 200 | Steps 10k, full intensity, 1 run/ride wk |
 | 5     | Diet break | 2,700 | 185 | 85 | 285 | Maintenance over Christmas (20–26 Dec)   |
 | 6–9   | The work   | 2,240 | 191 | 74 | 200 | Back to the deficit, same as weeks 3–4   |
-| 10–13 | The finish | 2,150 | 195 | 70 | 185 | Steps 10–12k, hold volume, no extra cardio |
+| 10–13 | The finish | 2,150 | 195 | 70 | 185 | Steps 10–12k, hold volume, nothing harder than the walks |
 
 Training is a seven-day **rotation**, not weekdays: Push, Pull, Legs, 5K run or bike,
 Upper, Delts/arms/abs/neck, Rest, then round again. Day one (Sun 22 Nov 2026) is Push.
@@ -27,7 +27,9 @@ The rotation follows what was **done**, not the calendar (`rotState()`): a skipp
 session owed; doing a different one (Upper on a Legs day) leaves Legs owed and Upper is skipped when the
 round reaches it. Any session can be logged from the chips on Train (`S.sess[date]` = index 0–6, which
 also ticks the checklist's "trained"). `tests/rotation.js`.
-Plus a **daily 3 km bike ride**, logged from the first day.
+Plus a **daily 3 km bike ride**, logged from the first day. Push, Pull and Upper end with a 20-minute easy
+incline walk (10–12%, about 5 km/h, talking pace; alternatives and the why in the Train tab's Notes). He asked
+for light cardio for fat burn; it is not counted in calories and should not be eaten back.
 
 **Meals are decided, not chosen (KISS, from 23 Nov).** He asked for no food options. Breakfast is eggs,
 sourdough and 360 ml semi-skimmed milk for his coffee, three cappuccinos (`MILK`, counted when breakfast is ticked). Snack is
