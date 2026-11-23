@@ -27,9 +27,9 @@ The rotation follows what was **done**, not the calendar (`rotState()`): a skipp
 session owed; doing a different one (Upper on a Legs day) leaves Legs owed and Upper is skipped when the
 round reaches it. Any session can be logged from the chips on Train (`S.sess[date]` = index 0–6, which
 also ticks the checklist's "trained"). `tests/rotation.js`.
-Plus a **daily 3 km bike ride**, logged from the first day. Push, Pull and Upper end with a 20-minute easy
-incline walk (10–12%, about 5 km/h, talking pace; alternatives and the why in the Train tab's Notes). He asked
-for light cardio for fat burn; it is not counted in calories and should not be eaten back.
+Plus a **daily 3 km bike ride**, logged from the first day. Push, Pull and Upper end with an incline walk,
+decided for him (he asked for no options): treadmill 12%, 5.0 km/h, talking pace; 20 min in re-entry and the
+Christmas break, 25 in the work, 30 in the finish (`walkMin()`). Not counted in calories, not eaten back.
 
 **Meals are decided, not chosen (KISS, from 23 Nov).** He asked for no food options. Breakfast is eggs,
 sourdough and 360 ml semi-skimmed milk for his coffee, three cappuccinos (`MILK`, counted when breakfast is ticked). Snack is
