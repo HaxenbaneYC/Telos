@@ -10,7 +10,7 @@ from main /docs, or any static host) and "Add to Home Screen" gives a full-scree
 
 The food table in data/foods.tsv is embedded in the file, so the app stays one file that opens
 offline. Regenerate it from the USDA database with data/build-foods.py."""
-import sys, pathlib, hashlib
+import sys, pathlib, hashlib, json
 root = pathlib.Path(__file__).resolve().parent
 read = lambda p: p.read_text(encoding="utf-8")
 head = read(root / "src" / "head.html")
@@ -32,13 +32,19 @@ print("wrote", dest.name, round(len(out) / 1024), "KB")
 if not preview:
     site = root / "docs"
     (site / "icons").mkdir(parents=True, exist_ok=True)
+    # The icon URLs carry a hash of the icon, so a phone that saw an older logo cannot reuse it.
+    iv = hashlib.sha1((site / "icons" / "apple-touch-icon.png").read_bytes() + (site / "icons" / "icon-512.png").read_bytes()).hexdigest()[:8]
+    man = json.loads(read(site / "manifest.webmanifest"))
+    for ic in man["icons"]:
+        ic["src"] = ic["src"].split("?")[0] + "?v=" + iv
+    (site / "manifest.webmanifest").write_text(json.dumps(man, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     page_head = (
         '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
         '<meta name="theme-color" content="#0A0C0B" media="(prefers-color-scheme: dark)">\n'
         '<meta name="theme-color" content="#F0EFEB" media="(prefers-color-scheme: light)">\n'
-        '<link rel="manifest" href="manifest.webmanifest">\n'
-        '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">\n'
+        '<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=' + iv + '">\n'
+        '<link rel="manifest" href="manifest.webmanifest?v=' + iv + '">\n'
         '<meta name="apple-mobile-web-app-capable" content="yes">\n'
         '<meta name="mobile-web-app-capable" content="yes">\n'
         '<meta name="apple-mobile-web-app-title" content="Telos">\n'
