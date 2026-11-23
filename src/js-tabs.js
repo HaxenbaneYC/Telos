@@ -316,94 +316,67 @@
   }
   function renderTrend() { renderReview(); renderMorning(); renderWeight(); renderMeas(); renderPhotos(); renderLog(); renderPhases(); }
 
-  // ── Food: recipes first, the reference material folded away ──
-  var recQ = "", recChip = "all", RECS = null;
-  var CHIPS = [["all", "All"], ["pasta", "Pasta"], ["rice", "Rice"], ["potato", "Potato"], ["eggs", "Eggs & yogurt"], ["sauce", "Sauces"]];
-  function ol(steps) { return "<ol>" + steps.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol>"; }
-  function names(cat, ids) {
-    var seen = {}, out = [];
-    ids.forEach(function (id) { var n = food(cat, id)[1].split(",")[0]; if (!seen[n]) { seen[n] = 1; out.push(n); } });
-    return out.slice(0, 4).join(", ");
-  }
-  function recList() {
-    if (RECS) return RECS;
-    var out = [];
-    RECIPES.forEach(function (r) {
-      var nm = r.n.toLowerCase(), tags = [];
-      if (/sauce/.test(nm)) tags.push("sauce");
-      if (/pasta/.test(nm)) tags.push("pasta");
-      if (/rice/.test(nm)) tags.push("rice");
-      if (/potato/.test(nm)) tags.push("potato");
-      if (/egg/.test(nm)) tags.push("eggs");
-      out.push({ n: r.n, sub: r.s, t: 0, tags: tags,
-        body: '<div class="acc-in"><p>' + r.why + "</p><h4>You need</h4><ul>" + r.ing.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul><h4>Method</h4>" + ol(r.steps) + "</div>",
-        find: (r.n + " " + r.s + " " + r.why + " " + r.ing.join(" ") + " " + tags.join(" ")).toLowerCase() });
-    });
-    LIB.forEach(function (r) {
-      var tags = [];
-      if (r.c.indexOf("pas") >= 0) tags.push("pasta");
-      if (r.c.indexOf("ric") >= 0) tags.push("rice");
-      if (r.c.indexOf("pot") >= 0 || r.c.indexOf("swt") >= 0) tags.push("potato");
-      if (["egg", "ewh", "yog", "cot", "whe"].some(function (id) { return r.p.indexOf(id) >= 0; })) tags.push("eggs");
-      var fits = [names("protein", r.p), names("carb", r.c)].filter(Boolean).join(" · ");
-      out.push({ n: r.n, sub: r.k, t: r.t, tags: tags,
-        body: '<div class="acc-in"><p>' + r.k + "</p>" + (fits ? '<p class="rfit">Works with ' + fits + "</p>" : "") + ol(r.s) + "</div>",
-        find: (r.n + " " + r.k + " " + fits + " " + r.s.join(" ") + " " + tags.join(" ")).toLowerCase() });
-    });
-    FIN.forEach(function (r) {
-      out.push({ n: r.n, sub: r.k, t: r.t, tags: ["sauce"], body: '<div class="acc-in"><p>' + r.k + "</p>" + ol(r.s) + "</div>", find: (r.n + " " + r.k + " sauce " + r.s.join(" ")).toLowerCase() });
-    });
-    RECS = out;
-    return out;
-  }
-  function renderRecipes() {
-    var toks = recQ.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-    var list = recList().filter(function (r) {
-      if (recChip !== "all" && r.tags.indexOf(recChip) < 0) return false;
-      return toks.every(function (t) { return r.find.indexOf(t) >= 0; });
-    });
-    $("recCount").textContent = list.length + (list.length === 1 ? " recipe" : " recipes");
-    $("recChips").innerHTML = CHIPS.map(function (c) { return '<button class="chip' + (c[0] === recChip ? " on" : "") + '" data-chip="' + c[0] + '" aria-pressed="' + (c[0] === recChip) + '">' + c[1] + "</button>"; }).join("");
-    $("recipes").innerHTML = list.length
-      ? list.map(function (r, i) { return accHtml("rc" + i, false, r.n, r.sub, r.t ? r.t + " min" : "", r.body); }).join("")
-      : '<div class="sw"><div class="b">No recipe matches that. Try a shorter word, or All.</div></div>';
-  }
-  $("recQ").addEventListener("input", function (ev) { recQ = ev.target.value; renderRecipes(); });
-  $("recChips").addEventListener("click", function (ev) {
-    var b = ev.target.closest("[data-chip]"); if (!b) return;
-    recChip = b.getAttribute("data-chip"); renderRecipes();
-  });
-  var foodBuilt = false;
+  // ── Food: the week's dinners, then the shopping list ──
   function renderMenu() {
     var html = "";
     for (var k = 0; k < 7; k++) {
       var d = shift(TODAY, k), dish = dishOn(d);
       var tag = k === 0 ? "Tonight" : k === 1 ? "Tomorrow" : parseISO(d).toLocaleDateString(undefined, { weekday: "long" });
       html += accHtml("menu" + k, false, dish.n, tag + " · " + dish.t + " min", "",
-        '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">Cook for two:</b> ' + cookList(cookParts(d)) + ".</p><ol>" +
+        '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">Cook for two</b> (weights before cooking): ' + cookList(cookParts(d)) + ".</p><ol>" +
         dish.s.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol></div>");
     }
     $("menuList").innerHTML = html;
   }
-  function renderFood() {
-    renderMenu();
-    renderRecipes();
-    if (foodBuilt) return;   // the tables below are static and move into the accordion once; a second pass has nothing to find
-    foodBuilt = true;
-    var cls = { a: "a", b: "b", c: "" };
-    $("proteins").innerHTML = PROTEINS.map(function (gr) {
-      return '<div class="pgrp"><div class="pgt ' + cls[gr.cls] + '">' + gr.g + '</div><div class="pgn">' + gr.note + "</div>" +
-        '<div class="ph"><span></span><span>Protein</span><span>Fat</span><span>kcal</span></div>' +
-        gr.items.map(function (it) {
-          return '<div class="prow' + (it[4] === "the baseline" ? " base" : "") + '"><span class="n"><b>' + it[0] + "</b>" + (it[4] ? "<i>" + it[4] + "</i>" : "") + "</span>" +
-            '<span class="f p">' + it[2] + '</span><span class="f">' + it[3] + '</span><span class="f">' + it[1] + "</span></div>";
-        }).join("") + "</div>";
-    }).join("");
-    $("swaps").innerHTML = SWAPS.map(function (s2) { return '<div class="sw"><div class="a">' + s2[0] + '</div><div class="b">' + s2[1] + "</div></div>"; }).join("");
-    $("swapAcc").innerHTML = accHtml("sw1", false, "Swaps and the food rule", "Protein swaps, the rule, everything else", "", '<div class="acc-in" id="swapIn" style="padding-top:0"></div>');
-    var h = document.querySelector(".swapholder"), si = $("swapIn");
-    if (h && si) while (h.firstChild) si.appendChild(h.firstChild);
+  // Everything the next seven days need: breakfasts, snacks and bananas, and every dinner pan (which also
+  // fills the next day's lunch box). Weights before cooking, rounded up to what you can buy.
+  var SHOP_GROUPS = [["meat", "Meat"], ["dairy", "Dairy and eggs"], ["carb", "Rice, pasta, potatoes, bread"], ["veg", "Veg and fruit"], ["other", "Other"]];
+  function renderShop() {
+    var list = {}, order = [];
+    function add(name, grp, amt, unit) {
+      var x = list[name];
+      if (!x) { x = list[name] = { name: name, grp: grp, amt: 0, unit: unit }; order.push(x); }
+      x.amt += amt;
+    }
+    function part(pt) {
+      if (pt.skip || (!pt.noun && !pt.g) || /olive oil/i.test(pt.name)) return;
+      if (pt.mix) { pt.mix.forEach(function (m) { add(m[0], "veg", pt.g * m[1], "g"); }); return; }
+      if (pt.name === "Milk") { add("Semi-skimmed milk", "dairy", pt.g, "ml"); return; }
+      if (pt.noun) {   // counted things: eggs, slices, bananas, wraps
+        var egg = /egg/.test(pt.noun), ban = /banana/.test(pt.noun), slice = /slice/.test(pt.noun);
+        add(egg ? "Eggs" : ban ? "Bananas" : slice ? pt.name : "Wraps", egg ? "dairy" : ban ? "veg" : "carb", pt.n, slice ? "slices" : ""); return;
+      }
+      var g = /yogurt/i.test(pt.name) ? "dairy" : /peanut/i.test(pt.name) ? "other" : pt.cat === "protein" ? "meat" : pt.cat === "carb" ? "carb" : "other";
+      add(pt.name, g, pt.g, "g");
+    }
+    for (var k = 0; k < 7; k++) {
+      var d = shift(TODAY, k), pl = planOn(d).out;
+      ["m1", "m3", "m4"].forEach(function (id) { pl[id].parts.forEach(part); });
+      cookParts(d).forEach(part);
+    }
+    function amount(x) {
+      if (x.unit === "ml") return (Math.ceil(x.amt / 500) / 2).toFixed(1).replace(/\.0$/, "") + " L";
+      if (x.unit !== "g") return x.amt + (x.unit ? " " + x.unit : "");
+      if (/tinned/i.test(x.name)) { var c = Math.ceil(x.amt / 400); return c + (c === 1 ? " can" : " cans") + " (400 g)"; }
+      var r = Math.ceil(x.amt / 50) * 50;
+      return r >= 1000 ? +(r / 1000).toFixed(2) + " kg" : r + " g";
+    }
+    var html = "";
+    SHOP_GROUPS.forEach(function (gr) {
+      var rows = order.filter(function (x) { return x.grp === gr[0]; });
+      if (!rows.length) return;
+      html += '<div class="shopgrp">' + gr[1] + "</div>" + rows.map(function (x) {
+        return '<button class="trow" data-shop aria-pressed="false"><span class="chk2"></span><span class="tb"><b>' + esc(x.name.split(",")[0]) + "</b><i>" + amount(x) + "</i></span></button>";
+      }).join("");
+    });
+    $("shopList").innerHTML = html;
   }
+  // ticking off in the shop is only for the trip: nothing is saved
+  $("shopList").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-shop]"); if (!b) return;
+    var on = !b.classList.contains("on"); b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+  });
+  function renderFood() { renderMenu(); renderShop(); }
 
   // ── Train ──
   function sessionFor(name) { for (var i = 0; i < SESSIONS.length; i++) if (SESSIONS[i].d === name) return SESSIONS[i]; return null; }

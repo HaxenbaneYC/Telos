@@ -42,7 +42,7 @@ for(const [w,h] of [[320,568],[360,740],[390,844]]){
   ['today-scrolled',async()=>{await p.evaluate(()=>document.getElementById('main').scrollTo(0,99999));await p.waitForTimeout(300)}],
   ['train',async()=>{await p.evaluate(()=>document.querySelector('nav [data-tab=train]').click());await p.waitForTimeout(400)}],
   ['food',async()=>{await p.evaluate(()=>document.querySelector('nav [data-tab=food]').click());await p.waitForTimeout(400)}],
-  ['food-open',async()=>{await p.evaluate(()=>document.querySelector('#recipes .acc-h').click());await p.waitForTimeout(400)}],
+  ['food-open',async()=>{await p.evaluate(()=>document.querySelector('#menuList .acc-h').click());await p.waitForTimeout(400)}],
   ['trend',async()=>{await p.evaluate(()=>document.querySelector('nav [data-tab=trend]').click());await p.waitForTimeout(500)}],
   ['trend-open',async()=>{await p.evaluate(()=>{document.querySelectorAll('#v-trend .acc-h').forEach(x=>x.click())});await p.waitForTimeout(500)}],
  ];

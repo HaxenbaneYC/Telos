@@ -558,6 +558,8 @@
   .mc4.k.over .bar i { background: var(--signal); }
 
   /* ── coach note, add-food sheet ── */
+  .shopgrp { padding: 14px 16px 6px; font-size: 13.5px; font-weight: 600; color: var(--fg-2); border-top: 1px solid var(--line); }
+  .shopgrp:first-child { border-top: 0; }
   .prepnote { margin: 0 0 14px; font-size: 14.5px; line-height: 1.45; color: var(--fg-2); }
   .prepnote b { color: var(--fg); font-weight: 600; }
   .trimnote { margin-top: 4px; font-family: var(--mono); font-size: 12.5px; color: var(--bronze); font-variant-numeric: tabular-nums; }
@@ -926,26 +928,13 @@
   <!-- ===== FOOD ===== -->
   <section class="view" id="v-food" hidden>
     <div class="gut">
-      <div class="titlerow"><h1>Food</h1><span class="dt" id="recCount"></span></div>
-      <p class="lede">Seven dinners on a loop. Each one is cooked double: dinner tonight, lunch tomorrow.</p>
+      <div class="titlerow"><h1>Food</h1></div>
+      <p class="lede">Seven dinners on a loop. Each one is cooked for two: dinner tonight, lunch tomorrow.</p>
       <div class="label">This week’s dinners</div>
       <div class="list" id="menuList"></div>
-      <div class="label">More recipes</div>
-      <label class="flabel" for="recQ" style="padding-top:0">Find a recipe</label>
-      <input class="inp" id="recQ" type="search" autocomplete="off" enterkeyhint="search" placeholder="White sauce, pasta, salmon…">
-      <div class="chips" id="recChips" role="group" aria-label="Filter recipes"></div>
-      <div class="list" id="recipes" style="margin-top:12px"></div>
-
-      <div class="label">Reference</div>
-      <div class="list" id="swapAcc"></div>
-      <div class="swapholder" hidden>
-        <div class="card rule"><p class="rl"><b>Real food, cooked by you.</b> Eggs, chicken thigh and breast, salmon, steak, Greek yogurt, cheese, milk, potato, rice, oats, fruit, olive oil, nuts. Five eggs is fine, because dietary cholesterol doesn&rsquo;t meaningfully move blood cholesterol in healthy young men. Skip the processed middle: cream, bottled dressings, packaged sauces, protein bars.</p></div>
-        <div class="label">Protein swaps <span class="r">per 180 g raw</span></div>
-        <div class="card ptab" id="proteins"></div>
-        <p class="aihint" style="padding:0 4px"><b>Match the protein first, then pay for the fat.</b> Anything in the third group isn&rsquo;t a swap, it&rsquo;s a meal you plan around. Drop the oil and the yogurt sauce, and make the protein back up elsewhere in the day.</p>
-        <div class="label">Everything else</div>
-        <div class="list" id="swaps"></div>
-      </div>
+      <div class="label">Shopping list</div>
+      <p class="aihint" style="padding:0 4px 8px">The next seven days: every breakfast, snack and banana, and every dinner cooked for two, which also makes the next day’s lunch. Weights before cooking. Have olive oil, salt, pepper, paprika, garlic powder, cumin and oregano in.</p>
+      <div class="list" id="shopList"></div>
     </div>
   </section>
 
@@ -8918,7 +8907,7 @@
       d: "Steps 10–12k. Hold volume, add no cardio. Abs show here." }
   ];
 
-  // per 100 g raw: [id, name, kcal, P, F, C]
+  // per 100 g before cooking (raw meat, dry rice and pasta): [id, name, kcal, P, F, C]
   var FOODS = {
     protein: [
       ["chk",  "Chicken breast",         165, 31,   3.6, 0],
@@ -8941,8 +8930,8 @@
       ["whe",  "Whey powder",            400, 80,   7,   8]
     ],
     carb: [
-      ["ric", "Rice, cooked",       130,  2.7, 0.3, 28],
-      ["pas", "Pasta, cooked",      131,  5,   1.1, 25],
+      ["ric", "Rice, dry",          365,  7.1, 0.7, 80],
+      ["pas", "Pasta, dry",         371, 13,   1.5, 75],
       ["pot", "Potato, raw",         77,  2,   0.1, 17],
       ["swt", "Sweet potato, raw",   86,  1.6, 0.1, 20],
       ["sou", "Sourdough",          270,  9,   2,   52],
@@ -9013,46 +9002,47 @@
   ];
 
   // Milk for the day's coffee rides with breakfast, so ticking breakfast counts it. Semi-skimmed, per 100 ml.
-  var MILK = { ml: 500, k: 46, p: 3.5, f: 1.7, c: 4.7 };
+  var MILK = { ml: 360, k: 46, p: 3.5, f: 1.7, c: 4.7 };   // three cappuccinos
 
   // Seven dinners on a loop. Each one is cooked for two: half that night, half boxed for the next day's lunch.
-  // veg = [name, grams per portion, kcal, P, F, C per 100 g]. Methods in our own words.
+  // veg = [name, grams per portion, kcal, P, F, C per 100 g, what it is made of for the shopping list].
+  // All weights are before cooking. Methods in our own words.
   var MENU_START = "2026-11-23";
   var MENU = [
-    { n: "Chicken, rice and broccoli", p: "chk", c: "ric", veg: ["Broccoli", 150, 34, 2.8, 0.4, 6.6], t: 25,
+    { n: "Chicken, rice and broccoli", p: "chk", c: "ric", veg: ["Broccoli", 150, 34, 2.8, 0.4, 6.6, [["Broccoli", 1]]], t: 25,
       s: ["Rice on first, enough for both portions.",
           "Chicken in strips, salt, paprika and garlic powder, tossed in the oil.",
           "Air fryer 200°C, 12–14 min, shake halfway. Cut the thickest piece: no pink, done.",
           "Broccoli into the air fryer for the last 6 min, or 4 min in the microwave with a splash of water.",
           "Split in two. Box tomorrow’s half once it stops steaming and put it straight in the fridge."] },
-    { n: "Steak, air-fryer potatoes and green beans", p: "sir", c: "pot", veg: ["Green beans", 150, 31, 1.8, 0.2, 7], t: 35,
+    { n: "Steak, air-fryer potatoes and green beans", p: "sir", c: "pot", veg: ["Green beans", 150, 31, 1.8, 0.2, 7, [["Green beans", 1]]], t: 35,
       s: ["Potatoes in 2 cm cubes, the oil and salt, air fryer 200°C for 20–22 min, shake twice.",
           "Steak out of the fridge when the potatoes go in, salted both sides.",
           "Very hot dry pan, 2–3 min a side for medium-rare at 2 cm. Rest 5 min before cutting.",
           "Green beans: 4 min in boiling water or the microwave.",
           "Slice tomorrow’s steak cold for the box. It eats fine cold or with 60 s in the microwave."] },
-    { n: "Chicken thighs, sweet potato fries and courgette", p: "thi", c: "swt", veg: ["Courgette", 150, 17, 1.2, 0.3, 3.1], t: 30,
+    { n: "Chicken thighs, sweet potato fries and courgette", p: "thi", c: "swt", veg: ["Courgette", 150, 17, 1.2, 0.3, 3.1, [["Courgette", 1]]], t: 30,
       s: ["Sweet potato in fries, half the oil and salt, air fryer 200°C for 15–18 min, shake halfway.",
           "Thighs with paprika, garlic powder and salt. Air fryer or pan, 12–15 min until the juice runs clear.",
           "Courgette in half-moons, the rest of the oil, 5 min in a hot pan.",
           "Box tomorrow’s half. The fries soften in the fridge; 3 min back in the air fryer fixes them."] },
-    { n: "Beef mince pasta with tomato and spinach", p: "mi5", c: "pas", veg: ["Tinned tomatoes, onion, spinach", 200, 24, 1.4, 0.2, 5], t: 25,
+    { n: "Beef mince pasta with tomato and spinach", p: "mi5", c: "pas", veg: ["Tinned tomatoes, onion, spinach", 200, 24, 1.4, 0.2, 5, [["Tinned chopped tomatoes", 0.5], ["Onion", 0.25], ["Spinach", 0.25]]], t: 25,
       s: ["Pasta into well-salted boiling water.",
           "Mince into a hot pan with the oil. Leave it alone 3 min so it browns, then break it up.",
           "Chopped onion in for 3 min, then the tinned tomatoes, salt and oregano. Simmer 10 min.",
           "Spinach in at the end until it wilts. Toss with the drained pasta and a splash of the pasta water.",
           "Box tomorrow’s half. It is better the next day."] },
-    { n: "Chicken fajita wraps", p: "chk", c: "tor", veg: ["Peppers and onion", 150, 33, 1, 0.2, 7.7], t: 20,
+    { n: "Chicken fajita wraps", p: "chk", c: "tor", veg: ["Peppers and onion", 150, 33, 1, 0.2, 7.7, [["Peppers", 0.5], ["Onion", 0.5]]], t: 20,
       s: ["Chicken in strips with sliced peppers and onion, the oil, paprika, cumin, garlic powder and salt.",
           "Hot pan 8–10 min, or air fryer 200°C for 12 min, shaking once.",
           "Warm the wraps 20 s each in a dry pan. A spoon of Greek yogurt works as sour cream.",
           "Box the filling and the wraps apart so the wraps don’t go soggy."] },
-    { n: "Beef and rice bowl", p: "mi5", c: "ric", veg: ["Broccoli and peppers", 150, 30, 1.9, 0.35, 6.3], t: 20,
+    { n: "Beef and rice bowl", p: "mi5", c: "ric", veg: ["Broccoli and peppers", 150, 30, 1.9, 0.35, 6.3, [["Broccoli", 0.5], ["Peppers", 0.5]]], t: 20,
       s: ["Rice on, enough for both portions.",
           "Mince into a hot pan with the oil, garlic, paprika, cumin and salt. Let it brown before you stir.",
           "Broccoli and sliced peppers into the pan for the last 5 min, with a splash of water to steam them.",
           "Rice in the bowl, beef and veg on top. Box tomorrow’s half."] },
-    { n: "Chicken thigh pasta with mushrooms and spinach", p: "thi", c: "pas", veg: ["Mushrooms and spinach", 150, 23, 3, 0.4, 3.5], t: 25,
+    { n: "Chicken thigh pasta with mushrooms and spinach", p: "thi", c: "pas", veg: ["Mushrooms and spinach", 150, 23, 3, 0.4, 3.5, [["Mushrooms", 0.5], ["Spinach", 0.5]]], t: 25,
       s: ["Pasta into well-salted boiling water.",
           "Thighs in strips, the oil, salt and pepper, hot pan 8 min.",
           "Sliced mushrooms in for 4 min, a crushed garlic clove for 1, then spinach until it wilts.",
@@ -9098,7 +9088,7 @@
     var dish = dishFor(mealId);
     if (!dish) return [];
     var v = dish.veg, u = v[1] / 100;
-    return [{ cat: "carb", g: v[1], name: v[0], t: { k: v[2] * u, p: v[3] * u, f: v[4] * u, c: v[5] * u } }];
+    return [{ cat: "carb", g: v[1], name: v[0], mix: v[6], t: { k: v[2] * u, p: v[3] * u, f: v[4] * u, c: v[5] * u } }];
   }
   // Protein hits the protein target. Carb fills the carb gap left after it.
   // Fat fills only what the first two have not already brought.
@@ -9230,7 +9220,7 @@
     planOn(d).out.m5.parts.concat(planOn(shift(d, 1)).out.m2.parts).forEach(function (pt) {
       if (pt.skip || (!pt.noun && !pt.g)) return;
       var x = at[pt.name];
-      if (!x) { x = at[pt.name] = { name: pt.name, g: 0, n: pt.noun ? 0 : undefined, noun: pt.noun }; out.push(x); }
+      if (!x) { x = at[pt.name] = { name: pt.name, cat: pt.cat, mix: pt.mix, g: 0, n: pt.noun ? 0 : undefined, noun: pt.noun }; out.push(x); }
       x.g += pt.g; if (pt.noun) x.n += pt.n;
     });
     return out;
@@ -9255,20 +9245,7 @@
   var DAILY = [
     ["protein", "Protein hit", ""],
     ["steps", "Steps to target", ""],
-    ["water", "3 L water, salt your food", ""],
-    ["fibre", "Veg at lunch and dinner", "Fibre is most of gut health"],
     ["train", "Trained, or deliberate rest", ""]
-  ];
-
-  var SUPPS = [
-    ["d3", "Vitamin D3 + K2", "Breakfast, with fat"],
-    ["omega", "Omega 3", "Breakfast"],
-    ["mag", "Magnesium", "Evening"],
-    ["zinc", "Zinc", "With food, away from calcium"],
-    ["sel", "Selenium 100 mcg", "With food"],
-    ["tong", "Tongkat ali 400 mg", "Morning"],
-    ["crea", "Creatine 5 g", "Every day, rest days too"],
-    ["boron", "Boron — cycled", "Your call on the weeks"]
   ];
 
   var WEEKPLAN = [
@@ -9283,60 +9260,6 @@
     { d: "Legs", s: "Wednesday · one leg day", ex: [["Goblet squat","3 × 8",0],["Romanian deadlift","3 × 8",1],["Walking lunges","3 × 8 ea",0],["Calf raise","3 × 15",0],["Hanging leg raise","3 × 12–15",1],["Plank","3 × 60 s",0]] },
     { d: "Upper", s: "Friday · boxing plan", ex: [["Lat pulldown","3 × 8",1],["DB bench press","3 × 8",0],["Seated cable row","3 × 10",1],["Incline smith press","3 × 8",0],["Lateral raises","3 × 12–15",1],["Face pulls","3 × 15",1]] },
     { d: "Delts, arms, abs, neck", s: "Saturday · 45 min", ex: [["DB lateral raise","4 × 12–20",1],["Rear delt fly","3 × 15",1],["EZ-bar curl","3 × 12",1],["Incline DB curl","3 × 10",1],["Hammer curl","3 × 12–15",1],["Rope pushdown","2 × 12",0],["Neck curl with plate","3 × 15",1],["Weighted cable crunch","3 × 12",1]] }
-  ];
-
-  var RECIPES = [
-    { n: "Yogurt white sauce", s: "2 min · replaces cream", why: "40 kcal a serving instead of 400. Goes on chicken, potato, rice, salad.",
-      ing: ["150 g thick Greek yogurt","1 garlic clove","Juice of half a lemon","1 tsp olive oil","Salt, pepper"],
-      steps: ["Crush the garlic with a pinch of salt using the flat of a knife until it's a paste. Chopped garlic tastes harsh; paste tastes creamy.","Stir into the yogurt with the lemon juice and oil.","Leave 10 minutes so the garlic mellows.","Splash of water if you want it pourable."] },
-    { n: "Lean white sauce", s: "5 min · pasta, chicken, potato", why: "A proper white sauce without cream or a butter roux. Cornflour thickens it, so it is mostly milk: about 220 kcal for the whole batch (milk 120, parmesan 80, cornflour 25). It is not part of the plate numbers, so use half the batch or log it under Off-plan food.",
-      ing: ["250 ml semi-skimmed milk, cold","1 tbsp cornflour","1 garlic clove, crushed","20 g parmesan, finely grated","Salt and pepper","Pinch of nutmeg"],
-      steps: ["Whisk the cornflour into the cold milk in a small pan until there is not a single lump. Starch clumps in hot liquid, so it goes in cold.","Add the garlic and a pinch of salt. Medium heat, whisking the whole time, 2–3 minutes until it coats the back of a spoon.","Off the heat, stir in the parmesan and nutmeg. The cheese goes in last so it melts instead of going stringy.","Too thick, loosen it with a splash of milk or pasta water. It thickens as it sits.","Make it just before you need it. It skins over if it waits."] },
-    { n: "Chicken and rice", s: "The default · 20 min", why: "Same meal you already eat, cooked so you don't get sick of it by week three.",
-      ing: ["180 g chicken breast or thigh","180 g cooked rice","2 tsp olive oil","Paprika, cumin, garlic powder, salt","Green veg","Yogurt white sauce"],
-      steps: ["Salt the chicken and leave it 15 minutes while the rice cooks.","Pat it properly dry — wet chicken steams instead of browning.","Hot pan, 1 tsp oil. Don't move it for 4 minutes, flip for 3. Thigh takes a minute longer.","Rest 5 minutes before slicing or the juice ends up on the board.","Slice across the grain, sauce over the top."] },
-    { n: "Salmon, potato and lemon", s: "One tray · 35 min", why: "Covers your omega-3 and a chunk of the fat target. One tray, nothing to wash up.",
-      ing: ["180 g salmon, skin on","300 g potato in 2 cm cubes","1 red onion in wedges","1 lemon","1 tbsp olive oil","Cherry tomatoes","Salt, pepper, paprika"],
-      steps: ["Oven 220°C. Toss potato and onion with half the oil, salt and paprika on a tray.","Roast 20 minutes alone — potato needs the head start or the salmon overcooks waiting.","Push it aside, add salmon skin-down with lemon slices and tomatoes. Rest of the oil, salt.","Back in 11–13 minutes. Done when it flakes but the middle still looks slightly translucent.","Squeeze the lemon over at the table."] },
-    { n: "Steak, eggs and potato", s: "Rest day", why: "Zinc from the beef, fat and cholesterol from the yolks, vitamin D from the eggs.",
-      ing: ["200 g sirloin or ribeye","3 eggs","250 g potato, boiled","1 tbsp butter","Salt, black pepper","Greens"],
-      steps: ["Steak out of the fridge 30 minutes early and salted — cold steak cooks unevenly.","Boil the potato, drain, crush with a fork, crisp it in a hot pan with the butter.","Very hot dry pan, 2–3 minutes a side for medium rare at 2 cm. Rest 5 minutes.","Fry the eggs in the same pan — the browned bits season them.","Plate with the greens."] }
-  ];
-
-  // per 180 g raw: [name, kcal, protein, fat, note]
-  var PROTEINS = [
-    { g: "Straight swap", cls: "a", note: "Similar protein, similar fat. Change nothing else in the meal.",
-      items: [
-        ["Chicken breast", 297, 56, 6, "the baseline"],
-        ["Turkey breast", 294, 53, 7, ""],
-        ["Tuna, pouch, drained", 198, 45, 2, "two pouches ≈ 180 g"],
-        ["Prawns", 153, 36, 1, "low protein for the weight — add 100 g"],
-        ["Cod or white fish", 148, 32, 1, "add 1 tsp oil to make the calories back"]
-      ] },
-    { g: "Costs you fat", cls: "b", note: "Still a swap, but drop the olive oil from that meal to pay for it.",
-      items: [
-        ["Sirloin, trimmed", 324, 48, 14, "the lean red meat option"],
-        ["Chicken thigh, skinless", 319, 43, 15, ""],
-        ["Lean mince, 5%", 247, 38, 9, "add 60 g to match the protein"],
-        ["Lean mince, 10%", 317, 36, 18, "drop the oil and the sauce"]
-      ] },
-    { g: "Not a swap — a planned meal", cls: "c", note: "Too fatty to trade straight across. Build the day around it or cut the portion.",
-      items: [
-        ["Salmon", 374, 36, 23, "worth it for omega-3 — drop all added fat"],
-        ["Lamb leg", 450, 44, 30, "cut to 140 g"],
-        ["Ribeye", 450, 41, 32, "cut to 140 g, no oil, no sauce, +200 g yogurt"],
-        ["Chicken thigh, skin on", 414, 40, 28, "take the skin off and it moves up two groups"]
-      ] }
-  ];
-
-  var SWAPS = [
-    ["180 g cooked rice","180 g pasta, or 270 g raw potato"],
-    ["180 g chicken breast","200 g white fish, or 180 g lean mince"],
-    ["1 yogurt tub (360 g)","1 scoop whey + fruit, or 2 tuna pouches"],
-    ["25 g peanuts","20 g almonds, or 20 g cheese"],
-    ["Green veg and salad","Unlimited, always"],
-    ["G Hughes zero-sugar BBQ","Free — use it on anything"],
-    ["Mustard, vinegar, hot sauce, spices","Free"]
   ];
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
@@ -9375,346 +9298,22 @@
   var $ = function(id){ return document.getElementById(id); };
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];}); }
 
+  // Only dinner is cooked: its method comes with the dish. Lunch is the box, the rest needs no recipe.
   function methodsFor(mealId) {
-    if (mealId === "m2") return [];
-    var dish = dishFor(mealId);
-    if (dish) return [{ n: dish.n, t: dish.t, k: "Cook double: half tonight, half boxed for tomorrow’s lunch.", s: dish.s }];
-    var pick = pickFor(mealId);
-    // The whole+whites mix cooks like eggs, so it matches the egg methods.
-    var pid = pick.protein === "egx" ? "egg" : pick.protein;
-    function pOk(r) { return pid ? r.p.indexOf(pid) !== -1 : r.p.length === 0; }
-    var exact = LIB.filter(function (r) {
-      return pOk(r) && (pick.carb ? r.c.indexOf(pick.carb) !== -1 : true);
-    });
-    if (exact.length) return exact;
-    // Nothing written for that exact pairing — fall back to the protein and
-    // flag that the carb is a substitution rather than pretending otherwise.
-    return LIB.filter(pOk).map(function (r) {
-      var o = { n: r.n, t: r.t, p: r.p, c: r.c, s: r.s, swap: true,
-                k: r.k + " — written for " + carbName(r.c[0]) + "; swap your carb in at the same point." };
-      return o;
-    });
-  }
-  function carbName(id) {
-    for (var i = 0; i < FOODS.carb.length; i++) if (FOODS.carb[i][0] === id) return FOODS.carb[i][1].toLowerCase().split(",")[0];
-    return "the carb";
+    var dish = mealId === "m5" && dishFor(mealId);
+    return dish ? [{ n: dish.n, t: dish.t, k: "Cook for two: one plate tonight, one box for tomorrow’s lunch.", s: dish.s }] : [];
   }
 
   var RED = { rib:1, sir:1, lam:1, mi5:1, mi10:1 };
-  var FISH = { sal:1, cod:1, prw:1 };
-
-  // ── Complete-meal methods. p = proteins it fits, c = carbs it fits.
-  // Each one cooks the whole plate, with the timing interleaved.
-  var LIB = [
-  // ===== STEAK / RED MEAT =====
-  {n:"Steak and crushed potato",t:35,p:["rib","sir","lam"],c:["pot","swt"],
-   k:"The potato goes on first and finishes while the steak rests. Nothing waits for anything.",
-   s:["Potato into well-salted cold water, bring to the boil, 12 min until a knife slides in. Steak out of the fridge now, salted both sides.",
-      "Drain the potato, let it steam dry 2 min, then crush each piece flat with a fork. Those rough edges become the crust.",
-      "Potato into a hot pan with your oil, or 220°C oven. Leave it alone 6 min — moving it early means no crust.",
-      "Second pan on high until it just smokes. Steak patted bone dry, in, untouched 3 min. Flip, 2–3 min for medium-rare at 2 cm.",
-      "Pull the steak 3°C under target and rest it 5–10 min. Turn the potato while it rests, salt at the very end.",
-      "Slice the steak across the grain. Pour any resting juice over the potato."]},
-  {n:"Steak and garlic rice",t:30,p:["rib","sir","lam"],c:["ric"],
-   k:"Rice cooks unattended under a lid while you deal with the steak.",
-   s:["Rinse the rice until the water runs clear. Toast it dry in the pan 1 min with a crushed garlic clove until it smells nutty.",
-      "Water 1.5 to 1, salt, lid on, lowest heat, 12 min. Do not lift the lid. Steak out and salted.",
-      "Rice off the heat, lid still on, resting. Pan on high for the steak.",
-      "Steak dry, in, 3 min untouched, flip, 2–3 min. Pull 3°C under and rest 5 min.",
-      "Fork the rice through. Deglaze the steak pan with a splash of water and lemon, scrape up the brown bits, pour over the rice."]},
-  {n:"Beef stir-fry over rice",t:20,p:["rib","sir","lam","mi5","mi10"],c:["ric"],
-   k:"Makes a fatty cut cover a much bigger plate. Freeze it briefly to slice it thin.",
-   s:["Rice on first: rinsed, 1.5 to 1 water, salt, lid on, low, 12 min.",
-      "Freeze the steak 15 min, then slice as thin as you can against the grain. Toss with salt and garlic powder.",
-      "Pan on maximum. Sear the beef in two batches, 60 seconds each. Crowding it is what makes beef grey.",
-      "Beef out. Veg into the same pan, 2 min, still crunchy.",
-      "Beef back in for 20 seconds, off the heat, then vinegar or lemon and white pepper. Over the rice."]},
-  {n:"Steak and pasta, chimichurri",t:25,p:["rib","sir","lam"],c:["pas"],
-   k:"The chimichurri dresses both the steak and the pasta, so there is no second sauce to make.",
-   s:["Chop a big handful of parsley with 1 garlic clove and chilli flakes. Mix with 2 tbsp red wine vinegar, your oil, salt. Leave it.",
-      "Pasta into heavily salted water. Keep a mug of the water before draining.",
-      "Steak dry, screaming pan, 3 min, flip, 2–3 min. Out to rest.",
-      "Drained pasta into the steak pan with a splash of the pasta water. Toss hard — the starch picks up everything stuck to the base.",
-      "Half the chimichurri through the pasta, the other half over the sliced steak."]},
-  {n:"Kofta and roast potato",t:35,p:["mi5","mi10","lam"],c:["pot","swt"],
-   k:"One oven, two trays, zero attention for twenty minutes.",
-   s:["Oven 220°C. Potato cubed, tossed with paprika, garlic powder, salt and your oil, onto a tray. In for 15 min.",
-      "Meanwhile mix the mince with grated onion squeezed dry, parsley, cumin, coriander, paprika, salt, lots of pepper.",
-      "Work it with your hands a full minute until it gets sticky, or the skewers fall apart. Shape into fat fingers.",
-      "Kofta onto a second tray, in alongside the potato for the last 15 min, turning once.",
-      "Both out together. Garlic yogurt over the kofta, lemon over the potato."]},
-  {n:"Smashed patties and potato",t:25,p:["mi5","mi10"],c:["pot","swt"],
-   k:"Thin patties give twice the crust of one thick one. Same meat.",
-   s:["Potato cubed, microwaved 6–7 min until soft, spread on a plate 2 min to let the steam go.",
-      "Potato into a hot pan with your oil, single layer, 4 min a side without stirring. Out, salted.",
-      "Divide the mince into balls. Do not salt yet — salt pulls water out and kills the crust.",
-      "Same pan, very hot. Drop a ball, smash hard flat for 10 seconds, salt the top now.",
-      "2 min until the edges go lacy, flip, 1 min. Stack two thin patties per portion."]},
-  {n:"Beef and tomato pasta",t:30,p:["mi5","mi10"],c:["pas"],
-   k:"One pot, no cream, and better reheated the next day.",
-   s:["Brown the mince hard in a dry pan, breaking it up. Let it catch — the brown is the flavour.",
-      "Chopped onion and garlic in, 3 min. Then a tin of tomatoes, oregano, salt, a splash of vinegar.",
-      "Simmer 15 min until it holds a dent from the spoon. The vinegar is what stops tinned tomato tasting raw.",
-      "Pasta in salted water meanwhile. Keep a mug of the water.",
-      "Drained pasta straight into the sauce with a splash of the water. Toss a minute so it clings. Pepper off the heat."]},
-  {n:"Mince fried rice",t:15,p:["mi5","mi10"],c:["ric"],
-   k:"Only works with cold leftover rice. Fresh rice turns to paste.",
-   s:["Cold rice broken up with your fingers. Screaming hot pan.",
-      "Mince in dry, hard, 4 min until properly browned. Out onto a plate.",
-      "Your oil in, then the rice. Press it flat, leave 60 seconds to catch, then toss.",
-      "Mince back in, spring onion, white pepper, a little soy. Two minutes, done."]},
-
-  // ===== CHICKEN BREAST =====
-  {n:"Tray chicken and potato",t:40,p:["chk","tur","thi"],c:["pot","swt"],
-   k:"Hands-off and scales — cook three days at once on two trays.",
-   s:["Salt the chicken and leave it uncovered in the fridge while the oven heats to 200°C. Forty-five minutes is the minimum that matters, overnight is better.",
-      "Potato cubed, tossed with paprika, cumin, garlic powder, salt and your oil. Onto a tray, in for 15 min.",
-      "Pat the chicken completely dry, season, set it on a rack over the same tray so air gets underneath.",
-      "20–22 min for 180 g pieces. Pull at 71°C — it carries to 74°C while resting.",
-      "Rest 5 min before slicing. Lemon and flaky salt over everything."]},
-  {n:"Chicken and rice, properly",t:30,p:["chk","tur"],c:["ric"],
-   k:"The meal you already eat, cooked so you are not sick of it by week three.",
-   s:["Salt the chicken and leave it while the rice cooks — this is the single biggest upgrade available to you.",
-      "Rinse the rice until clear, toast it dry 1 min with cumin seeds, add water 1.5 to 1 and salt. Lid on, lowest heat, 12 min.",
-      "Pat the chicken properly dry. Wet chicken steams instead of browning. Season with paprika, cumin, garlic powder.",
-      "Medium-high pan, your oil. In, untouched, 5 min. Flip, 4 min. Pull at 71°C.",
-      "Rest 5 min while the rice sits covered. Slice across the grain, garlic yogurt over the top."]},
-  {n:"Shawarma chicken and rice",t:35,p:["chk","thi","tur"],c:["ric"],
-   k:"Yogurt tenderises where lemon toughens. Marinate in the morning, eat at night.",
-   s:["Marinate the chicken in Greek yogurt with garlic, paprika, cumin, coriander, turmeric, salt. Thirty minutes minimum, all day is better.",
-      "Rice on: rinsed, toasted dry 1 min, water 1.5 to 1, salt, lid on, low, 12 min.",
-      "Scrape most of the marinade off the chicken. What clings is enough — wet marinade steams instead of charring.",
-      "230°C oven or a hot pan, 12–15 min, until the edges are genuinely charred. Pull at 71°C.",
-      "Rest, slice, pile on the rice with pickled onion and more garlic yogurt."]},
-  {n:"Chicken and garlic chilli pasta",t:25,p:["chk","tur","prw"],c:["pas"],
-   k:"The pasta water makes the sauce. No cream, no cheese needed.",
-   s:["Salt and dry the chicken, season. Pasta into heavily salted water.",
-      "Chicken in a medium-high pan, 5 min, flip, 4 min, pull at 71°C. Out to rest. Keep a mug of pasta water before draining.",
-      "Same pan on LOW: sliced garlic and chilli flakes in your oil. Golden, never brown — burnt garlic ruins the dish.",
-      "Drained pasta in with a big splash of the starchy water. Toss hard a full minute until it emulsifies and clings.",
-      "Sliced chicken through it, parsley, lots of black pepper."]},
-  {n:"Chicken and sweet potato mash",t:35,p:["chk","thi","tur"],c:["swt","pot"],
-   k:"Yogurt instead of butter in the mash, so the fat budget stays on the protein.",
-   s:["Salt the chicken, leave it. Sweet potato cubed into salted water, boil 14 min until completely soft.",
-      "Drain very well and let it steam dry — wet mash is sad mash.",
-      "Mash with 2 tbsp Greek yogurt, salt, pepper, a scrape of nutmeg or a pinch of cumin. No butter.",
-      "Chicken dry and seasoned, medium-high pan with your oil, 5 min, flip 4, pull at 71°C.",
-      "Rest 5 min. Pan sauce: splash of water and lemon into the hot pan, scrape, reduce, pour over."]},
-  {n:"Poached and shredded, batch",t:20,p:["chk","tur"],c:["ric","pas","pot","swt"],
-   k:"Impossible to dry out, and the best thing to have in the fridge on a Monday.",
-   s:["Cover the chicken with cold salted water, add a bay leaf, bring to a bare simmer. Never a rolling boil.",
-      "Twelve minutes at the barest bubble, then off the heat and leave it in the water 5 more.",
-      "Cook your carb in the same window — rice under a lid, or potato cubes boiled then crisped.",
-      "Shred the chicken with two forks while warm and toss straight into garlic yogurt or chimichurri.",
-      "Keeps four days and needs no reheating. Cold shredded chicken is better than reheated breast."]},
-
-  // ===== CHICKEN THIGH =====
-  {n:"Lemon garlic thigh and rice",t:30,p:["thi","chk"],c:["ric"],
-   k:"The pan juices become the sauce for free. Thigh is almost impossible to overcook.",
-   s:["Rice on first: rinsed, toasted dry, water 1.5 to 1, salt, lid on, low, 12 min.",
-      "Thighs opened flat, salted, dried well. Medium-high pan, no oil — thigh renders its own.",
-      "Smooth side down, press flat with a spatula for the first minute to get full contact. 6 min, flip, 5 min. Done at 75°C and happy higher.",
-      "Thighs out. Three smashed garlic cloves into the pan, 30 seconds, then the juice of a whole lemon and a splash of water.",
-      "Scrape everything up, reduce by half. Thighs back in to coat, parsley off the heat, over the rice."]},
-
-  // ===== FISH =====
-  {n:"Salmon and potato, one tray",t:35,p:["sal"],c:["pot","swt"],
-   k:"One tray, nothing to wash. The potato gets a 20-minute head start.",
-   s:["Oven 220°C. Potato in 2 cm cubes with red onion wedges, half your oil, salt, paprika. Onto the tray.",
-      "Roast 20 min alone. The potato needs the head start or the salmon overcooks waiting for it.",
-      "Push it to one side. Salmon skin-down with lemon slices and cherry tomatoes, rest of the oil, salt.",
-      "Back in 11–13 min. Done when it flakes but the centre still looks slightly translucent.",
-      "Squeeze the lemon over at the table. Salmon brings its own fat — no butter anywhere."]},
-  {n:"Crisp-skin salmon and rice",t:25,p:["sal"],c:["ric"],
-   k:"Skin-side down almost the whole time. That is the entire technique.",
-   s:["Rice on: rinsed, water 1.5 to 1, salt, lid on, lowest heat, 12 min.",
-      "Salt the salmon skin and leave 10 min, then wipe the moisture off. Wet skin never crisps.",
-      "Cold pan, skin down, then turn the heat to medium. Starting cold renders the fat out slowly instead of seizing it.",
-      "Press flat 20 seconds, then leave it 6–7 min. Watch the cooked line creep up the side.",
-      "Flip for 60 seconds only. Onto the rice with lemon and spring onion. No oil needed at any point."]},
-  {n:"Cod in foil with potato",t:35,p:["cod","prw"],c:["pot","swt"],
-   k:"White fish is lean and unforgiving. Steaming it in its own juice fixes that.",
-   s:["Oven 200°C. Potato cubed with your oil, salt, paprika, onto a tray. 18 min.",
-      "Fish on a square of foil with lemon slices, garlic, salt, a splash of water. Scrunch into a loose sealed parcel.",
-      "Parcel in alongside the potato for the last 14 min.",
-      "Open the parcel at the table — the juice in it is the sauce.",
-      "Cod is so lean you will have fat budget left. Spend it: a tablespoon of olive oil over the fish."]},
-  {n:"Garlic prawns and rice",t:20,p:["prw"],c:["ric"],
-   k:"Fastest protein there is. Overcooking is the only way to ruin them.",
-   s:["Rice on: rinsed, toasted dry with a garlic clove, water 1.5 to 1, salt, lid on, low, 12 min.",
-      "Prawns dried and salted. Pan hot with your oil.",
-      "Ninety seconds one side, 60 the other. Done the second they curl into a C — a tight O means overdone.",
-      "Off the heat, then garlic, chilli flakes and lemon. Garlic in a hot pan burns in seconds.",
-      "Onto the rice with all the pan juice. Parsley."]},
-  {n:"Spiced fish and sweet potato",t:35,p:["cod","sal"],c:["swt","pot"],
-   k:"Spice rub instead of batter. All the crust, none of the crumb.",
-   s:["Oven 220°C. Sweet potato in wedges, soaked in cold water 10 min then dried hard — rinsing the surface starch is what crisps them.",
-      "Tossed with paprika, garlic powder, salt and your oil, onto baking paper, 20 min.",
-      "Rub the fish with paprika, cumin, garlic powder, salt and a little cayenne.",
-      "Fish in alongside for the last 12–15 min. Done when it flakes under light pressure but still looks glossy.",
-      "Lemon at the table, never before — acid on raw fish starts cooking it."]},
-
-  // ===== EGGS =====
-  {n:"Soft scramble on sourdough",t:8,p:["egg","ewh"],c:["sou"],
-   k:"Low heat and constant movement. Almost everyone cooks eggs far too hot.",
-   s:["Beat the eggs with salt. Salting before cooking makes them more tender, not less.",
-      "Sourdough into the toaster. Timing matters — cold toast under hot eggs is a waste.",
-      "Lowest heat, your butter. Eggs in, wait 20 seconds.",
-      "Stir slowly and constantly, pulling the set edges into the middle.",
-      "Off the heat while still visibly wet — they finish on the way to the plate. Onto the toast, black pepper."]},
-  {n:"Potato tortilla",t:30,p:["egg","ewh"],c:["pot","swt"],
-   k:"Eggs and potato in one pan. Cold the next day is better than hot.",
-   s:["Potato sliced thin. Soften in a covered pan on low with your oil, 12 min, tender but not browned.",
-      "Beat the eggs with plenty of salt. Pour over the potato, turn the heat right down.",
-      "8 min, until only the very top is still wet.",
-      "Slide onto a plate, invert the pan over it, flip it back in. 3 min more.",
-      "Rest 10 min before cutting — it sets as it cools. Good cold from the fridge all week."]},
-  {n:"Eggs in tomato with bread",t:18,p:["egg","ewh"],c:["sou"],
-   k:"Shakshuka logic. Breakfast that does not taste like breakfast.",
-   s:["Onion and garlic soft in your oil. Cumin and paprika, 30 seconds, until they smell.",
-      "Tin of tomatoes, salt, simmer 8 min until thick enough to hold a dent.",
-      "Make wells, crack the eggs in, lid on, 4–5 min for runny yolks.",
-      "Parsley and black pepper. The bread is for the yolk — do not toast it too early."]},
-  {n:"Overnight oats",t:3,p:["yog","cot","whe"],c:["oat","mus"],
-   k:"Made the night before, which is the only reason you will actually eat breakfast.",
-   s:["Oats, yogurt or milk, and a pinch of salt. Salt in oats is what nobody does and everybody should.",
-      "Cinnamon stirred through. Into a jar, into the fridge.",
-      "Fruit in the morning rather than overnight, or it goes grey.",
-      "Thicker the next day — loosen with a splash of milk."]},
-
-  // ===== YOGURT, SNACK SLOT =====
-  {n:"Savoury yogurt bowl",t:5,p:["yog","cot"],c:["sou","oat","mus","ban","dat","pot","swt","ric","pas"],
-   k:"Far better than the sweet version at 4pm, when you are actually hungry.",
-   s:["Yogurt in a bowl. Salt, black pepper, a drizzle of your oil.",
-      "Cucumber, tomato, chopped herbs, a pinch of sumac or chilli flakes.",
-      "Nuts on top for crunch if the fat budget allows.",
-      "Eat it before you are hungry, not after. This is the meal that stops the 6pm order."]},
-  {n:"Sweet yogurt bowl",t:3,p:["yog","cot","whe"],c:["ban","dat","oat","mus"],
-   k:"Cinnamon makes it taste sweeter than it is, for nothing.",
-   s:["Yogurt, cinnamon, a little vanilla if you have it.",
-      "Banana sliced in, or two dates chopped small — chopped small goes much further than whole.",
-      "Nuts or seeds on top. Done in a minute."]},
-
-  // ===== CARB ONLY, PRE-GYM =====
-  {n:"Tuna rice bowl",t:12,p:["tun"],c:["ric","pas"],
-   k:"No cooking the protein at all. The fastest real meal in the app.",
-   s:["Rice on: rinsed, water 1.5 to 1, salt, lid on, lowest heat, 12 min. Or use cold leftover rice.",
-      "Tuna drained properly — squeeze it. Watery tuna makes everything taste of tin.",
-      "Mix with Greek yogurt, lemon, black pepper, a little mustard. This replaces mayo exactly.",
-      "Over the rice with cucumber, spring onion, pickled onion and chilli flakes.",
-      "Sesame or a few drops of soy if you have them. Eat cold or warm, both work."]},
-  {n:"Cod and rice",t:25,p:["cod","prw","tun"],c:["ric"],
-   k:"Lean fish and rice is the blandest thing you can make, so the technique here is all seasoning.",
-   s:["Rice on: rinsed, toasted dry 1 min with cumin seeds and a garlic clove, water 1.5 to 1, salt, lid on, low, 12 min.",
-      "Rub the fish with paprika, cumin, garlic powder, salt, a little cayenne.",
-      "Hot pan with your oil, 3 min, flip carefully, 2–3 min. It flakes when done but should still look glossy.",
-      "Fish out. Lemon juice and a splash of water into the hot pan, scrape up everything, 30 seconds.",
-      "Fork the rice, fish on top, pan juice over, lots of parsley. Cod is lean enough that you can add a proper tablespoon of oil."]},
-  {n:"Egg fried rice",t:12,p:["egg","ewh"],c:["ric"],
-   k:"Only works with cold leftover rice. Fresh rice turns to paste every time.",
-   s:["Cold rice from the fridge, broken up with your fingers.",
-      "Screaming hot pan. Beaten eggs in first, scramble fast and loose, straight out onto a plate.",
-      "Your oil in, then the rice. Press it flat and leave it 60 seconds to catch before you toss it.",
-      "Egg back in, spring onion, white pepper, a little soy.",
-      "Two minutes from here. Do not stir it constantly — the browned bits are the point."]},
-  {n:"Salmon pasta",t:22,p:["sal","prw","tun"],c:["pas"],
-   k:"The pasta water and the salmon fat make the sauce. No cream anywhere near it.",
-   s:["Pasta into heavily salted water. Keep a mug of the water before draining.",
-      "Salmon skin-down in a cold pan, heat to medium, 6 min. Flip 60 seconds. Out, flaked into chunks, skin discarded or eaten.",
-      "Same pan on low: garlic and chilli flakes in the salmon fat already there. One minute, golden not brown.",
-      "Drained pasta in with a big splash of the starchy water. Toss hard a full minute until it clings.",
-      "Salmon folded through at the end so it stays in chunks. Lemon zest, parsley, black pepper."]},
-  {n:"Chicken pasta, lean white sauce",t:25,p:["chk","tur","thi"],c:["pas"],
-   k:"A real white sauce with no cream and no butter roux. The sauce is not in the plate numbers, so use half the batch or log it under Off-plan food.",
-   s:["Pasta into heavily salted water. Keep a mug of the water before draining.",
-      "Salt and dry the chicken. Medium-high pan, 5 min, flip, 4 min, pull at 71°C. Rest it, then slice across the grain.",
-      "Sauce while it rests: whisk 1 tbsp cornflour into 250 ml cold milk, add a crushed garlic clove and salt, then medium heat and whisk constantly 2–3 min until it coats a spoon. Off the heat, stir in 20 g grated parmesan and a pinch of nutmeg.",
-      "Drained pasta into the sauce with a splash of the pasta water. Toss until it is glossy and clings.",
-      "Chicken on top. Peas or spinach folded through at the last minute make it a full plate."]},
-  {n:"Tuna pasta, yogurt white sauce",t:15,p:["tun"],c:["pas"],
-   k:"Cold sauce, hot pasta, no cooking. The yogurt stays creamy because it never boils.",
-   s:["Pasta into heavily salted water. Keep a mug of the water.",
-      "While it cooks, stir 150 g thick Greek yogurt with a crushed garlic clove, the juice of half a lemon, salt and black pepper.",
-      "Drain the pasta and let it steam off for a minute. Yogurt splits if it meets pasta straight from the pot.",
-      "Toss the pasta with the yogurt and a splash of pasta water until it loosens into a sauce. Flake the tuna through last so it stays in pieces.",
-      "Parsley, capers or chilli flakes if you have them."]},
-  {n:"Garlic prawn pasta, white sauce",t:20,p:["prw"],c:["pas"],
-   k:"Prawns need three minutes, so the sauce is the whole job. Same lean white sauce, no cream.",
-   s:["Pasta into heavily salted water. Keep a mug of the water.",
-      "Make the lean white sauce while it cooks: 1 tbsp cornflour whisked into 250 ml cold milk with a crushed garlic clove, medium heat, whisking 2–3 min. Off the heat, 20 g parmesan and black pepper.",
-      "Dry the prawns. Hot pan, 2 min a side until pink and curled. Longer and they go rubbery. Lemon juice over them in the pan.",
-      "Drained pasta into the sauce with a splash of the water, then the prawns. One toss and it is done.",
-      "Parsley and a little chilli if you want heat."]},
-  {n:"Chicken in flatbread",t:20,p:["chk","thi","tur"],c:["sou"],
-   k:"Lunch you can carry. Everything cooked the night before and assembled cold.",
-   s:["Salt the chicken and leave it, then dry it hard. Season with paprika, cumin, garlic powder.",
-      "Hot pan with your oil, 5 min, flip, 4 min, pull at 71°C. Rest 5 min then slice.",
-      "Bread warmed in the dry pan 30 seconds a side — this is the difference between bread and good bread.",
-      "Garlic yogurt spread on, chicken, pickled onion, tomato, cucumber, parsley.",
-      "Wrap tight in foil and it holds together until lunch."]},
-  {n:"Steak sandwich",t:18,p:["rib","sir","lam"],c:["sou"],
-   k:"Thin slices, not a slab. A whole steak in a sandwich is impossible to bite through.",
-   s:["Steak out and salted 30 min early. Pan screaming hot.",
-      "3 min, flip, 2 min for medium-rare. Pull 3°C under and rest a full 10 min — a hot steak makes soggy bread.",
-      "Bread cut and toasted in the steak pan, cut side down, soaking up what is left. 40 seconds.",
-      "Slice the steak as thin as you can across the grain.",
-      "Mustard, steak, pickled onion, rocket. Any resting juice poured over the meat, not the bread."]},
-  {n:"Kofta wrap",t:25,p:["mi5","mi10","lam"],c:["sou"],
-   k:"Mince shaped flat cooks in half the time and fits the bread properly.",
-   s:["Mix the mince with grated onion squeezed dry, parsley, cumin, coriander, paprika, salt, lots of pepper.",
-      "Work it a full minute with your hands until it is sticky, then rest 10 min in the fridge.",
-      "Shape into flat ovals, not balls. Hot dry pan, 3 min a side.",
-      "Bread warmed in the same pan to pick up the fat.",
-      "Garlic yogurt, kofta, pickled onion, tomato, chilli flakes. Wrap tight."]},
-  {n:"Protein oats",t:5,p:["whe","yog","cot"],c:["oat","mus","ban","dat"],
-   k:"Stir the powder in after cooking, never during, or it turns to rubber.",
-   s:["Oats with water or milk and a real pinch of salt. Microwave 2 min, or hob 4 min stirring.",
-      "Let it stand a minute off the heat so it stops steaming. This matters.",
-      "Now stir the protein in, with a splash more liquid — hot oats seize the powder into lumps.",
-      "Cinnamon, banana or chopped dates, nuts if the fat allows."]}
-  ,{n:"Pre-gym, no cooking",t:1,p:[],c:["ban","dat","oat","mus"],
-   k:"Sixty to ninety minutes before you lift. Do not overthink it.",
-   s:["Banana, or two dates, or both.",
-      "Salt your water if you are training in the heat.",
-      "That is the whole method. Anything heavier this close to training sits in your stomach."]}
-  ];
-
-  // Finishers — near-zero calorie, always offered.
-  var FIN = [
-  {n:"Garlic yogurt",t:3,k:"Replaces every cream sauce for 40 kcal instead of 400.",
-   s:["Crush 1 garlic clove to a paste with a pinch of salt using the flat of a knife. Chopped tastes harsh, paste tastes creamy.",
-      "Stir into Greek yogurt with lemon juice and 1 tsp oil.",
-      "Rest 10 min so the garlic mellows. Thin with water to pour.",
-      "Oregano, dill or mint all work. Make a week at a time."]},
-  {n:"Chimichurri",t:5,k:"Highest flavour-to-calorie ratio in the kitchen.",
-   s:["Big handful of parsley, 1 garlic clove, chilli flakes, chopped fine.",
-      "2 tbsp red wine vinegar, 1 tsp oil, salt. The acid carries it, not the fat.",
-      "Twenty minutes to come together. Keeps a week."]},
-  {n:"Pickled red onion",t:10,k:"Almost no calories, and it makes repetitive food taste new.",
-   s:["Onion sliced thin. Cover with vinegar, a pinch of salt, a pinch of sugar.",
-      "Ten minutes will do, a day is better. Keeps three weeks.",
-      "Put it on everything. Acid against protein is what stops a cut getting boring."]},
-  {n:"Pan sauce from nothing",t:4,k:"The brown bits are free flavour you are currently washing down the sink.",
-   s:["Meat out and resting. Pour off excess fat, keep the brown bits.",
-      "Splash of water, vinegar or lemon into the hot pan. It will hiss hard.",
-      "Scrape everything up, reduce by half, 2 min.",
-      "Mustard or a spoon of yogurt off the heat to thicken. No butter, no cream."]},
-  {n:"Harissa yogurt",t:3,k:"Same base as garlic yogurt, completely different meal.",
-   s:["Yogurt, 1–2 tsp harissa, lemon juice, salt.",
-      "Taste it — brands vary wildly in heat.",
-      "Best on lamb, kofta and roast potato."]}
-  ];
 
 
   // ── Preview only: a sample day so the screen opens mid-day, not empty.
   function seed() {
     if (S.mockSeeded) return;
     S.ticks[TODAY] = { m1: true, m2: true };
-    S.ticks[TODAY + "-s"] = { d3: true, omega: true, tong: true, crea: true };
-    S.ticks[TODAY + "-d"] = { water: true };
+    S.ticks[TODAY + "-d"] = { steps: true };
     S.mockSeeded = true; save();
   }
-  DAILY.push(["bike", "3 km bike ride", ""]);
 
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   function RM() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
@@ -9954,7 +9553,7 @@
   function prepNote(id) {
     if (id === "m2") return '<div class="prepnote">Last night’s dinner, from the box. Nothing to cook.</div>';
     if (id !== "m5") return "";
-    return '<div class="prepnote"><b>Cook for two:</b> ' + cookList(cookParts(DAY)) + ". Eat tonight’s amounts above, box the rest for tomorrow’s lunch.</div>";
+    return '<div class="prepnote"><b>Cook for two</b> (weights before cooking): ' + cookList(cookParts(DAY)) + ". Split it in two: one plate tonight, one box for tomorrow’s lunch.</div>";
   }
   // What goes in the pan for two portions, in the units you shop and cook in.
   function cookList(parts) {
@@ -9964,8 +9563,8 @@
         for (k in PIECE) if (PIECE[k].one === pt.noun || PIECE[k].many === pt.noun) nn = pt.n === 1 ? PIECE[k].one : PIECE[k].many;
         return pt.n + " " + esc(nn);
       }
-      var nm = pt.name.split(",")[0].toLowerCase();
-      return pt.g + " g " + esc(nm) + (/^(rice|pasta)$/.test(nm) ? " cooked (about " + round5(pt.g * 0.355) + " g dry)" : "");
+      var nm = pt.name.toLowerCase().split(", ");
+      return pt.g + " g " + esc(nm[1] === "dry" ? "dry " + nm[0] : nm.join(", "));
     }).join(", ");
   }
   function cardHtml(m) {
@@ -10020,13 +9619,12 @@
   }
 
   function renderMore() {
-    var d = count(DAILY, DAY + "-d"), s = count(SUPPS, DAY + "-s");
+    var d = count(DAILY, DAY + "-d");
     function row(kind, name, val, cls) {
       return '<button class="srow" data-sheet="' + kind + '"><span class="sk">' + name + '</span><span class="sv' + (cls ? " " + cls : "") + '">' + val + '</span><i class="chev"></i></button>';
     }
     $("more").innerHTML =
       row("d", "Checklist", d + " / " + DAILY.length, d === DAILY.length ? "on" : "") +
-      row("s", "Supplements", s + " / " + SUPPS.length, s === SUPPS.length ? "on" : "") +
       (hasLog(DAY) ? '<button class="srow" data-clearday><span class="sk">Clear this day’s food</span></button>' : "");
   }
   // Off-plan food sits right on Today: see it, remove it in one tap, add more.
@@ -10462,20 +10060,17 @@
         '<div class="rp-body"><div><ol>' + r.s.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol></div></div></div>";
     }
     return phead("Methods", esc(m[2]) + " · " + esc(combo), true) +
-      '<div class="pbody">' + hits.map(function (r, i) { return block(r, String(i), false); }).join("") +
-      '<div class="rhead">Finishers</div>' + FIN.map(function (f, i) { return block(f, "f" + i, true); }).join("") + "</div>";
+      '<div class="pbody">' + hits.map(function (r, i) { return block(r, String(i), false); }).join("") + "</div>";
   }
 
   function viewList(kind) {
-    var items = kind === "d" ? DAILY : SUPPS, key = DAY + "-" + kind, st = S.ticks[key] || {}, n = count(items, key);
+    var items = DAILY, key = DAY + "-" + kind, st = S.ticks[key] || {}, n = count(items, key);
     var rows = items.map(function (it) {
       return '<button class="trow' + (st[it[0]] ? " on" : "") + '" data-tick="' + kind + ":" + it[0] + '" aria-pressed="' + !!st[it[0]] + '"><span class="chk2"></span>' +
         '<span class="tb"><b>' + it[1] + "</b>" + (it[2] ? "<i>" + it[2] + "</i>" : "") + "</span></button>";
     }).join("");
-    var note = kind === "s"
-      ? '<div class="pnote"><b>Iron is deliberately not here.</b> You eat red meat and don’t lose blood monthly. Get ferritin tested and take it only if it’s low.</div>' : "";
-    return phead(kind === "d" ? "Checklist" : "Supplements", n + " of " + items.length + (kind === "d" ? " done" : " taken"), false) +
-      '<div class="pbody"><div class="fgroup">' + rows + "</div>" + note + "</div>";
+    return phead("Checklist", n + " of " + items.length + " done", false) +
+      '<div class="pbody"><div class="fgroup">' + rows + "</div></div>";
   }
 
   // ── Off-plan food: describe it, photograph the label, or type the numbers ──
@@ -10751,8 +10346,7 @@
       if (S.ticks[key][p[1]]) delete S.ticks[key][p[1]]; else S.ticks[key][p[1]] = true;
       t.classList.toggle("on", !!S.ticks[key][p[1]]);
       t.setAttribute("aria-pressed", String(!!S.ticks[key][p[1]]));
-      var items = p[0] === "d" ? DAILY : SUPPS;
-      $("panel").querySelector(".pt span").textContent = count(items, key) + " of " + items.length + (p[0] === "d" ? " done" : " taken");
+      $("panel").querySelector(".pt span").textContent = count(DAILY, key) + " of " + DAILY.length + " done";
       save(); renderMore(); return;
     }
     if (t.hasAttribute("data-xdel")) {
@@ -11313,94 +10907,67 @@
   }
   function renderTrend() { renderReview(); renderMorning(); renderWeight(); renderMeas(); renderPhotos(); renderLog(); renderPhases(); }
 
-  // ── Food: recipes first, the reference material folded away ──
-  var recQ = "", recChip = "all", RECS = null;
-  var CHIPS = [["all", "All"], ["pasta", "Pasta"], ["rice", "Rice"], ["potato", "Potato"], ["eggs", "Eggs & yogurt"], ["sauce", "Sauces"]];
-  function ol(steps) { return "<ol>" + steps.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol>"; }
-  function names(cat, ids) {
-    var seen = {}, out = [];
-    ids.forEach(function (id) { var n = food(cat, id)[1].split(",")[0]; if (!seen[n]) { seen[n] = 1; out.push(n); } });
-    return out.slice(0, 4).join(", ");
-  }
-  function recList() {
-    if (RECS) return RECS;
-    var out = [];
-    RECIPES.forEach(function (r) {
-      var nm = r.n.toLowerCase(), tags = [];
-      if (/sauce/.test(nm)) tags.push("sauce");
-      if (/pasta/.test(nm)) tags.push("pasta");
-      if (/rice/.test(nm)) tags.push("rice");
-      if (/potato/.test(nm)) tags.push("potato");
-      if (/egg/.test(nm)) tags.push("eggs");
-      out.push({ n: r.n, sub: r.s, t: 0, tags: tags,
-        body: '<div class="acc-in"><p>' + r.why + "</p><h4>You need</h4><ul>" + r.ing.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul><h4>Method</h4>" + ol(r.steps) + "</div>",
-        find: (r.n + " " + r.s + " " + r.why + " " + r.ing.join(" ") + " " + tags.join(" ")).toLowerCase() });
-    });
-    LIB.forEach(function (r) {
-      var tags = [];
-      if (r.c.indexOf("pas") >= 0) tags.push("pasta");
-      if (r.c.indexOf("ric") >= 0) tags.push("rice");
-      if (r.c.indexOf("pot") >= 0 || r.c.indexOf("swt") >= 0) tags.push("potato");
-      if (["egg", "ewh", "yog", "cot", "whe"].some(function (id) { return r.p.indexOf(id) >= 0; })) tags.push("eggs");
-      var fits = [names("protein", r.p), names("carb", r.c)].filter(Boolean).join(" · ");
-      out.push({ n: r.n, sub: r.k, t: r.t, tags: tags,
-        body: '<div class="acc-in"><p>' + r.k + "</p>" + (fits ? '<p class="rfit">Works with ' + fits + "</p>" : "") + ol(r.s) + "</div>",
-        find: (r.n + " " + r.k + " " + fits + " " + r.s.join(" ") + " " + tags.join(" ")).toLowerCase() });
-    });
-    FIN.forEach(function (r) {
-      out.push({ n: r.n, sub: r.k, t: r.t, tags: ["sauce"], body: '<div class="acc-in"><p>' + r.k + "</p>" + ol(r.s) + "</div>", find: (r.n + " " + r.k + " sauce " + r.s.join(" ")).toLowerCase() });
-    });
-    RECS = out;
-    return out;
-  }
-  function renderRecipes() {
-    var toks = recQ.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-    var list = recList().filter(function (r) {
-      if (recChip !== "all" && r.tags.indexOf(recChip) < 0) return false;
-      return toks.every(function (t) { return r.find.indexOf(t) >= 0; });
-    });
-    $("recCount").textContent = list.length + (list.length === 1 ? " recipe" : " recipes");
-    $("recChips").innerHTML = CHIPS.map(function (c) { return '<button class="chip' + (c[0] === recChip ? " on" : "") + '" data-chip="' + c[0] + '" aria-pressed="' + (c[0] === recChip) + '">' + c[1] + "</button>"; }).join("");
-    $("recipes").innerHTML = list.length
-      ? list.map(function (r, i) { return accHtml("rc" + i, false, r.n, r.sub, r.t ? r.t + " min" : "", r.body); }).join("")
-      : '<div class="sw"><div class="b">No recipe matches that. Try a shorter word, or All.</div></div>';
-  }
-  $("recQ").addEventListener("input", function (ev) { recQ = ev.target.value; renderRecipes(); });
-  $("recChips").addEventListener("click", function (ev) {
-    var b = ev.target.closest("[data-chip]"); if (!b) return;
-    recChip = b.getAttribute("data-chip"); renderRecipes();
-  });
-  var foodBuilt = false;
+  // ── Food: the week's dinners, then the shopping list ──
   function renderMenu() {
     var html = "";
     for (var k = 0; k < 7; k++) {
       var d = shift(TODAY, k), dish = dishOn(d);
       var tag = k === 0 ? "Tonight" : k === 1 ? "Tomorrow" : parseISO(d).toLocaleDateString(undefined, { weekday: "long" });
       html += accHtml("menu" + k, false, dish.n, tag + " · " + dish.t + " min", "",
-        '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">Cook for two:</b> ' + cookList(cookParts(d)) + ".</p><ol>" +
+        '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">Cook for two</b> (weights before cooking): ' + cookList(cookParts(d)) + ".</p><ol>" +
         dish.s.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol></div>");
     }
     $("menuList").innerHTML = html;
   }
-  function renderFood() {
-    renderMenu();
-    renderRecipes();
-    if (foodBuilt) return;   // the tables below are static and move into the accordion once; a second pass has nothing to find
-    foodBuilt = true;
-    var cls = { a: "a", b: "b", c: "" };
-    $("proteins").innerHTML = PROTEINS.map(function (gr) {
-      return '<div class="pgrp"><div class="pgt ' + cls[gr.cls] + '">' + gr.g + '</div><div class="pgn">' + gr.note + "</div>" +
-        '<div class="ph"><span></span><span>Protein</span><span>Fat</span><span>kcal</span></div>' +
-        gr.items.map(function (it) {
-          return '<div class="prow' + (it[4] === "the baseline" ? " base" : "") + '"><span class="n"><b>' + it[0] + "</b>" + (it[4] ? "<i>" + it[4] + "</i>" : "") + "</span>" +
-            '<span class="f p">' + it[2] + '</span><span class="f">' + it[3] + '</span><span class="f">' + it[1] + "</span></div>";
-        }).join("") + "</div>";
-    }).join("");
-    $("swaps").innerHTML = SWAPS.map(function (s2) { return '<div class="sw"><div class="a">' + s2[0] + '</div><div class="b">' + s2[1] + "</div></div>"; }).join("");
-    $("swapAcc").innerHTML = accHtml("sw1", false, "Swaps and the food rule", "Protein swaps, the rule, everything else", "", '<div class="acc-in" id="swapIn" style="padding-top:0"></div>');
-    var h = document.querySelector(".swapholder"), si = $("swapIn");
-    if (h && si) while (h.firstChild) si.appendChild(h.firstChild);
+  // Everything the next seven days need: breakfasts, snacks and bananas, and every dinner pan (which also
+  // fills the next day's lunch box). Weights before cooking, rounded up to what you can buy.
+  var SHOP_GROUPS = [["meat", "Meat"], ["dairy", "Dairy and eggs"], ["carb", "Rice, pasta, potatoes, bread"], ["veg", "Veg and fruit"], ["other", "Other"]];
+  function renderShop() {
+    var list = {}, order = [];
+    function add(name, grp, amt, unit) {
+      var x = list[name];
+      if (!x) { x = list[name] = { name: name, grp: grp, amt: 0, unit: unit }; order.push(x); }
+      x.amt += amt;
+    }
+    function part(pt) {
+      if (pt.skip || (!pt.noun && !pt.g) || /olive oil/i.test(pt.name)) return;
+      if (pt.mix) { pt.mix.forEach(function (m) { add(m[0], "veg", pt.g * m[1], "g"); }); return; }
+      if (pt.name === "Milk") { add("Semi-skimmed milk", "dairy", pt.g, "ml"); return; }
+      if (pt.noun) {   // counted things: eggs, slices, bananas, wraps
+        var egg = /egg/.test(pt.noun), ban = /banana/.test(pt.noun), slice = /slice/.test(pt.noun);
+        add(egg ? "Eggs" : ban ? "Bananas" : slice ? pt.name : "Wraps", egg ? "dairy" : ban ? "veg" : "carb", pt.n, slice ? "slices" : ""); return;
+      }
+      var g = /yogurt/i.test(pt.name) ? "dairy" : /peanut/i.test(pt.name) ? "other" : pt.cat === "protein" ? "meat" : pt.cat === "carb" ? "carb" : "other";
+      add(pt.name, g, pt.g, "g");
+    }
+    for (var k = 0; k < 7; k++) {
+      var d = shift(TODAY, k), pl = planOn(d).out;
+      ["m1", "m3", "m4"].forEach(function (id) { pl[id].parts.forEach(part); });
+      cookParts(d).forEach(part);
+    }
+    function amount(x) {
+      if (x.unit === "ml") return (Math.ceil(x.amt / 500) / 2).toFixed(1).replace(/\.0$/, "") + " L";
+      if (x.unit !== "g") return x.amt + (x.unit ? " " + x.unit : "");
+      if (/tinned/i.test(x.name)) { var c = Math.ceil(x.amt / 400); return c + (c === 1 ? " can" : " cans") + " (400 g)"; }
+      var r = Math.ceil(x.amt / 50) * 50;
+      return r >= 1000 ? +(r / 1000).toFixed(2) + " kg" : r + " g";
+    }
+    var html = "";
+    SHOP_GROUPS.forEach(function (gr) {
+      var rows = order.filter(function (x) { return x.grp === gr[0]; });
+      if (!rows.length) return;
+      html += '<div class="shopgrp">' + gr[1] + "</div>" + rows.map(function (x) {
+        return '<button class="trow" data-shop aria-pressed="false"><span class="chk2"></span><span class="tb"><b>' + esc(x.name.split(",")[0]) + "</b><i>" + amount(x) + "</i></span></button>";
+      }).join("");
+    });
+    $("shopList").innerHTML = html;
   }
+  // ticking off in the shop is only for the trip: nothing is saved
+  $("shopList").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-shop]"); if (!b) return;
+    var on = !b.classList.contains("on"); b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+  });
+  function renderFood() { renderMenu(); renderShop(); }
 
   // ── Train ──
   function sessionFor(name) { for (var i = 0; i < SESSIONS.length; i++) if (SESSIONS[i].d === name) return SESSIONS[i]; return null; }

@@ -545,6 +545,8 @@
   .mc4.k.over .bar i { background: var(--signal); }
 
   /* ── coach note, add-food sheet ── */
+  .shopgrp { padding: 14px 16px 6px; font-size: 13.5px; font-weight: 600; color: var(--fg-2); border-top: 1px solid var(--line); }
+  .shopgrp:first-child { border-top: 0; }
   .prepnote { margin: 0 0 14px; font-size: 14.5px; line-height: 1.45; color: var(--fg-2); }
   .prepnote b { color: var(--fg); font-weight: 600; }
   .trimnote { margin-top: 4px; font-family: var(--mono); font-size: 12.5px; color: var(--bronze); font-variant-numeric: tabular-nums; }
@@ -913,26 +915,13 @@
   <!-- ===== FOOD ===== -->
   <section class="view" id="v-food" hidden>
     <div class="gut">
-      <div class="titlerow"><h1>Food</h1><span class="dt" id="recCount"></span></div>
-      <p class="lede">Seven dinners on a loop. Each one is cooked double: dinner tonight, lunch tomorrow.</p>
+      <div class="titlerow"><h1>Food</h1></div>
+      <p class="lede">Seven dinners on a loop. Each one is cooked for two: dinner tonight, lunch tomorrow.</p>
       <div class="label">This week’s dinners</div>
       <div class="list" id="menuList"></div>
-      <div class="label">More recipes</div>
-      <label class="flabel" for="recQ" style="padding-top:0">Find a recipe</label>
-      <input class="inp" id="recQ" type="search" autocomplete="off" enterkeyhint="search" placeholder="White sauce, pasta, salmon…">
-      <div class="chips" id="recChips" role="group" aria-label="Filter recipes"></div>
-      <div class="list" id="recipes" style="margin-top:12px"></div>
-
-      <div class="label">Reference</div>
-      <div class="list" id="swapAcc"></div>
-      <div class="swapholder" hidden>
-        <div class="card rule"><p class="rl"><b>Real food, cooked by you.</b> Eggs, chicken thigh and breast, salmon, steak, Greek yogurt, cheese, milk, potato, rice, oats, fruit, olive oil, nuts. Five eggs is fine, because dietary cholesterol doesn&rsquo;t meaningfully move blood cholesterol in healthy young men. Skip the processed middle: cream, bottled dressings, packaged sauces, protein bars.</p></div>
-        <div class="label">Protein swaps <span class="r">per 180 g raw</span></div>
-        <div class="card ptab" id="proteins"></div>
-        <p class="aihint" style="padding:0 4px"><b>Match the protein first, then pay for the fat.</b> Anything in the third group isn&rsquo;t a swap, it&rsquo;s a meal you plan around. Drop the oil and the yogurt sauce, and make the protein back up elsewhere in the day.</p>
-        <div class="label">Everything else</div>
-        <div class="list" id="swaps"></div>
-      </div>
+      <div class="label">Shopping list</div>
+      <p class="aihint" style="padding:0 4px 8px">The next seven days: every breakfast, snack and banana, and every dinner cooked for two, which also makes the next day’s lunch. Weights before cooking. Have olive oil, salt, pepper, paprika, garlic powder, cumin and oregano in.</p>
+      <div class="list" id="shopList"></div>
     </div>
   </section>
 
