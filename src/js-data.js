@@ -2,7 +2,7 @@
 
   var PHASES = [
     { n: "Re-entry",   w: [1, 2],   kcal: 2350, p: 185, f: 78, c: 215,
-      d: "Steps 5k to 8k. 3–4 reps in reserve. Small deficit on purpose." },
+      d: "Steps 5k to 8k. Heavy from week two; week one stops at RPE 8. Small deficit on purpose." },
     { n: "The work",   w: [3, 4],   kcal: 2240, p: 191, f: 74, c: 200,
       d: "Steps 10k. Full intensity. One run or ride weekly." },
     { n: "Diet break", w: [5, 5],   kcal: 2700, p: 185, f: 85, c: 285,
@@ -364,12 +364,17 @@
   // without eating into recovery. Only the minutes change: 20 to start, 25 in the work, 30 in the finish
   // (when food is lowest), 20 over Christmas. Legs is left alone, and the 5K day is already cardio.
   function walkMin(d) { var ph = phaseOn(d); return ph.n === "The work" ? 25 : ph.n === "The finish" ? 30 : 20; }
+  // Each lift carries its RPE (10 = nothing left, 9 = one rep left, 8 = two). Heavy is the point: compounds at 8–9,
+  // isolation and drop sets to 9–10. Week one only, everything stops at RPE 8 while joints catch up after time off.
+  function rpeFor(x, d) { return dayDiff(START, d) < 7 ? "8" : x[3]; }
+  // week one has no drop sets and no sets to failure: they would break the RPE 8 cap
+  function setsFor(x, d) { return dayDiff(START, d) < 7 ? x[1].replace(" + drop", "").replace("failure", "max, 2 short of failure") : x[1]; }
   var SESSIONS = [
-    { d: "Push", s: "Monday · Nippard", ex: [["Machine shoulder press","3 × 8–10",1],["Cable chest press","2 × 10–12 + drop",0],["Triceps pressdown","2 × 12–15 + drop",0],["Close-grip push-up","1 × failure",0],["DB lateral raise","3 × 12–15",1],["Cable lateral raise","2 × 15–20",1],["Incline walk","WALK",0]] },
-    { d: "Pull", s: "Tuesday · Nippard", ex: [["1-arm kneeling pulldown","1 × 10–12",0],["Weighted pull-up","3 × 6–8",1],["Pendlay row","2 × 8–10",1],["Bayesian cable curl","3 × 12–15 ea",1],["Rope face pull","2 × 10–12 + drop",1],["Hammer curl","2 × 12–15",1],["Incline walk","WALK",0]] },
-    { d: "Legs", s: "Wednesday · one leg day", ex: [["Goblet squat","3 × 8",0],["Romanian deadlift","3 × 8",1],["Walking lunges","3 × 8 ea",0],["Calf raise","3 × 15",0],["Hanging leg raise","3 × 12–15",1],["Plank","3 × 60 s",0]] },
-    { d: "Upper", s: "Friday · boxing plan", ex: [["Lat pulldown","3 × 8",1],["DB bench press","3 × 8",0],["Seated cable row","3 × 10",1],["Incline smith press","3 × 8",0],["Lateral raises","3 × 12–15",1],["Face pulls","3 × 15",1],["Incline walk","WALK",0]] },
-    { d: "Delts, arms, abs, neck", s: "Saturday · 45 min", ex: [["DB lateral raise","4 × 12–20",1],["Rear delt fly","3 × 15",1],["EZ-bar curl","3 × 12",1],["Incline DB curl","3 × 10",1],["Hammer curl","3 × 12–15",1],["Rope pushdown","2 × 12",0],["Neck curl with plate","3 × 15",1],["Weighted cable crunch","3 × 12",1]] }
+    { d: "Push", s: "Monday · Nippard", ex: [["Machine shoulder press","3 × 8–10",1,"8–9"],["Cable chest press","2 × 10–12 + drop",0,"10"],["Triceps pressdown","2 × 12–15 + drop",0,"10"],["Close-grip push-up","1 × failure",0,"10"],["DB lateral raise","3 × 12–15",1,"9–10"],["Cable lateral raise","2 × 15–20",1,"9–10"],["Incline walk","WALK",0]] },
+    { d: "Pull", s: "Tuesday · Nippard", ex: [["1-arm kneeling pulldown","1 × 10–12",0,"9"],["Weighted pull-up","3 × 6–8",1,"8–9"],["Pendlay row","2 × 8–10",1,"8–9"],["Bayesian cable curl","3 × 12–15 ea",1,"9–10"],["Rope face pull","2 × 10–12 + drop",1,"10"],["Hammer curl","2 × 12–15",1,"9–10"],["Incline walk","WALK",0]] },
+    { d: "Legs", s: "Wednesday · one leg day", ex: [["Goblet squat","3 × 8",0,"8–9"],["Romanian deadlift","3 × 8",1,"8"],["Walking lunges","3 × 8 ea",0,"8–9"],["Calf raise","3 × 15",0,"9–10"],["Hanging leg raise","3 × 12–15",1,"9"],["Plank","3 × 60 s",0,"8"]] },
+    { d: "Upper", s: "Friday · boxing plan", ex: [["Lat pulldown","3 × 8",1,"8–9"],["DB bench press","3 × 8",0,"8–9"],["Seated cable row","3 × 10",1,"8–9"],["Incline smith press","3 × 8",0,"8–9"],["Lateral raises","3 × 12–15",1,"9–10"],["Face pulls","3 × 15",1,"9"],["Incline walk","WALK",0]] },
+    { d: "Delts, arms, abs, neck", s: "Saturday · 45 min", ex: [["DB lateral raise","4 × 12–20",1,"9–10"],["Rear delt fly","3 × 15",1,"9–10"],["EZ-bar curl","3 × 12",1,"9"],["Incline DB curl","3 × 10",1,"9"],["Hammer curl","3 × 12–15",1,"9–10"],["Rope pushdown","2 × 12",0,"9–10"],["Neck curl with plate","3 × 15",1,"8"],["Weighted cable crunch","3 × 12",1,"9"]] }
   ];
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
