@@ -20,7 +20,7 @@ blob = read(root / "data" / "foods.tsv")
 assert "</script" not in blob.lower()
 head = head.replace(marker, '<script type="text/plain" id="foodsDB">' + blob + "</script>\n" + marker)
 out = head + read(root / "src" / "js-data.js")
-for name in ("js-today.js", "js-search.js", "js-tabs.js", "js-init.js"):
+for name in ("js-today.js", "js-search.js", "js-tabs.js", "js-sync.js", "js-init.js"):
     out += read(root / "src" / name)
 preview = "--preview" in sys.argv
 if not preview:

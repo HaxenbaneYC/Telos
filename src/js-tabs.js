@@ -283,6 +283,7 @@
       S.photos.unshift({ d: TODAY, src: data });
       try { localStorage.setItem(KEY, JSON.stringify(S)); }
       catch (e2) { S.photos.shift(); err.textContent = "Out of room on this device. Delete an older photo first."; err.hidden = false; return; }
+      syncSaved();
       $("pIn").value = ""; renderPhotos();
     };
     img.onerror = function () { URL.revokeObjectURL(url); err.textContent = "That file isn’t an image."; err.hidden = false; };

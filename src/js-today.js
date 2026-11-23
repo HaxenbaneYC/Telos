@@ -317,6 +317,7 @@
     }
     $("more").innerHTML =
       row("d", "Checklist", d + " / " + DAILY.length, d === DAILY.length ? "on" : "") +
+      (syncAllowed() ? (function (b) { return row("sync", "Cloud backup", b.v, b.cls); })(syncStatus()) : "") +
       (hasLog(DAY) ? '<button class="srow" data-clearday><span class="sk">Clear this day’s food</span></button>' : "");
   }
   // Off-plan food sits right on Today: see it, remove it in one tap, add more.
@@ -963,7 +964,7 @@
   }
   function paintSheet() {
     var h = sh.view === "meal" ? viewMeal() : sh.view === "rec" ? viewRec()
-          : sh.view === "add" ? viewAdd() : sh.view === "photo" ? viewPhoto() : sh.view === "days" ? viewDays() : viewList(sh.view);
+          : sh.view === "add" ? viewAdd() : sh.view === "photo" ? viewPhoto() : sh.view === "days" ? viewDays() : sh.view === "sync" ? viewSync() : viewList(sh.view);
     $("panel").innerHTML = h;
   }
 
