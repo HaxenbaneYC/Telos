@@ -30,7 +30,7 @@ for(const [w,h] of [[320,568],[360,740],[390,844]]){
  const states=[
   ['today',async()=>{}],
   ['today-sumopen',async()=>{await p.evaluate(()=>{const b=document.getElementById('sumToggle');b&&b.offsetParent&&b.click()})}],
-  ['meal-sheet',async()=>{await p.evaluate(()=>document.querySelector('.mslot.next [data-open]').click());await p.waitForTimeout(500)}],
+  ['meal-sheet',async()=>{await p.evaluate(()=>document.querySelector('#meals [data-open]').click());await p.waitForTimeout(500)}],
   ['meal-pick',async()=>{await p.evaluate(()=>{const e=document.querySelector('#panel [data-cat]');e&&e.click()});await p.waitForTimeout(300)}],
   ['close',async()=>{await p.evaluate(()=>document.querySelector('[data-close]').click());await p.waitForTimeout(400)}],
   ['add-search',async()=>{await p.evaluate(()=>document.querySelector('#offplan [data-sheet=add]').click());await p.waitForTimeout(500);await p.fill('#qIn','orange juice');await p.waitForTimeout(400)}],

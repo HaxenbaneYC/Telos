@@ -374,7 +374,19 @@
     recChip = b.getAttribute("data-chip"); renderRecipes();
   });
   var foodBuilt = false;
+  function renderMenu() {
+    var html = "";
+    for (var k = 0; k < 7; k++) {
+      var d = shift(TODAY, k), dish = dishOn(d);
+      var tag = k === 0 ? "Tonight" : k === 1 ? "Tomorrow" : parseISO(d).toLocaleDateString(undefined, { weekday: "long" });
+      html += accHtml("menu" + k, false, dish.n, tag + " · " + dish.t + " min", "",
+        '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">Cook for two:</b> ' + cookList(cookParts(d)) + ".</p><ol>" +
+        dish.s.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol></div>");
+    }
+    $("menuList").innerHTML = html;
+  }
   function renderFood() {
+    renderMenu();
     renderRecipes();
     if (foodBuilt) return;   // the tables below are static and move into the accordion once; a second pass has nothing to find
     foodBuilt = true;
@@ -396,9 +408,7 @@
   // ── Train ──
   function sessionFor(name) { for (var i = 0; i < SESSIONS.length; i++) if (SESSIONS[i].d === name) return SESSIONS[i]; return null; }
   function exHtml(s2) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + x[1] + "</span></div>"; }).join(""); }
-  function trainedToday() { var t = S.ticks[TODAY + "-d"]; return !!(t && t.train); }
   // Training is a rotation that started on Push on the first day of the cut, not fixed weekdays.
-  function cycleIdx(isoDate) { var d = dayDiff(START, isoDate); return ((d % 7) + 7) % 7; }
   function rideCount() {
     var n = 0;
     for (var i = 0; i < 7; i++) { var t = S.ticks[shift(TODAY, -i) + "-d"]; if (t && t.bike) n++; }
@@ -455,20 +465,51 @@
       S.acts[TODAY].splice(Math.min(i, S.acts[TODAY].length), 0, a); save(); renderAct();
     });
   });
+  // The rotation follows what was done, not the calendar. Skip a day and the same session waits. Do a different
+  // one (Upper on a Legs day) and Legs is still owed next; Upper is then skipped when the round reaches it.
+  var SHORTS = { "5K run or bike": "5K", "Delts, arms, abs, neck": "Delts" };
+  function step(st, v) {
+    if (v !== st.owed) { st.ahead[v] = true; return st; }
+    st.owed = (st.owed + 1) % 7;
+    while (st.ahead[st.owed]) { delete st.ahead[st.owed]; st.owed = (st.owed + 1) % 7; }
+    return st;
+  }
+  function loggedOn(d, owed) {
+    if (S.sess[d] != null) return S.sess[d];
+    var t = S.ticks[d + "-d"];
+    return t && t.train ? owed : null;   // ticked without naming one (the Today checklist): the one that was owed
+  }
+  // where the rotation stands at the start of a day
+  function rotState(day) {
+    var st = { owed: 0, ahead: {} };
+    for (var d = START; dayDiff(d, day) > 0; d = shift(d, 1)) { var v = loggedOn(d, st.owed); if (v != null) step(st, v); }
+    return st;
+  }
+  var trSel = null;   // the session shown on the card: today's logged one, the next one owed, or one picked from the chips
   function renderTrain() {
-    var plan = WEEKPLAN[cycleIdx(TODAY)], ph = currentPhase(), s2 = sessionFor(plan[1]);
+    var st = rotState(TODAY), logged = loggedOn(TODAY, st.owed), base = logged != null ? logged : st.owed, ph = currentPhase();
+    if (trSel == null) trSel = base;
+    var plan = WEEKPLAN[trSel], s2 = sessionFor(plan[1]), done = logged === trSel;
     $("trDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long" });
     $("trPhase").innerHTML = "<b>Week " + weekNumber() + ", " + ph.n + ".</b> " + ph.d;
-    var done = trainedToday();
+    var chips = WEEKPLAN.map(function (w, i) {
+      return '<button class="chip' + (i === trSel ? " on" : "") + '" data-ses="' + i + '" aria-pressed="' + (i === trSel) + '">' + (SHORTS[w[1]] || w[1]) + (i === logged ? " ✓" : "") + "</button>";
+    }).join("");
+    var label = done ? (s2 ? "Trained · tap to undo" : "Done · tap to undo")
+      : logged != null ? "Log " + (SHORTS[plan[1]] || plan[1]) + " instead"
+      : (s2 ? "Mark as trained" : (plan[1] === "Rest" ? "Mark rest done" : "Mark as done"));
     $("trToday").innerHTML =
-      '<div class="mhead"><h3>' + plan[1] + '</h3><span class="tm">Today</span></div>' +
+      '<div class="mhead"><h3>' + plan[1] + '</h3><span class="tm">' + (trSel === base ? (logged != null ? "Today" : "Up next") : "Instead") + "</span></div>" +
       (plan[2] ? '<div class="tsub">' + plan[2] + "</div>" : "") +
+      '<div class="chips" style="flex-wrap:wrap;overflow:visible;margin:12px 0 4px">' + chips + "</div>" +
       (s2 ? '<div class="exs">' + exHtml(s2) + "</div>" : '<p class="lede" style="margin:8px 0 14px">' + (plan[1] === "Rest" ? "Rest is part of the plan." : "No gym today.") + "</p>") +
-      '<button class="bigbtn' + (done ? " on" : "") + '" id="trDone">' + (done ? (s2 ? "Trained · tap to undo" : "Done · tap to undo") : (s2 ? "Mark as trained" : (plan[1] === "Rest" ? "Mark rest done" : "Mark as done"))) + "</button>";
+      '<button class="bigbtn' + (done ? " on" : "") + '" id="trDone">' + label + "</button>";
     renderBike(); renderAct();
-    var rows = "";
+    var rows = "", seq = [base];
+    step(st, base);   // then as if each day does what is owed
+    for (var j = 1; j < 7; j++) { seq.push(st.owed); step(st, st.owed); }
     for (var k = 0; k < 7; k++) {
-      var date = shift(TODAY, k), d = WEEKPLAN[cycleIdx(date)], ss = sessionFor(d[1]), today = k === 0;
+      var date = shift(TODAY, k), d = WEEKPLAN[seq[k]], ss = sessionFor(d[1]), today = k === 0;
       var tag = parseISO(date).toLocaleDateString(undefined, { weekday: "short" });
       if (!ss) rows += '<div class="acc wrow' + (today ? " today" : "") + '"><div class="acc-h" style="cursor:default"><span class="daytag">' + tag + '</span><span class="ab"><span class="an">' + d[1] + "</span>" + (d[2] ? '<span class="as">' + d[2] + "</span>" : "") + "</span></div></div>";
       else rows += '<div class="acc wrow' + (today ? " today" : "") + '"><button class="acc-h" data-acc aria-expanded="false"><span class="daytag">' + tag + '</span><span class="ab"><span class="an">' + d[1] + '</span><span class="as">' + d[2] + '</span></span><i class="chev"></i></button><div class="acc-b"><div>' + exHtml(ss) + "</div></div></div>";
@@ -486,11 +527,18 @@
     save(); renderBike(); renderMore();
   });
   $("trToday").addEventListener("click", function (ev) {
+    var c = ev.target.closest("[data-ses]");
+    if (c) { trSel = +c.getAttribute("data-ses"); renderTrain(); return; }
     if (!ev.target.closest("#trDone")) return;
-    var key = TODAY + "-d";
+    var key = TODAY + "-d", was = loggedOn(TODAY, rotState(TODAY).owed), name = WEEKPLAN[trSel][1];
     if (!S.ticks[key]) S.ticks[key] = {};
-    if (S.ticks[key].train) delete S.ticks[key].train; else S.ticks[key].train = true;
+    if (was === trSel) { delete S.sess[TODAY]; delete S.ticks[key].train; trSel = null; }
+    else { S.sess[TODAY] = trSel; S.ticks[key].train = true; }
     save(); renderTrain(); renderMore();
+    toast(was === trSel ? "Training undone" : (SHORTS[name] || name) + " logged for today", function () {
+      if (was == null) { delete S.sess[TODAY]; delete S.ticks[key].train; } else { S.sess[TODAY] = was; S.ticks[key].train = true; }
+      trSel = null; save(); renderTrain(); renderMore();
+    });
   });
 
   // accordions (recipes, sessions, history)

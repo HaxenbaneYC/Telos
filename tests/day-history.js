@@ -46,11 +46,12 @@ const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) bad++; 
   await click('.tundo');
   ok((await p.$$eval('#offplan .xrow', e => e.length)) === 1, 'undo brought it back');
   // clear the day's food, then undo
+  const beforeClear = await T('#rEaten');
   await click('[data-clearday]');
   ok((await T('#rEaten')).startsWith('0 of') && (await p.$$eval('#offplan .xrow', e => e.length)) === 0, 'cleared the day: ' + await T('#rEaten') + ', ' + await T('#toast span'));
   await click('.tundo');
   const afterUndo = await T('#rEaten');
-  ok(afterUndo === '1,736 of 2,350' && afterUndo.split(' of ')[0] !== eatenY.split(' of ')[0], 'undo restored the whole day (meals and the off-plan item): ' + afterUndo);
+  ok(afterUndo === beforeClear && afterUndo.split(' of ')[0] !== eatenY.split(' of ')[0], 'undo restored the whole day (meals and the off-plan item): ' + afterUndo);
   // survives a reload
   await p.reload(); await p.waitForTimeout(900);
   await click('#dPrev');

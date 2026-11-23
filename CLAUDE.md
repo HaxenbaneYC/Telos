@@ -23,7 +23,20 @@ on the restart was 77 kg, one weigh-in. The phase numbers were kept: 2 kg moves 
 
 Training is a seven-day **rotation**, not weekdays: Push, Pull, Legs, 5K run or bike,
 Upper, Delts/arms/abs/neck, Rest, then round again. Day one (Sun 22 Nov 2026) is Push.
+The rotation follows what was **done**, not the calendar (`rotState()`): a skipped day keeps the same
+session owed; doing a different one (Upper on a Legs day) leaves Legs owed and Upper is skipped when the
+round reaches it. Any session can be logged from the chips on Train (`S.sess[date]` = index 0–6, which
+also ticks the checklist's "trained"). `tests/rotation.js`.
 Plus a **daily 3 km bike ride**, logged from the first day.
+
+**Meals are decided, not chosen (KISS, from 23 Nov).** He asked for no food options. Breakfast is eggs,
+sourdough and 500 ml semi-skimmed milk for his coffee (`MILK`, counted when breakfast is ticked). Snack is
+Greek yogurt and peanuts, pre-gym a banana. Dinner comes from `MENU`, seven dinners on a loop from
+`MENU_START`, each with an easy veg; it is cooked for two and **lunch is the box from the night before**
+(`dishFor()`: lunch is yesterday's dish). The box portion is sized for the day it is eaten, so every
+day adds up on its own; the dinner card and the Food tab give the pan total (`cookParts()`: tonight's
+plate plus tomorrow's box). His ingredients: chicken breast and thigh, steak, lean beef mince, rice,
+pasta, potato and sweet potato in the air fryer, wraps, eggs, sourdough, Greek yogurt, milk.
 
 
 Food rule: real food, cooked by himself. No cream, no bottled dressings, no
@@ -102,7 +115,8 @@ first on purpose; Trend is last.
   slides in on scroll. Meals open in a bottom sheet. Every change has an undo toast.
 - **Train** - today's session from the rotation, a 7-day "Next 7 days" list, the
   daily 3 km bike tick, back-from-time-off notes.
-- **Food** - recipes only: search, chips (Pasta, Rice, Potato, Eggs and yogurt,
+- **Food** - this week's seven dinners first (what to cook for two, and how), then the
+  recipe library: search, chips (Pasta, Rice, Potato, Eggs and yogurt,
   Sauces), "healthy but fun" plus the simple staples. The food rule and protein
   swaps live in one accordion at the bottom. He does not want a Food tab that is
   just reference tables.
@@ -124,7 +138,8 @@ Training and the trend view stay on today (weight and sleep have their own day a
 ### Meals, partial meals, skipped meals
 
 `MEALS` holds five slots as a **share of the day**, so they rescale when the phase
-changes. `buildMeal()` solves in three passes (carb and fat sources carry protein
+changes. Lunch and dinner have the same share. Fixed parts (the milk, each dish's veg) come off a slot's
+target before the rest is solved (`fixedParts()`). There is no food picker any more; `S.picks` is ignored. `buildMeal()` solves in three passes (carb and fat sources carry protein
 of their own). Portions are rounded to how they are served before macros are counted.
 `PIECE` counts eggs, slices, bananas; `egx` is the mixed-eggs composite.
 
@@ -166,13 +181,13 @@ These numbers (`COACH`) are judgment, adjustable.
 
 ### The day adds up
 
-`dayPlan()` builds all five slots together. A slot is solved against its share, but breakfast has no
+`dayPlan()` builds all five slots together (`planOn(d)` for any day, cached). A slot is solved against its share, but breakfast has no
 fat source and bananas and bread are coarse steps, so the leftover for the day goes to the slots that
 can take it in small steps (rice, potato, oil, chicken, yogurt, nuts); pieces never absorb it. The
 plan does not depend on what has been eaten; only the coach trim recalculates the slots still to come,
 and eaten slots stay as planned. Fat that cannot go lower (fatty meat, eggs) is traded against carbs so
-the calories still add up. Default day lands within 3% of the phase calories, one- and two-food swaps
-within about 6%. Known: the plan table's own macros do not sum to its calories (weeks 1-2: 2,302 vs
+the calories still add up. Every day of the 13 weeks on the menu lands within about 3.5% of the phase
+calories and 1% of protein (`tests/day-accuracy.js`). The coach trim never touches lunch: the box is cooked. Known: the plan table's own macros do not sum to its calories (weeks 1-2: 2,302 vs
 2,350; diet break: 2,645 vs 2,700), which is most of the remaining gap.
 
 ### Stored data is untrusted
@@ -261,7 +276,7 @@ the same shape; change all three together. Wordmark in the app header stays live
 - The deliverable is one self-contained HTML file. Edit `src/`, run `build.py`.
   No npm, no framework.
 - Vanilla JS, `var`, no transpiling.
-- Test before claiming it works. `tests/` has activity, morning-past, day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
+- Test before claiming it works. `tests/` has activity, rotation, morning-past, day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
   (Playwright). Render it in a real browser at 320, 360, 390 and 430 px and look at it. Past
   failures all shipped because nobody opened the page.
 - Keep it simple. His words: KISS. Don't add features he didn't ask for.

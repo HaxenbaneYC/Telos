@@ -545,6 +545,8 @@
   .mc4.k.over .bar i { background: var(--signal); }
 
   /* ── coach note, add-food sheet ── */
+  .prepnote { margin: 0 0 14px; font-size: 14.5px; line-height: 1.45; color: var(--fg-2); }
+  .prepnote b { color: var(--fg); font-weight: 600; }
   .trimnote { margin-top: 4px; font-family: var(--mono); font-size: 12.5px; color: var(--bronze); font-variant-numeric: tabular-nums; }
   .seg { display: flex; gap: 4px; padding: 4px; margin-bottom: 4px; background: var(--fill); border-radius: var(--r-ctl); }
   .segb { flex: 1; min-width: 0; min-height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--fg-2); font-size: 14.5px; font-weight: 600; cursor: pointer; transition: background-color .18s ease, color .18s ease; }
@@ -912,8 +914,11 @@
   <section class="view" id="v-food" hidden>
     <div class="gut">
       <div class="titlerow"><h1>Food</h1><span class="dt" id="recCount"></span></div>
-      <p class="lede">Complete meals, protein and carb cooked together, so week three is not chicken and rice again.</p>
-      <label class="flabel" for="recQ" style="padding-top:14px">Find a recipe</label>
+      <p class="lede">Seven dinners on a loop. Each one is cooked double: dinner tonight, lunch tomorrow.</p>
+      <div class="label">This week’s dinners</div>
+      <div class="list" id="menuList"></div>
+      <div class="label">More recipes</div>
+      <label class="flabel" for="recQ" style="padding-top:0">Find a recipe</label>
       <input class="inp" id="recQ" type="search" autocomplete="off" enterkeyhint="search" placeholder="White sauce, pasta, salmon…">
       <div class="chips" id="recChips" role="group" aria-label="Filter recipes"></div>
       <div class="list" id="recipes" style="margin-top:12px"></div>
@@ -8869,6 +8874,7 @@
         return { t: a.t, km: fin(a.km) ? Math.min(500, Math.max(0, a.km)) : 0, min: fin(a.min) ? Math.min(1440, Math.max(0, Math.round(a.min))) : 0 };
       });
     }, DAYKEY);
+    x.sess = mapOf(x.sess, function (v) { return fin(v) !== undefined && v >= 0 && v <= 6 && v === Math.round(v) ? v : undefined; }, /^\d{4}-\d{2}-\d{2}$/);
     x.skip = mapOf(x.skip, function (day) {
       return isObj(day) ? mapOf(day, function (m) { return isObj(m) ? flags(m, /^\d{1,2}$/) : undefined; }, MEALKEY) : undefined;
     }, DAYKEY);
@@ -8929,6 +8935,7 @@
       ["sou", "Sourdough",          270,  9,   2,   52],
       ["oat", "Oats, dry",          379, 13,   7,   67],
       ["mus", "Muesli",             360, 10,   6,   65],
+      ["tor", "Flour wrap",         297,  8,   7.6, 49.3],
       ["ban", "Banana",              89,  1.1, 0.3, 23],
       ["dat", "Dates",              277,  1.8, 0.2, 75]
     ],
@@ -8958,6 +8965,7 @@
     egg: { g: 50,  one: "whole egg",       many: "whole eggs" },
     ewh: { g: 33,  one: "egg white",       many: "egg whites" },
     sou: { g: 55,  one: "slice sourdough", many: "slices sourdough" },
+    tor: { g: 49,  one: "wrap",            many: "wraps" },
     ban: { g: 118, one: "banana",          many: "bananas" },
     dat: { g: 8,   one: "date",            many: "dates" }
   };
@@ -8981,17 +8989,76 @@
 
   // [id, time, name, share of day's P / F / C, categories asked for, defaults]
   // Shares sum to 1.00 on each macro, so every slot scales with the phase target.
+  // No choosing: breakfast, snack and pre-gym are always the same, lunch and dinner come from MENU.
+  // Lunch and dinner have the same share because lunch is yesterday's dinner, cooked twice.
   var MEALS = [
-    ["m1", "09:00", "Breakfast",     0.14, 0.35, 0.12, ["protein","carb"],       { protein:"egg", carb:"sou" }],
-    ["m2", "13:00", "Lunch at work", 0.32, 0.22, 0.29, ["protein","carb","fat"], { protein:"chk", carb:"ric", fat:"oil" }],
-    ["m3", "16:30", "Snack",         0.22, 0.21, 0.10, ["protein","fat"],        { protein:"yog", fat:"pea" }],
-    ["m4", "19:30", "Pre-gym",       0.00, 0.00, 0.21, ["carb"],                 { carb:"ban" }],
-    ["m5", "21:30", "Dinner",        0.32, 0.22, 0.28, ["protein","carb","fat"], { protein:"chk", carb:"pot", fat:"oil" }]
+    ["m1", "09:00", "Breakfast",     0.22, 0.34, 0.27,  ["protein","carb"],       { protein:"egg", carb:"sou" }],
+    ["m2", "13:00", "Lunch at work", 0.28, 0.20, 0.24,  ["protein","carb","fat"], { protein:"chk", carb:"ric", fat:"oil" }],
+    ["m3", "16:30", "Snack",         0.22, 0.26, 0.11,  ["protein","fat"],        { protein:"yog", fat:"pea" }],
+    ["m4", "19:30", "Pre-gym",       0.00, 0.00, 0.14,  ["carb"],                 { carb:"ban" }],
+    ["m5", "21:30", "Dinner",        0.28, 0.20, 0.24,  ["protein","carb","fat"], { protein:"chk", carb:"ric", fat:"oil" }]
   ];
+
+  // Milk for the day's coffee rides with breakfast, so ticking breakfast counts it. Semi-skimmed, per 100 ml.
+  var MILK = { ml: 500, k: 46, p: 3.5, f: 1.7, c: 4.7 };
+
+  // Seven dinners on a loop. Each one is cooked for two: half that night, half boxed for the next day's lunch.
+  // veg = [name, grams per portion, kcal, P, F, C per 100 g]. Methods in our own words.
+  var MENU_START = "2026-11-23";
+  var MENU = [
+    { n: "Chicken, rice and broccoli", p: "chk", c: "ric", veg: ["Broccoli", 150, 34, 2.8, 0.4, 6.6], t: 25,
+      s: ["Rice on first, enough for both portions.",
+          "Chicken in strips, salt, paprika and garlic powder, tossed in the oil.",
+          "Air fryer 200°C, 12–14 min, shake halfway. Cut the thickest piece: no pink, done.",
+          "Broccoli into the air fryer for the last 6 min, or 4 min in the microwave with a splash of water.",
+          "Split in two. Box tomorrow’s half once it stops steaming and put it straight in the fridge."] },
+    { n: "Steak, air-fryer potatoes and green beans", p: "sir", c: "pot", veg: ["Green beans", 150, 31, 1.8, 0.2, 7], t: 35,
+      s: ["Potatoes in 2 cm cubes, the oil and salt, air fryer 200°C for 20–22 min, shake twice.",
+          "Steak out of the fridge when the potatoes go in, salted both sides.",
+          "Very hot dry pan, 2–3 min a side for medium-rare at 2 cm. Rest 5 min before cutting.",
+          "Green beans: 4 min in boiling water or the microwave.",
+          "Slice tomorrow’s steak cold for the box. It eats fine cold or with 60 s in the microwave."] },
+    { n: "Chicken thighs, sweet potato fries and courgette", p: "thi", c: "swt", veg: ["Courgette", 150, 17, 1.2, 0.3, 3.1], t: 30,
+      s: ["Sweet potato in fries, half the oil and salt, air fryer 200°C for 15–18 min, shake halfway.",
+          "Thighs with paprika, garlic powder and salt. Air fryer or pan, 12–15 min until the juice runs clear.",
+          "Courgette in half-moons, the rest of the oil, 5 min in a hot pan.",
+          "Box tomorrow’s half. The fries soften in the fridge; 3 min back in the air fryer fixes them."] },
+    { n: "Beef mince pasta with tomato and spinach", p: "mi5", c: "pas", veg: ["Tinned tomatoes, onion, spinach", 200, 24, 1.4, 0.2, 5], t: 25,
+      s: ["Pasta into well-salted boiling water.",
+          "Mince into a hot pan with the oil. Leave it alone 3 min so it browns, then break it up.",
+          "Chopped onion in for 3 min, then the tinned tomatoes, salt and oregano. Simmer 10 min.",
+          "Spinach in at the end until it wilts. Toss with the drained pasta and a splash of the pasta water.",
+          "Box tomorrow’s half. It is better the next day."] },
+    { n: "Chicken fajita wraps", p: "chk", c: "tor", veg: ["Peppers and onion", 150, 33, 1, 0.2, 7.7], t: 20,
+      s: ["Chicken in strips with sliced peppers and onion, the oil, paprika, cumin, garlic powder and salt.",
+          "Hot pan 8–10 min, or air fryer 200°C for 12 min, shaking once.",
+          "Warm the wraps 20 s each in a dry pan. A spoon of Greek yogurt works as sour cream.",
+          "Box the filling and the wraps apart so the wraps don’t go soggy."] },
+    { n: "Beef and rice bowl", p: "mi5", c: "ric", veg: ["Broccoli and peppers", 150, 30, 1.9, 0.35, 6.3], t: 20,
+      s: ["Rice on, enough for both portions.",
+          "Mince into a hot pan with the oil, garlic, paprika, cumin and salt. Let it brown before you stir.",
+          "Broccoli and sliced peppers into the pan for the last 5 min, with a splash of water to steam them.",
+          "Rice in the bowl, beef and veg on top. Box tomorrow’s half."] },
+    { n: "Chicken thigh pasta with mushrooms and spinach", p: "thi", c: "pas", veg: ["Mushrooms and spinach", 150, 23, 3, 0.4, 3.5], t: 25,
+      s: ["Pasta into well-salted boiling water.",
+          "Thighs in strips, the oil, salt and pepper, hot pan 8 min.",
+          "Sliced mushrooms in for 4 min, a crushed garlic clove for 1, then spinach until it wilts.",
+          "Off the heat, 2 tbsp Greek yogurt and a splash of pasta water: creamy, no cream. Toss with the pasta.",
+          "Box tomorrow’s half."] }
+  ];
+  function dishOn(d) { var i = dayDiff(MENU_START, d) % MENU.length; return MENU[i < 0 ? i + MENU.length : i]; }
+  // the dish a slot eats on a day: dinner is that day's dish, lunch is the day before's
+  function dishFor(mealId, d) {
+    d = d || pday();
+    return mealId === "m5" ? dishOn(d) : mealId === "m2" ? dishOn(shift(d, -1)) : null;
+  }
+  // The plan can be worked out for a day other than the one on screen (lunch needs yesterday's dinner).
+  var PD = null;
+  function pday() { return PD || DAY; }
 
   // a slot's absolute targets for the phase, before any coach trim
   function planTarget(m) {
-    var ph = phaseOn(DAY);
+    var ph = phaseOn(pday());
     return { p: ph.p * m[3], f: ph.f * m[4], c: ph.c * m[5] };
   }
   // ...and with today's trim on the slots still to come
@@ -9006,9 +9073,19 @@
     return MEALS[0];
   }
   function pickFor(mealId) {
-    var m = mealById(mealId), saved = (S.picks && S.picks[mealId]) || {}, out = {};
-    m[6].forEach(function (cat) { out[cat] = (saved[cat] && hasFood(cat, saved[cat])) ? saved[cat] : m[7][cat]; });
+    var m = mealById(mealId), dish = dishFor(mealId), out = {};
+    m[6].forEach(function (cat) { out[cat] = m[7][cat]; });
+    if (dish) { out.protein = dish.p; out.carb = dish.c; }
     return out;
+  }
+  // Parts that are there whatever the targets: the day's milk at breakfast, the veg with lunch and dinner.
+  function fixedParts(mealId) {
+    if (mealId === "m1") return [{ cat: "carb", g: MILK.ml, n: MILK.ml, noun: "ml milk", sub: "semi-skimmed, coffee", name: "Milk",
+      t: { k: MILK.k * MILK.ml / 100, p: MILK.p * MILK.ml / 100, f: MILK.f * MILK.ml / 100, c: MILK.c * MILK.ml / 100 } }];
+    var dish = dishFor(mealId);
+    if (!dish) return [];
+    var v = dish.veg, u = v[1] / 100;
+    return [{ cat: "carb", g: v[1], name: v[0], t: { k: v[2] * u, p: v[3] * u, f: v[4] * u, c: v[5] * u } }];
   }
   // Protein hits the protein target. Carb fills the carb gap left after it.
   // Fat fills only what the first two have not already brought.
@@ -9052,20 +9129,22 @@
     // Three passes. The carb and fat sources carry protein of their own
     // (bread, rice, peanuts), so protein is solved against what is left
     // after them rather than against the raw target.
+    var X = { parts: fixedParts(mealId), t: { k: 0, p: 0, f: 0, c: 0 } };
+    X.parts.forEach(function (x) { X.t.k += x.t.k; X.t.p += x.t.p; X.t.f += x.t.f; X.t.c += x.t.c; });
     var P = NIL, C = NIL, F = NIL, fatSkip = false;
     for (var pass = 0; pass < 3; pass++) {
-      P = solveProtein(Math.max(0, tP - C.t.p - F.t.p));
-      C = pick.carb ? solve("carb", 5, Math.max(0, tC - P.t.c)) : NIL;
-      var fatGap = tF - P.t.f - C.t.f;
+      P = solveProtein(Math.max(0, tP - C.t.p - F.t.p - X.t.p));
+      C = pick.carb ? solve("carb", 5, Math.max(0, tC - P.t.c - X.t.c)) : NIL;
+      var fatGap = tF - P.t.f - C.t.f - X.t.f;
       fatSkip = !!pick.fat && fatGap <= 1;
       F = (pick.fat && !fatSkip) ? solve("fat", 4, fatGap) : NIL;
     }
 
-    var parts = P.parts.concat(C.parts, F.parts);
+    var parts = P.parts.concat(C.parts, X.parts, F.parts);
     if (pick.fat && fatSkip) parts.push({ cat:"fat", g:0, name: food("fat", pick.fat)[1], skip:true });
 
-    var tot = { k: P.t.k+C.t.k+F.t.k, p: P.t.p+C.t.p+F.t.p,
-                f: P.t.f+C.t.f+F.t.f, c: P.t.c+C.t.c+F.t.c };
+    var tot = { k: P.t.k+C.t.k+F.t.k+X.t.k, p: P.t.p+C.t.p+F.t.p+X.t.p,
+                f: P.t.f+C.t.f+F.t.f+X.t.f, c: P.t.c+C.t.c+F.t.c+X.t.c };
     var raw = { k: tot.k, p: tot.p, f: tot.f, c: tot.c };
     tot.k = Math.round(tot.k); tot.p = Math.round(tot.p);
     tot.f = Math.round(tot.f); tot.c = Math.round(tot.c);
@@ -9118,22 +9197,40 @@
     }
     return best;
   }
-  var PLAN = { key: "", v: null }, PLAIN = { key: "", v: null };
-  function plainPlan() {
-    var key = JSON.stringify([S.picks, S.eggs, phaseOn(DAY).n]);
-    if (PLAIN.key === key && PLAIN.v) return PLAIN.v;
+  // Lunch is the box from the night before: the same dish as yesterday's dinner (dishFor), with the portion
+  // sized for the day it is eaten. Each day is solved on its own, so every day adds up, including the first
+  // day of a new phase. Tonight's pan is tonight's plate plus tomorrow's box (cookParts). Nothing here
+  // depends on what was eaten.
+  var PLAN = { key: "", v: null }, FREE = {};
+  function planOn(d) {
+    if (FREE[d]) return FREE[d];
+    var keep = PD; PD = d;
     var base = {}, adj = {};
     MEALS.forEach(function (m) { base[m[0]] = planTarget(m); adj[m[0]] = { p: 0, f: 0, c: 0 }; });
-    PLAIN.v = { out: reconcile(MEALS, base, adj), adj: adj }; PLAIN.key = key;
-    return PLAIN.v;
+    FREE[d] = { out: reconcile(MEALS, base, adj), adj: adj };
+    PD = keep;
+    return FREE[d];
   }
+  // what goes in the pan on day d: that night's dinner and the next day's lunch, added up item by item
+  function cookParts(d) {
+    var out = [], at = {};
+    planOn(d).out.m5.parts.concat(planOn(shift(d, 1)).out.m2.parts).forEach(function (pt) {
+      if (pt.skip || (!pt.noun && !pt.g)) return;
+      var x = at[pt.name];
+      if (!x) { x = at[pt.name] = { name: pt.name, g: 0, n: pt.noun ? 0 : undefined, noun: pt.noun }; out.push(x); }
+      x.g += pt.g; if (pt.noun) x.n += pt.n;
+    });
+    return out;
+  }
+  function plainPlan() { return planOn(DAY); }
   function dayPlan() {
     var plain = plainPlan();
     if (!TRIM.on) return plain.out;
     var hs = MEALS.map(function (m) { return handled(m[0]) ? 1 : 0; }).join("");
-    var key = JSON.stringify([PLAIN.key, TRIM.fatFrac, TRIM.carbFrac, hs]);
+    var key = JSON.stringify([DAY, TRIM.fatFrac, TRIM.carbFrac, hs]);
     if (PLAN.key === key && PLAN.v) return PLAN.v;
-    var open = MEALS.filter(function (m) { return !handled(m[0]); }), base = {}, adj = {};
+    // the box is already cooked: the trim only touches the slots still to come that can still change
+    var open = MEALS.filter(function (m) { return !handled(m[0]) && m[0] !== "m2"; }), base = {}, adj = {};
     open.forEach(function (m) { base[m[0]] = slotTarget(m); adj[m[0]] = { p: plain.adj[m[0]].p, f: plain.adj[m[0]].f, c: plain.adj[m[0]].c }; });
     var out = reconcile(open, base, adj), res = {};
     MEALS.forEach(function (m) { res[m[0]] = out[m[0]] || plain.out[m[0]]; });
@@ -9266,6 +9363,9 @@
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];}); }
 
   function methodsFor(mealId) {
+    if (mealId === "m2") return [];
+    var dish = dishFor(mealId);
+    if (dish) return [{ n: dish.n, t: dish.t, k: "Cook double: half tonight, half boxed for tomorrow’s lunch.", s: dish.s }];
     var pick = pickFor(mealId);
     // The whole+whites mix cooks like eggs, so it matches the egg methods.
     var pid = pick.protein === "egx" ? "egg" : pick.protein;
@@ -9630,7 +9730,7 @@
     var toggle = !!mealId && n >= 1;
     return parts.map(function (pt, i) {
       var q, w, none = pt.skip || (!pt.noun && pt.g === 0);
-      if (none)         { q = "none"; w = esc(pt.name) + '<span class="gs">' + (pt.skip ? "protein covers the fat" : "trimmed for today") + "</span>"; }
+      if (none)         { q = "none"; w = esc(pt.name) + '<span class="gs">' + (pt.skip ? "protein covers the fat" : TRIM.on && DAY === TODAY ? "trimmed for today" : "not needed today") + "</span>"; }
       else if (pt.noun) { q = esc(pt.n); w = esc(pt.noun) + '<span class="gs">' + esc(pt.sub) + "</span>"; }
       else              { q = esc(pt.g) + " g"; w = esc(pt.name); }
       var off = pt.off || (toggle && sk[i]);
@@ -9692,7 +9792,8 @@
     MEALS.forEach(function (m) {
       if (handled(m[0])) return;
       var t = buildMeal(m[0]).tot;
-      o.k += t.k; o.f += t.f; o.c += t.c; if (m[0] !== "m4") o.cNoPre += t.c;
+      o.k += t.k; if (m[0] === "m2") return;
+      o.f += t.f; o.c += t.c; if (m[0] !== "m4") o.cNoPre += t.c;
     });
     return o;
   }
@@ -9802,7 +9903,7 @@
   var justAte = null, revealNext = false, eatenOpen = false;
   function rowHtml(m) {
     var id = m[0], b = mealView(id), pick = pickFor(id), done = isDone(id), skd = isSkipped(id);
-    var names = m[6].map(function (cat) { return shortName(cat, pick[cat]); }).join(" · ");
+    var dish = dishFor(id), names = dish ? (id === "m2" ? "Box · " : "") + dish.n : m[6].map(function (cat) { return shortName(cat, pick[cat]); }).join(" · ") + (id === "m1" ? " · Milk" : "");
     var sn = done && snapOf(DAY, id);
     if (sn) {
       var off = [], on = [];
@@ -9836,16 +9937,33 @@
     var d = plainBuild(id).tot.k - buildMeal(id).tot.k;
     return d >= 5 ? '<div class="trimnote">−' + d + " kcal to cover your off-plan food</div>" : "";
   }
+  // Lunch is last night's box; dinner says what to cook for two.
+  function prepNote(id) {
+    if (id === "m2") return '<div class="prepnote">Last night’s dinner, from the box. Nothing to cook.</div>';
+    if (id !== "m5") return "";
+    return '<div class="prepnote"><b>Cook for two:</b> ' + cookList(cookParts(DAY)) + ". Eat tonight’s amounts above, box the rest for tomorrow’s lunch.</div>";
+  }
+  // What goes in the pan for two portions, in the units you shop and cook in.
+  function cookList(parts) {
+    return parts.map(function (pt) {
+      if (pt.noun) {
+        var k, nn = pt.noun;
+        for (k in PIECE) if (PIECE[k].one === pt.noun || PIECE[k].many === pt.noun) nn = pt.n === 1 ? PIECE[k].one : PIECE[k].many;
+        return pt.n + " " + esc(nn);
+      }
+      var nm = pt.name.split(",")[0].toLowerCase();
+      return pt.g + " g " + esc(nm) + (/^(rice|pasta)$/.test(nm) ? " cooked (about " + round5(pt.g * 0.355) + " g dry)" : "");
+    }).join(", ");
+  }
   function cardHtml(m) {
     var id = m[0], b = selView(id), hits = methodsFor(id);
     return '<div class="mslot next" data-m="' + id + '"><div class="mcard">' +
       '<div class="mhead"><h3>' + m[2] + '</h3><span class="tm">' + m[1] + "</span></div>" +
       '<div class="mac">' + macLine(b.tot) + "</div>" + trimNote(id) +
-      '<div class="items">' + itemsHtml(b.parts, id) + "</div>" + skipSlot(b) +
+      '<div class="items">' + itemsHtml(b.parts, id) + "</div>" + skipSlot(b) + prepNote(id) +
       (b.allOff ? '<button class="bigbtn skip" data-skipmeal="' + id + '">Skip ' + m[2].toLowerCase() + "</button>" : '<button class="bigbtn" data-ate="' + id + '">Ate it</button>') +
-      '<div class="two"><button class="sbtn" data-open="' + id + '">Change foods</button>' +
-      (hits.length ? '<button class="sbtn rec" data-rec="' + id + '">Recipes · ' + hits.length + "</button>" : "") +
-      "</div></div></div>";
+      (hits.length ? '<button class="sbtn rec" data-rec="' + id + '" style="width:100%;margin-top:10px">How to cook</button>' : "") +
+      "</div></div>";
   }
   // Eaten meals fold into one row, so the open meal stays where you left your thumb.
   function renderMeals() {
@@ -10304,41 +10422,21 @@
 
   function viewMeal() {
     var id = sh.meal, m = mealById(id), done = isDone(id), skd = isSkipped(id), b = done ? mealView(id) : selView(id), pick = pickFor(id), hits = methodsFor(id);
-    var foods = m[6].map(function (cat) {
-      return '<button class="frow" data-cat="' + cat + '"><span class="fk">' + cat + '</span><span class="fv">' + esc(food(cat, pick[cat])[1]) + '</span><i class="chev"></i></button>';
-    }).join("");
-    if (pick.protein && RED[pick.protein]) {
+    var foods = "";
+    if (pick.protein && RED[pick.protein] && id !== "m2") {
       var cur = S.done[id] || "medium-rare";
       foods += '<label class="frow"><span class="fk">Cooked</span><select class="fsel" data-done="' + id + '" aria-label="How to cook it">' +
         ["rare", "medium-rare", "medium", "medium-well", "well done"].map(function (d) {
           return '<option value="' + d + '"' + (d === cur ? " selected" : "") + ">" + d + "</option>";
         }).join("") + "</select></label>";
     }
-    if (pick.protein === "egx") {
-      var ew = wholeEggs(id);
-      foods += '<label class="frow"><span class="fk">Eggs</span><select class="fsel" data-eggs="' + id + '" aria-label="Whole eggs in the mix">' +
-        [0, 1, 2, 3, 4, 5, 6].map(function (n) {
-          return '<option value="' + n + '"' + (n === ew ? " selected" : "") + ">" + n + " whole, rest whites</option>";
-        }).join("") + "</select></label>";
-    }
     return phead(m[2], m[1] + " · " + macLine(b.tot), false) +
-      '<div class="pbody"><div class="items big">' + itemsHtml(b.parts, skd ? null : id) + "</div>" + (done ? doneSlot(id) : (skd ? "" : skipSlot(b) + trimNote(id))) +
-      '<div class="plabel">Foods</div><div class="fgroup">' + (done ? foods.replace(/data-cat=/g, 'disabled data-x=') : foods) + "</div></div>" +
+      '<div class="pbody"><div class="items big">' + itemsHtml(b.parts, skd ? null : id) + "</div>" + (done ? doneSlot(id) : (skd ? "" : skipSlot(b) + trimNote(id))) + prepNote(id) +
+      (foods ? '<div class="fgroup" style="margin-top:12px">' + foods + "</div>" : "") + "</div>" +
       '<div class="pfoot">' + (skd ? '<button class="bigbtn" data-unskip="' + id + '">Undo skip</button>'
         : (!done && b.allOff ? '<button class="bigbtn skip" data-skipmeal="' + id + '">Skip ' + m[2].toLowerCase() + "</button>"
         : '<button class="bigbtn' + (done ? " on" : "") + '" data-ate="' + id + '">' + (done ? "Undo eaten" : "Ate it") + "</button>")) +
-      (hits.length ? '<button class="sbtn rec" data-rec="' + id + '">Recipes · ' + hits.length + "</button>" : "") + "</div>";
-  }
-
-  function viewPick() {
-    var m = mealById(sh.meal), cur = pickFor(sh.meal)[sh.cat];
-    var opts = FOODS[sh.cat].map(function (f) {
-      var u = sh.cat === "protein" ? f[3] + " g protein" : sh.cat === "carb" ? f[5] + " g carbs" : f[4] + " g fat";
-      return '<button class="opt' + (f[0] === cur ? " sel" : "") + '" data-food="' + f[0] + '"><span class="ob"><span class="on1">' + esc(f[1]) +
-        '</span><span class="on2">per 100 g · ' + f[2] + " kcal · " + u + '</span></span><span class="tick"></span></button>';
-    }).join("");
-    return phead(sh.cat.charAt(0).toUpperCase() + sh.cat.slice(1), m[2], true) +
-      '<div class="pbody"><div class="fgroup">' + opts + "</div></div>";
+      (hits.length ? '<button class="sbtn rec" data-rec="' + id + '">How to cook</button>' : "") + "</div>";
   }
 
   function viewRec() {
@@ -10564,7 +10662,7 @@
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: RM() ? "auto" : "smooth" });
   }
   function paintSheet() {
-    var h = sh.view === "meal" ? viewMeal() : sh.view === "pick" ? viewPick() : sh.view === "rec" ? viewRec()
+    var h = sh.view === "meal" ? viewMeal() : sh.view === "rec" ? viewRec()
           : sh.view === "add" ? viewAdd() : sh.view === "photo" ? viewPhoto() : sh.view === "days" ? viewDays() : viewList(sh.view);
     $("panel").innerHTML = h;
   }
@@ -10585,7 +10683,7 @@
   }
 
   $("panel").addEventListener("click", function (ev) {
-    var t = ev.target.closest("[data-paste],[data-topaste],#keySave,[data-keyremove],[data-day],[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-cat],[data-food],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
+    var t = ev.target.closest("[data-paste],[data-topaste],#keySave,[data-keyremove],[data-day],[data-skipmeal],[data-unskip],[data-hit],[data-unpick],[data-pdel],[data-sk],[data-close],[data-back],[data-ate],[data-rec],[data-pick],[data-tick],[data-xdel],[data-tab],[data-stop],#fAdd,#dGo");
     if (!t) return;
     if (t.hasAttribute("data-hit")) { pickFood(+t.getAttribute("data-hit")); return; }
     if (t.hasAttribute("data-unpick")) { syncAdd(); sh.pick = null; sh.ready = false; sh.note = ""; paintSheet(); return; }
@@ -10621,12 +10719,6 @@
       toggleAte(id, was);
       if (was) paintSheet(); else closeSheet();
       return;
-    }
-    if (t.hasAttribute("data-cat")) { sh = { view: "pick", meal: sh.meal, cat: t.getAttribute("data-cat") }; paintSheet(); return; }
-    if (t.hasAttribute("data-food")) {
-      if (!S.picks[sh.meal]) S.picks[sh.meal] = {};
-      S.picks[sh.meal][sh.cat] = t.getAttribute("data-food");
-      clearSkip(sh.meal); save(); sh = { view: "meal", meal: sh.meal }; paintSheet(); refresh(); return;
     }
     if (t.hasAttribute("data-rec")) { sh = { view: "rec", meal: t.getAttribute("data-rec") }; paintSheet(); return; }
     if (t.hasAttribute("data-pick")) {
@@ -11266,7 +11358,19 @@
     recChip = b.getAttribute("data-chip"); renderRecipes();
   });
   var foodBuilt = false;
+  function renderMenu() {
+    var html = "";
+    for (var k = 0; k < 7; k++) {
+      var d = shift(TODAY, k), dish = dishOn(d);
+      var tag = k === 0 ? "Tonight" : k === 1 ? "Tomorrow" : parseISO(d).toLocaleDateString(undefined, { weekday: "long" });
+      html += accHtml("menu" + k, false, dish.n, tag + " · " + dish.t + " min", "",
+        '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">Cook for two:</b> ' + cookList(cookParts(d)) + ".</p><ol>" +
+        dish.s.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ol></div>");
+    }
+    $("menuList").innerHTML = html;
+  }
   function renderFood() {
+    renderMenu();
     renderRecipes();
     if (foodBuilt) return;   // the tables below are static and move into the accordion once; a second pass has nothing to find
     foodBuilt = true;
@@ -11288,9 +11392,7 @@
   // ── Train ──
   function sessionFor(name) { for (var i = 0; i < SESSIONS.length; i++) if (SESSIONS[i].d === name) return SESSIONS[i]; return null; }
   function exHtml(s2) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + x[1] + "</span></div>"; }).join(""); }
-  function trainedToday() { var t = S.ticks[TODAY + "-d"]; return !!(t && t.train); }
   // Training is a rotation that started on Push on the first day of the cut, not fixed weekdays.
-  function cycleIdx(isoDate) { var d = dayDiff(START, isoDate); return ((d % 7) + 7) % 7; }
   function rideCount() {
     var n = 0;
     for (var i = 0; i < 7; i++) { var t = S.ticks[shift(TODAY, -i) + "-d"]; if (t && t.bike) n++; }
@@ -11347,20 +11449,51 @@
       S.acts[TODAY].splice(Math.min(i, S.acts[TODAY].length), 0, a); save(); renderAct();
     });
   });
+  // The rotation follows what was done, not the calendar. Skip a day and the same session waits. Do a different
+  // one (Upper on a Legs day) and Legs is still owed next; Upper is then skipped when the round reaches it.
+  var SHORTS = { "5K run or bike": "5K", "Delts, arms, abs, neck": "Delts" };
+  function step(st, v) {
+    if (v !== st.owed) { st.ahead[v] = true; return st; }
+    st.owed = (st.owed + 1) % 7;
+    while (st.ahead[st.owed]) { delete st.ahead[st.owed]; st.owed = (st.owed + 1) % 7; }
+    return st;
+  }
+  function loggedOn(d, owed) {
+    if (S.sess[d] != null) return S.sess[d];
+    var t = S.ticks[d + "-d"];
+    return t && t.train ? owed : null;   // ticked without naming one (the Today checklist): the one that was owed
+  }
+  // where the rotation stands at the start of a day
+  function rotState(day) {
+    var st = { owed: 0, ahead: {} };
+    for (var d = START; dayDiff(d, day) > 0; d = shift(d, 1)) { var v = loggedOn(d, st.owed); if (v != null) step(st, v); }
+    return st;
+  }
+  var trSel = null;   // the session shown on the card: today's logged one, the next one owed, or one picked from the chips
   function renderTrain() {
-    var plan = WEEKPLAN[cycleIdx(TODAY)], ph = currentPhase(), s2 = sessionFor(plan[1]);
+    var st = rotState(TODAY), logged = loggedOn(TODAY, st.owed), base = logged != null ? logged : st.owed, ph = currentPhase();
+    if (trSel == null) trSel = base;
+    var plan = WEEKPLAN[trSel], s2 = sessionFor(plan[1]), done = logged === trSel;
     $("trDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long" });
     $("trPhase").innerHTML = "<b>Week " + weekNumber() + ", " + ph.n + ".</b> " + ph.d;
-    var done = trainedToday();
+    var chips = WEEKPLAN.map(function (w, i) {
+      return '<button class="chip' + (i === trSel ? " on" : "") + '" data-ses="' + i + '" aria-pressed="' + (i === trSel) + '">' + (SHORTS[w[1]] || w[1]) + (i === logged ? " ✓" : "") + "</button>";
+    }).join("");
+    var label = done ? (s2 ? "Trained · tap to undo" : "Done · tap to undo")
+      : logged != null ? "Log " + (SHORTS[plan[1]] || plan[1]) + " instead"
+      : (s2 ? "Mark as trained" : (plan[1] === "Rest" ? "Mark rest done" : "Mark as done"));
     $("trToday").innerHTML =
-      '<div class="mhead"><h3>' + plan[1] + '</h3><span class="tm">Today</span></div>' +
+      '<div class="mhead"><h3>' + plan[1] + '</h3><span class="tm">' + (trSel === base ? (logged != null ? "Today" : "Up next") : "Instead") + "</span></div>" +
       (plan[2] ? '<div class="tsub">' + plan[2] + "</div>" : "") +
+      '<div class="chips" style="flex-wrap:wrap;overflow:visible;margin:12px 0 4px">' + chips + "</div>" +
       (s2 ? '<div class="exs">' + exHtml(s2) + "</div>" : '<p class="lede" style="margin:8px 0 14px">' + (plan[1] === "Rest" ? "Rest is part of the plan." : "No gym today.") + "</p>") +
-      '<button class="bigbtn' + (done ? " on" : "") + '" id="trDone">' + (done ? (s2 ? "Trained · tap to undo" : "Done · tap to undo") : (s2 ? "Mark as trained" : (plan[1] === "Rest" ? "Mark rest done" : "Mark as done"))) + "</button>";
+      '<button class="bigbtn' + (done ? " on" : "") + '" id="trDone">' + label + "</button>";
     renderBike(); renderAct();
-    var rows = "";
+    var rows = "", seq = [base];
+    step(st, base);   // then as if each day does what is owed
+    for (var j = 1; j < 7; j++) { seq.push(st.owed); step(st, st.owed); }
     for (var k = 0; k < 7; k++) {
-      var date = shift(TODAY, k), d = WEEKPLAN[cycleIdx(date)], ss = sessionFor(d[1]), today = k === 0;
+      var date = shift(TODAY, k), d = WEEKPLAN[seq[k]], ss = sessionFor(d[1]), today = k === 0;
       var tag = parseISO(date).toLocaleDateString(undefined, { weekday: "short" });
       if (!ss) rows += '<div class="acc wrow' + (today ? " today" : "") + '"><div class="acc-h" style="cursor:default"><span class="daytag">' + tag + '</span><span class="ab"><span class="an">' + d[1] + "</span>" + (d[2] ? '<span class="as">' + d[2] + "</span>" : "") + "</span></div></div>";
       else rows += '<div class="acc wrow' + (today ? " today" : "") + '"><button class="acc-h" data-acc aria-expanded="false"><span class="daytag">' + tag + '</span><span class="ab"><span class="an">' + d[1] + '</span><span class="as">' + d[2] + '</span></span><i class="chev"></i></button><div class="acc-b"><div>' + exHtml(ss) + "</div></div></div>";
@@ -11378,11 +11511,18 @@
     save(); renderBike(); renderMore();
   });
   $("trToday").addEventListener("click", function (ev) {
+    var c = ev.target.closest("[data-ses]");
+    if (c) { trSel = +c.getAttribute("data-ses"); renderTrain(); return; }
     if (!ev.target.closest("#trDone")) return;
-    var key = TODAY + "-d";
+    var key = TODAY + "-d", was = loggedOn(TODAY, rotState(TODAY).owed), name = WEEKPLAN[trSel][1];
     if (!S.ticks[key]) S.ticks[key] = {};
-    if (S.ticks[key].train) delete S.ticks[key].train; else S.ticks[key].train = true;
+    if (was === trSel) { delete S.sess[TODAY]; delete S.ticks[key].train; trSel = null; }
+    else { S.sess[TODAY] = trSel; S.ticks[key].train = true; }
     save(); renderTrain(); renderMore();
+    toast(was === trSel ? "Training undone" : (SHORTS[name] || name) + " logged for today", function () {
+      if (was == null) { delete S.sess[TODAY]; delete S.ticks[key].train; } else { S.sess[TODAY] = was; S.ticks[key].train = true; }
+      trSel = null; save(); renderTrain(); renderMore();
+    });
   });
 
   // accordions (recipes, sessions, history)

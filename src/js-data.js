@@ -43,6 +43,7 @@
       ["sou", "Sourdough",          270,  9,   2,   52],
       ["oat", "Oats, dry",          379, 13,   7,   67],
       ["mus", "Muesli",             360, 10,   6,   65],
+      ["tor", "Flour wrap",         297,  8,   7.6, 49.3],
       ["ban", "Banana",              89,  1.1, 0.3, 23],
       ["dat", "Dates",              277,  1.8, 0.2, 75]
     ],
@@ -72,6 +73,7 @@
     egg: { g: 50,  one: "whole egg",       many: "whole eggs" },
     ewh: { g: 33,  one: "egg white",       many: "egg whites" },
     sou: { g: 55,  one: "slice sourdough", many: "slices sourdough" },
+    tor: { g: 49,  one: "wrap",            many: "wraps" },
     ban: { g: 118, one: "banana",          many: "bananas" },
     dat: { g: 8,   one: "date",            many: "dates" }
   };
@@ -95,17 +97,76 @@
 
   // [id, time, name, share of day's P / F / C, categories asked for, defaults]
   // Shares sum to 1.00 on each macro, so every slot scales with the phase target.
+  // No choosing: breakfast, snack and pre-gym are always the same, lunch and dinner come from MENU.
+  // Lunch and dinner have the same share because lunch is yesterday's dinner, cooked twice.
   var MEALS = [
-    ["m1", "09:00", "Breakfast",     0.14, 0.35, 0.12, ["protein","carb"],       { protein:"egg", carb:"sou" }],
-    ["m2", "13:00", "Lunch at work", 0.32, 0.22, 0.29, ["protein","carb","fat"], { protein:"chk", carb:"ric", fat:"oil" }],
-    ["m3", "16:30", "Snack",         0.22, 0.21, 0.10, ["protein","fat"],        { protein:"yog", fat:"pea" }],
-    ["m4", "19:30", "Pre-gym",       0.00, 0.00, 0.21, ["carb"],                 { carb:"ban" }],
-    ["m5", "21:30", "Dinner",        0.32, 0.22, 0.28, ["protein","carb","fat"], { protein:"chk", carb:"pot", fat:"oil" }]
+    ["m1", "09:00", "Breakfast",     0.22, 0.34, 0.27,  ["protein","carb"],       { protein:"egg", carb:"sou" }],
+    ["m2", "13:00", "Lunch at work", 0.28, 0.20, 0.24,  ["protein","carb","fat"], { protein:"chk", carb:"ric", fat:"oil" }],
+    ["m3", "16:30", "Snack",         0.22, 0.26, 0.11,  ["protein","fat"],        { protein:"yog", fat:"pea" }],
+    ["m4", "19:30", "Pre-gym",       0.00, 0.00, 0.14,  ["carb"],                 { carb:"ban" }],
+    ["m5", "21:30", "Dinner",        0.28, 0.20, 0.24,  ["protein","carb","fat"], { protein:"chk", carb:"ric", fat:"oil" }]
   ];
+
+  // Milk for the day's coffee rides with breakfast, so ticking breakfast counts it. Semi-skimmed, per 100 ml.
+  var MILK = { ml: 500, k: 46, p: 3.5, f: 1.7, c: 4.7 };
+
+  // Seven dinners on a loop. Each one is cooked for two: half that night, half boxed for the next day's lunch.
+  // veg = [name, grams per portion, kcal, P, F, C per 100 g]. Methods in our own words.
+  var MENU_START = "2026-11-23";
+  var MENU = [
+    { n: "Chicken, rice and broccoli", p: "chk", c: "ric", veg: ["Broccoli", 150, 34, 2.8, 0.4, 6.6], t: 25,
+      s: ["Rice on first, enough for both portions.",
+          "Chicken in strips, salt, paprika and garlic powder, tossed in the oil.",
+          "Air fryer 200°C, 12–14 min, shake halfway. Cut the thickest piece: no pink, done.",
+          "Broccoli into the air fryer for the last 6 min, or 4 min in the microwave with a splash of water.",
+          "Split in two. Box tomorrow’s half once it stops steaming and put it straight in the fridge."] },
+    { n: "Steak, air-fryer potatoes and green beans", p: "sir", c: "pot", veg: ["Green beans", 150, 31, 1.8, 0.2, 7], t: 35,
+      s: ["Potatoes in 2 cm cubes, the oil and salt, air fryer 200°C for 20–22 min, shake twice.",
+          "Steak out of the fridge when the potatoes go in, salted both sides.",
+          "Very hot dry pan, 2–3 min a side for medium-rare at 2 cm. Rest 5 min before cutting.",
+          "Green beans: 4 min in boiling water or the microwave.",
+          "Slice tomorrow’s steak cold for the box. It eats fine cold or with 60 s in the microwave."] },
+    { n: "Chicken thighs, sweet potato fries and courgette", p: "thi", c: "swt", veg: ["Courgette", 150, 17, 1.2, 0.3, 3.1], t: 30,
+      s: ["Sweet potato in fries, half the oil and salt, air fryer 200°C for 15–18 min, shake halfway.",
+          "Thighs with paprika, garlic powder and salt. Air fryer or pan, 12–15 min until the juice runs clear.",
+          "Courgette in half-moons, the rest of the oil, 5 min in a hot pan.",
+          "Box tomorrow’s half. The fries soften in the fridge; 3 min back in the air fryer fixes them."] },
+    { n: "Beef mince pasta with tomato and spinach", p: "mi5", c: "pas", veg: ["Tinned tomatoes, onion, spinach", 200, 24, 1.4, 0.2, 5], t: 25,
+      s: ["Pasta into well-salted boiling water.",
+          "Mince into a hot pan with the oil. Leave it alone 3 min so it browns, then break it up.",
+          "Chopped onion in for 3 min, then the tinned tomatoes, salt and oregano. Simmer 10 min.",
+          "Spinach in at the end until it wilts. Toss with the drained pasta and a splash of the pasta water.",
+          "Box tomorrow’s half. It is better the next day."] },
+    { n: "Chicken fajita wraps", p: "chk", c: "tor", veg: ["Peppers and onion", 150, 33, 1, 0.2, 7.7], t: 20,
+      s: ["Chicken in strips with sliced peppers and onion, the oil, paprika, cumin, garlic powder and salt.",
+          "Hot pan 8–10 min, or air fryer 200°C for 12 min, shaking once.",
+          "Warm the wraps 20 s each in a dry pan. A spoon of Greek yogurt works as sour cream.",
+          "Box the filling and the wraps apart so the wraps don’t go soggy."] },
+    { n: "Beef and rice bowl", p: "mi5", c: "ric", veg: ["Broccoli and peppers", 150, 30, 1.9, 0.35, 6.3], t: 20,
+      s: ["Rice on, enough for both portions.",
+          "Mince into a hot pan with the oil, garlic, paprika, cumin and salt. Let it brown before you stir.",
+          "Broccoli and sliced peppers into the pan for the last 5 min, with a splash of water to steam them.",
+          "Rice in the bowl, beef and veg on top. Box tomorrow’s half."] },
+    { n: "Chicken thigh pasta with mushrooms and spinach", p: "thi", c: "pas", veg: ["Mushrooms and spinach", 150, 23, 3, 0.4, 3.5], t: 25,
+      s: ["Pasta into well-salted boiling water.",
+          "Thighs in strips, the oil, salt and pepper, hot pan 8 min.",
+          "Sliced mushrooms in for 4 min, a crushed garlic clove for 1, then spinach until it wilts.",
+          "Off the heat, 2 tbsp Greek yogurt and a splash of pasta water: creamy, no cream. Toss with the pasta.",
+          "Box tomorrow’s half."] }
+  ];
+  function dishOn(d) { var i = dayDiff(MENU_START, d) % MENU.length; return MENU[i < 0 ? i + MENU.length : i]; }
+  // the dish a slot eats on a day: dinner is that day's dish, lunch is the day before's
+  function dishFor(mealId, d) {
+    d = d || pday();
+    return mealId === "m5" ? dishOn(d) : mealId === "m2" ? dishOn(shift(d, -1)) : null;
+  }
+  // The plan can be worked out for a day other than the one on screen (lunch needs yesterday's dinner).
+  var PD = null;
+  function pday() { return PD || DAY; }
 
   // a slot's absolute targets for the phase, before any coach trim
   function planTarget(m) {
-    var ph = phaseOn(DAY);
+    var ph = phaseOn(pday());
     return { p: ph.p * m[3], f: ph.f * m[4], c: ph.c * m[5] };
   }
   // ...and with today's trim on the slots still to come
@@ -120,9 +181,19 @@
     return MEALS[0];
   }
   function pickFor(mealId) {
-    var m = mealById(mealId), saved = (S.picks && S.picks[mealId]) || {}, out = {};
-    m[6].forEach(function (cat) { out[cat] = (saved[cat] && hasFood(cat, saved[cat])) ? saved[cat] : m[7][cat]; });
+    var m = mealById(mealId), dish = dishFor(mealId), out = {};
+    m[6].forEach(function (cat) { out[cat] = m[7][cat]; });
+    if (dish) { out.protein = dish.p; out.carb = dish.c; }
     return out;
+  }
+  // Parts that are there whatever the targets: the day's milk at breakfast, the veg with lunch and dinner.
+  function fixedParts(mealId) {
+    if (mealId === "m1") return [{ cat: "carb", g: MILK.ml, n: MILK.ml, noun: "ml milk", sub: "semi-skimmed, coffee", name: "Milk",
+      t: { k: MILK.k * MILK.ml / 100, p: MILK.p * MILK.ml / 100, f: MILK.f * MILK.ml / 100, c: MILK.c * MILK.ml / 100 } }];
+    var dish = dishFor(mealId);
+    if (!dish) return [];
+    var v = dish.veg, u = v[1] / 100;
+    return [{ cat: "carb", g: v[1], name: v[0], t: { k: v[2] * u, p: v[3] * u, f: v[4] * u, c: v[5] * u } }];
   }
   // Protein hits the protein target. Carb fills the carb gap left after it.
   // Fat fills only what the first two have not already brought.
@@ -166,20 +237,22 @@
     // Three passes. The carb and fat sources carry protein of their own
     // (bread, rice, peanuts), so protein is solved against what is left
     // after them rather than against the raw target.
+    var X = { parts: fixedParts(mealId), t: { k: 0, p: 0, f: 0, c: 0 } };
+    X.parts.forEach(function (x) { X.t.k += x.t.k; X.t.p += x.t.p; X.t.f += x.t.f; X.t.c += x.t.c; });
     var P = NIL, C = NIL, F = NIL, fatSkip = false;
     for (var pass = 0; pass < 3; pass++) {
-      P = solveProtein(Math.max(0, tP - C.t.p - F.t.p));
-      C = pick.carb ? solve("carb", 5, Math.max(0, tC - P.t.c)) : NIL;
-      var fatGap = tF - P.t.f - C.t.f;
+      P = solveProtein(Math.max(0, tP - C.t.p - F.t.p - X.t.p));
+      C = pick.carb ? solve("carb", 5, Math.max(0, tC - P.t.c - X.t.c)) : NIL;
+      var fatGap = tF - P.t.f - C.t.f - X.t.f;
       fatSkip = !!pick.fat && fatGap <= 1;
       F = (pick.fat && !fatSkip) ? solve("fat", 4, fatGap) : NIL;
     }
 
-    var parts = P.parts.concat(C.parts, F.parts);
+    var parts = P.parts.concat(C.parts, X.parts, F.parts);
     if (pick.fat && fatSkip) parts.push({ cat:"fat", g:0, name: food("fat", pick.fat)[1], skip:true });
 
-    var tot = { k: P.t.k+C.t.k+F.t.k, p: P.t.p+C.t.p+F.t.p,
-                f: P.t.f+C.t.f+F.t.f, c: P.t.c+C.t.c+F.t.c };
+    var tot = { k: P.t.k+C.t.k+F.t.k+X.t.k, p: P.t.p+C.t.p+F.t.p+X.t.p,
+                f: P.t.f+C.t.f+F.t.f+X.t.f, c: P.t.c+C.t.c+F.t.c+X.t.c };
     var raw = { k: tot.k, p: tot.p, f: tot.f, c: tot.c };
     tot.k = Math.round(tot.k); tot.p = Math.round(tot.p);
     tot.f = Math.round(tot.f); tot.c = Math.round(tot.c);
@@ -232,22 +305,40 @@
     }
     return best;
   }
-  var PLAN = { key: "", v: null }, PLAIN = { key: "", v: null };
-  function plainPlan() {
-    var key = JSON.stringify([S.picks, S.eggs, phaseOn(DAY).n]);
-    if (PLAIN.key === key && PLAIN.v) return PLAIN.v;
+  // Lunch is the box from the night before: the same dish as yesterday's dinner (dishFor), with the portion
+  // sized for the day it is eaten. Each day is solved on its own, so every day adds up, including the first
+  // day of a new phase. Tonight's pan is tonight's plate plus tomorrow's box (cookParts). Nothing here
+  // depends on what was eaten.
+  var PLAN = { key: "", v: null }, FREE = {};
+  function planOn(d) {
+    if (FREE[d]) return FREE[d];
+    var keep = PD; PD = d;
     var base = {}, adj = {};
     MEALS.forEach(function (m) { base[m[0]] = planTarget(m); adj[m[0]] = { p: 0, f: 0, c: 0 }; });
-    PLAIN.v = { out: reconcile(MEALS, base, adj), adj: adj }; PLAIN.key = key;
-    return PLAIN.v;
+    FREE[d] = { out: reconcile(MEALS, base, adj), adj: adj };
+    PD = keep;
+    return FREE[d];
   }
+  // what goes in the pan on day d: that night's dinner and the next day's lunch, added up item by item
+  function cookParts(d) {
+    var out = [], at = {};
+    planOn(d).out.m5.parts.concat(planOn(shift(d, 1)).out.m2.parts).forEach(function (pt) {
+      if (pt.skip || (!pt.noun && !pt.g)) return;
+      var x = at[pt.name];
+      if (!x) { x = at[pt.name] = { name: pt.name, g: 0, n: pt.noun ? 0 : undefined, noun: pt.noun }; out.push(x); }
+      x.g += pt.g; if (pt.noun) x.n += pt.n;
+    });
+    return out;
+  }
+  function plainPlan() { return planOn(DAY); }
   function dayPlan() {
     var plain = plainPlan();
     if (!TRIM.on) return plain.out;
     var hs = MEALS.map(function (m) { return handled(m[0]) ? 1 : 0; }).join("");
-    var key = JSON.stringify([PLAIN.key, TRIM.fatFrac, TRIM.carbFrac, hs]);
+    var key = JSON.stringify([DAY, TRIM.fatFrac, TRIM.carbFrac, hs]);
     if (PLAN.key === key && PLAN.v) return PLAN.v;
-    var open = MEALS.filter(function (m) { return !handled(m[0]); }), base = {}, adj = {};
+    // the box is already cooked: the trim only touches the slots still to come that can still change
+    var open = MEALS.filter(function (m) { return !handled(m[0]) && m[0] !== "m2"; }), base = {}, adj = {};
     open.forEach(function (m) { base[m[0]] = slotTarget(m); adj[m[0]] = { p: plain.adj[m[0]].p, f: plain.adj[m[0]].f, c: plain.adj[m[0]].c }; });
     var out = reconcile(open, base, adj), res = {};
     MEALS.forEach(function (m) { res[m[0]] = out[m[0]] || plain.out[m[0]]; });
@@ -380,6 +471,9 @@
   function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];}); }
 
   function methodsFor(mealId) {
+    if (mealId === "m2") return [];
+    var dish = dishFor(mealId);
+    if (dish) return [{ n: dish.n, t: dish.t, k: "Cook double: half tonight, half boxed for tomorrow’s lunch.", s: dish.s }];
     var pick = pickFor(mealId);
     // The whole+whites mix cooks like eggs, so it matches the egg methods.
     var pid = pick.protein === "egx" ? "egg" : pick.protein;
