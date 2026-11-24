@@ -43,6 +43,8 @@ day adds up on its own; the dinner card and the Food tab give the pan total (`co
 plate plus tomorrow's box). His ingredients: chicken breast and thigh, steak, lean beef mince, rice,
 pasta, potato and sweet potato in the air fryer, wraps, eggs, sourdough, Greek yogurt, milk.
 **All weights are before cooking** (raw meat, dry rice and pasta): that is what he weighs to cook.
+One-off override `WEEK` (date → dish, read by `dishOn()`): 24 Nov–1 Dec 2026 alternate steak and chicken breast
+to use up 5 × 250 g steaks and 1 kg of breast he bought (4 steak pans ≈ 1.27 kg, 4 chicken pans ≈ 1.05 kg). The loop resumes 2 Dec.
 
 
 Food rule: real food, cooked by himself. No cream, no bottled dressings, no
