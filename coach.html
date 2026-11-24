@@ -9042,21 +9042,26 @@
           "Off the heat, 2 tbsp Greek yogurt and a splash of pasta water: creamy, no cream. Toss with the pasta.",
           "Box tomorrow’s half."] }
   ];
-  // One-off (his say, 24 Nov 2026): he bought 5 steaks of 250 g and 1 kg of chicken breast, so eight dinners
-  // alternate steak and chicken breast until they are used up (4 steak pans of about 320 g, 4 chicken pans of
-  // about 260 g). After the last date the loop above resumes.
-  var STEAK = MENU[1];
+  // One-off (his say, 24 Nov 2026): he bought 5 ribeyes of 250 g and 1 kg of chicken breast, so seven dinners
+  // alternate ribeye and chicken breast until they are used up (3 ribeye pans of about 370 g, 4 chicken pans of
+  // about 260 g; half a steak is left over). After the last date the loop above resumes.
+  var STEAK = { n: "Ribeye, air-fryer potatoes and green beans", p: "rib", c: "pot", veg: MENU[1].veg, t: 35,
+    s: ["Potatoes in 2 cm cubes with salt, no oil (the ribeye brings the fat), air fryer 200°C for 20–22 min, shake twice.",
+        "Ribeye out of the fridge when the potatoes go in, salted both sides.",
+        "Very hot dry pan, 3 min a side for medium-rare, fat edge down for the last minute. Rest 5 min before cutting.",
+        "Green beans: 4 min in boiling water or the microwave.",
+        "Slice tomorrow’s half cold for the box. It eats fine cold or with 60 s in the microwave."] };
   var WEEK = {
     "2026-11-24": STEAK,
     "2026-11-25": MENU[0],
-    "2026-11-26": { n: "Steak and rice bowl", p: "sir", c: "ric", veg: MENU[5].veg, t: 25,
+    "2026-11-26": { n: "Ribeye and rice bowl", p: "rib", c: "ric", veg: MENU[5].veg, t: 25,
       s: ["Rice on, enough for both portions.",
           "Steak out of the fridge 20 min before, salted both sides.",
           "Very hot dry pan, 2–3 min a side. Rest 5 min, then slice thin across the grain.",
           "Same pan, no oil needed (the steak left enough): broccoli and sliced peppers with a splash of water, 5 min.",
           "Rice in the bowl, steak and veg on top. Box tomorrow’s half; eat the steak cold or 60 s in the microwave."] },
     "2026-11-27": MENU[4],
-    "2026-11-28": { n: "Steak, sweet potato fries and courgette", p: "sir", c: "swt", veg: MENU[2].veg, t: 30,
+    "2026-11-28": { n: "Ribeye, sweet potato fries and courgette", p: "rib", c: "swt", veg: MENU[2].veg, t: 30,
       s: ["Sweet potato in fries with salt, no oil, air fryer 200°C for 15–18 min, shake halfway.",
           "Steak out of the fridge when the fries go in, salted both sides.",
           "Very hot dry pan, 2–3 min a side. Rest 5 min before cutting.",
@@ -9068,8 +9073,7 @@
           "Sliced mushrooms in for 4 min, a crushed garlic clove for 1, then spinach until it wilts.",
           "Off the heat, 2 tbsp Greek yogurt and a splash of pasta water. Toss with the pasta.",
           "Box tomorrow’s half."] },
-    "2026-11-30": STEAK,
-    "2026-12-01": MENU[0]
+    "2026-11-30": MENU[0]
   };
   function dishOn(d) {
     if (WEEK[d]) return WEEK[d];
