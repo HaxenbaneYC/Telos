@@ -16,17 +16,20 @@ on the restart was 77 kg, one weigh-in. The phase numbers were kept: 2 kg moves 
 | Weeks | Phase      | kcal  | P   | F  | C   | Notes                                    |
 |-------|------------|-------|-----|----|-----|------------------------------------------|
 | 1–2   | Re-entry   | 2,350 | 185 | 78 | 215 | Steps 5k→8k, RPE 8 cap in week 1 only, small deficit |
-| 3–4   | The work   | 2,240 | 191 | 74 | 200 | Steps 10k, full intensity, 1 run/ride wk |
+| 3–4   | The work   | 2,240 | 191 | 74 | 200 | Steps 10k, full intensity, the long walk once a round |
 | 5     | Diet break | 2,700 | 185 | 85 | 285 | Maintenance over Christmas (20–26 Dec)   |
 | 6–9   | The work   | 2,240 | 191 | 74 | 200 | Back to the deficit, same as weeks 3–4   |
 | 10–13 | The finish | 2,150 | 195 | 70 | 185 | Steps 10–12k, hold volume, nothing harder than the walks |
 
-Training is a seven-day **rotation**, not weekdays: Push, Pull, Legs, 5K run or bike,
-Upper, Delts/arms/abs/neck, Rest, then round again. Day one (Sun 22 Nov 2026) is Push.
+Training is a seven-day **rotation**, not weekdays: Push, Pull, Legs, Long incline walk,
+Upper, Delts/arms/abs/neck, Rest, then round again. (The long walk, 45 min at 12% and 5.0 km/h with no lifting,
+replaced the 5K run or bike on his say, 26 Nov; same index 3, so old logs still read.) Day one (Sun 22 Nov 2026) is Push.
 The rotation follows what was **done**, not the calendar (`rotState()`): a skipped day keeps the same
 session owed; doing a different one (Upper on a Legs day) leaves Legs owed and Upper is skipped when the
 round reaches it. Any session can be logged from the chips on Train (`S.sess[date]` = index 0–6, which
-also ticks the checklist's "trained"). `tests/rotation.js`.
+also ticks the checklist's "trained"). Day arrows on Train (`TDAY`) step back to the start, so a forgotten
+session, bike tick or other activity can be logged on the day it happened; the rotation follows. `tests/rotation.js`,
+`tests/train-past.js`.
 Plus a **daily 3 km bike ride**, logged from the first day. Push, Pull and Upper end with an incline walk,
 decided for him (he asked for no options): treadmill 12%, 5.0 km/h, talking pace; 20 min in re-entry and the
 Christmas break, 25 in the work, 30 in the finish (`walkMin()`). Not counted in calories, not eaten back.
@@ -133,14 +136,14 @@ first on purpose; Trend is last.
   off-plan food, a three-item checklist (protein, steps, trained; no supplements list, he asked
   for it gone), and a mini sticky calorie/macro bar that
   slides in on scroll. Meals open in a bottom sheet. Every change has an undo toast.
-- **Train** - today's session from the rotation, a 7-day "Next 7 days" list, the
-  daily 3 km bike tick, back-from-time-off notes.
+- **Train** - the session from the rotation for the day picked with the arrows (today by default), a
+  7-day "Next 7 days" list from today, the daily 3 km bike tick, notes.
 - **Food** - this week's seven dinners (what goes in the pan for two, and how to cook it), then a
   shopping list for the next seven days (`renderShop()`: every breakfast, snack, banana and dinner pan,
   weights before cooking, rounded up to what you can buy; ticks are for the trip and not saved).
   The recipe library, finishers and protein-swap tables were deleted on his say (Nov 2026).
 - **Other activity** (bottom of the Train tab's top block) - a run, bike, scooter or walk with km and/or minutes,
-  for today (`S.acts[date]`, list of `{t, km, min}`). Counted in distance only, never in calories; the daily 3 km tick stays separate.
+  for the day picked on Train (`S.acts[date]`, list of `{t, km, min}`). Counted in distance only, never in calories; the daily 3 km tick stays separate.
 - **Trend** - weight (chart fitted to the data), measurements and taper gap,
   photos, weekly analysis, phases. The weigh-in is a morning log here, not on Today; its arrows
   pick the day, so a missed weight or sleep can be filled in back to the start (`tests/morning-past.js`).
@@ -292,7 +295,7 @@ the same shape; change all three together. Wordmark in the app header stays live
 - The deliverable is one self-contained HTML file. Edit `src/`, run `build.py`.
   No npm, no framework.
 - Vanilla JS, `var`, no transpiling.
-- Test before claiming it works. `tests/` has sync, activity, rotation, morning-past, day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
+- Test before claiming it works. `tests/` has sync, train-past, activity, rotation, morning-past, day-accuracy, day-history, paste-numbers, api-lookup, storage-fuzz, injection and mobile-scan
   (Playwright). Render it in a real browser at 320, 360, 390 and 430 px and look at it. Past
   failures all shipped because nobody opened the page.
 - Keep it simple. His words: KISS. Don't add features he didn't ask for.

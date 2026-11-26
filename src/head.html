@@ -682,7 +682,7 @@
   .acc-in li { margin-bottom: 7px; font-size: 15.5px; line-height: 1.55; }
   .ex { display: flex; gap: 12px; align-items: baseline; padding: 9px 16px; border-top: 1px solid var(--line); font-size: 16px; }
   .ex .n { flex: 1; min-width: 0; color: var(--fg-2); }
-  .ex .sr { flex: none; font-family: var(--mono); font-size: 13.5px; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+  .ex .sr { flex: 0 1 auto; max-width: 52%; text-align: right; font-family: var(--mono); font-size: 13.5px; color: var(--fg-3); font-variant-numeric: tabular-nums; }
   .ex.pri .n { color: var(--fg); font-weight: 500; }
   .ex.pri .sr { color: var(--teal); }
   .acc-b .ex:first-child { border-top: 1px solid var(--line); }
@@ -934,7 +934,13 @@
   <!-- ===== TRAIN ===== -->
   <section class="view" id="v-train" hidden>
     <div class="gut">
-      <div class="titlerow"><h1>Train</h1><span class="dt" id="trDate"></span></div>
+      <div class="titlerow" style="align-items:center"><h1>Train</h1>
+        <div class="daynav">
+          <button class="dnb" id="tPrev" aria-label="Previous day"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <span class="dpick" id="trDate" style="display:grid;align-items:center;cursor:default"></span>
+          <button class="dnb" id="tNext" aria-label="Next day"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
       <p class="lede" id="trPhase"></p>
       <div class="card tcard" id="trToday" style="margin-top:14px"></div>
       <div class="list" id="trBike" style="margin-top:12px"></div>
