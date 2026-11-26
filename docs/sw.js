@@ -2,12 +2,12 @@
    The page is fetched fresh when there is a connection (so a new version arrives on its own) and
    falls back to the saved copy when there is not. Everything else is saved on first use.
    build.py puts the version in; a new build makes a new cache and the old one is deleted. */
-var V = "685b3d920a";
+var V = "620ebeb9ec";
 var CORE = "telos-" + V, FONTS = "telos-fonts";
 var SHELL = ["./", "index.html"];
 
 self.addEventListener("install", function (e) {
-  e.waitUntil(caches.open(CORE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(caches.open(CORE).then(function (c) { return c.addAll(SHELL.map(function (u) { return new Request(u, { cache: "reload" }); })); }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
@@ -19,7 +19,7 @@ self.addEventListener("activate", function (e) {
 function pageFirst(e) {
   return caches.open(CORE).then(function (c) {
     return c.match("index.html").then(function (hit) {
-      var net = fetch(e.request).then(function (res) { if (res && res.ok) c.put("index.html", res.clone()); return res; }, function () { return null; });
+      var net = fetch(e.request.url, { cache: "no-store", credentials: "same-origin" }).then(function (res) { if (res && res.ok) c.put("index.html", res.clone()); return res; }, function () { return null; });
       if (hit) { e.waitUntil(net); return hit; }
       return net.then(function (res) { return res || Response.error(); });
     });
