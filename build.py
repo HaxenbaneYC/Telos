@@ -50,8 +50,15 @@ if not preview:
         '<meta name="apple-mobile-web-app-title" content="Telos">\n'
         '<meta name="apple-mobile-web-app-status-bar-style" content="black">\n'
     )
+    # Updates arrive in one open: check for a new version on open and on every return to the app; when the new
+    # service worker takes over, reload at once (or, with a sheet open, the next time the app is left).
     register = ('<script>if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {'
-                ' window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); }); }</script>\n')
+                ' var swc = navigator.serviceWorker, had = !!swc.controller, due = false;'
+                ' function swGo() { if (document.querySelector("#sheetWrap.open") && !document.hidden) { due = true; return; } location.reload(); }'
+                ' swc.addEventListener("controllerchange", function () { if (had) swGo(); had = true; });'
+                ' window.addEventListener("load", function () { swc.register("sw.js", { updateViaCache: "none" }).then(function (reg) {'
+                ' document.addEventListener("visibilitychange", function () { if (document.hidden) { if (due) location.reload(); } else reg.update().catch(function () {}); });'
+                ' }).catch(function () {}); }); }</script>\n')
     page = page_head + out + "\n" + register
     (site / "index.html").write_text(page, encoding="utf-8")
     version = hashlib.sha1(page.encode("utf-8")).hexdigest()[:10]

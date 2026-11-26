@@ -98,8 +98,9 @@ repo is public). A push to main redeploys it in about a minute. Pages publishes 
 ### Launch safety (installed app)
 
 A cold start must paint at once. Google Fonts load from a script, never a render-blocking `<link>`: a stalled
-request used to leave the screen black. The service worker serves the saved page first and fetches the new one for
-next time (an update shows on the second open). If the app has not started after 6 s, a plain screen shows the error
+request used to leave the screen black. The service worker serves the saved page first and fetches the new one (no HTTP cache). The page
+checks for a new version on open and on every return to the app; when the new service worker takes over it reloads
+at once (or, with a sheet open, when the app is next left), so an update shows on one open. If the app has not started after 6 s, a plain screen shows the error
 and a "Reload the app" button that clears the saved app files; the log (localStorage) is never touched.
 On iOS the installed app has its own storage: deleting the home-screen icon deletes the log.
 

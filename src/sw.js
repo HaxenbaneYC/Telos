@@ -7,7 +7,7 @@ var CORE = "telos-" + V, FONTS = "telos-fonts";
 var SHELL = ["./", "index.html"];
 
 self.addEventListener("install", function (e) {
-  e.waitUntil(caches.open(CORE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(caches.open(CORE).then(function (c) { return c.addAll(SHELL.map(function (u) { return new Request(u, { cache: "reload" }); })); }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
@@ -19,7 +19,7 @@ self.addEventListener("activate", function (e) {
 function pageFirst(e) {
   return caches.open(CORE).then(function (c) {
     return c.match("index.html").then(function (hit) {
-      var net = fetch(e.request).then(function (res) { if (res && res.ok) c.put("index.html", res.clone()); return res; }, function () { return null; });
+      var net = fetch(e.request.url, { cache: "no-store", credentials: "same-origin" }).then(function (res) { if (res && res.ok) c.put("index.html", res.clone()); return res; }, function () { return null; });
       if (hit) { e.waitUntil(net); return hit; }
       return net.then(function (res) { return res || Response.error(); });
     });

@@ -11399,4 +11399,4 @@
 })();
 </script>
 
-<script>if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); }); }</script>
+<script>if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) { var swc = navigator.serviceWorker, had = !!swc.controller, due = false; function swGo() { if (document.querySelector("#sheetWrap.open") && !document.hidden) { due = true; return; } location.reload(); } swc.addEventListener("controllerchange", function () { if (had) swGo(); had = true; }); window.addEventListener("load", function () { swc.register("sw.js", { updateViaCache: "none" }).then(function (reg) { document.addEventListener("visibilitychange", function () { if (document.hidden) { if (due) location.reload(); } else reg.update().catch(function () {}); }); }).catch(function () {}); }); }</script>
