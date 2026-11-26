@@ -32,9 +32,9 @@ let bad = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if
   await click('#tNext'); await click('#tNext');            // today
   ok(await p.textContent('#trDate') === 'Today' && await head() === 'Legs', 'today now owes Legs');
   const plan = await p.$$eval('#weekPlan .an', l => l.map(e => e.textContent));
-  ok(plan[0] === 'Legs' && plan[1] === 'Long incline walk', 'next 7 days from today: ' + plan.join(', '));
+  ok(plan[0] === 'Legs' && plan[1] === 'Bike ride', 'next 7 days from today: ' + plan.join(', '));
   await click('[data-ses="3"]');
-  ok(/45 min · 12% · 5.0 km\/h/.test(await p.textContent('#trToday')), 'the walk day shows 45 min at 12%, 5.0 km/h');
+  ok(/Bike ride[\s\S]*45–60 min · steady/.test(await p.textContent('#trToday')), 'the bike day shows 45–60 min, steady');
   ok(!/5K/.test(await p.textContent('#trToday') + await p.textContent('#weekPlan')), 'no 5K left in the sessions');
   ok(errs.length === 0, 'no page errors ' + JSON.stringify(errs));
   await p.evaluate(() => scrollTo(0, 0)); await p.screenshot({ path: '/tmp/claude-0/train.png' });
