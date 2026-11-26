@@ -4,11 +4,11 @@
     { n: "Re-entry",   w: [1, 2],   kcal: 2350, p: 185, f: 78, c: 215,
       d: "Steps 5k to 8k. Heavy from week two; week one stops at RPE 8. Small deficit on purpose." },
     { n: "The work",   w: [3, 4],   kcal: 2240, p: 191, f: 74, c: 200,
-      d: "Steps 10k. Full intensity. The long walk once a round." },
+      d: "Steps 10k. Full intensity. The bike ride once a round." },
     { n: "Diet break", w: [5, 5],   kcal: 2700, p: 185, f: 85, c: 285,
       d: "Maintenance over Christmas, on purpose. Resets hormones and appetite." },
     { n: "The work",   w: [6, 9],   kcal: 2240, p: 191, f: 74, c: 200,
-      d: "Back to the deficit. Steps 10k, full intensity, the long walk once a round." },
+      d: "Back to the deficit. Steps 10k, full intensity, the bike ride once a round." },
     { n: "The finish", w: [10, 13], kcal: 2150, p: 195, f: 70, c: 185,
       d: "Steps 10–12k. Hold volume. Keep the incline walks easy, add nothing harder. Abs show here." }
   ];
@@ -392,14 +392,14 @@
 
   var WEEKPLAN = [
     ["Mon", "Push", "Nippard"], ["Tue", "Pull", "Nippard"], ["Wed", "Legs", "Boxing plan"],
-    ["Thu", "Long incline walk", "45 min, no lifting"], ["Fri", "Upper", "Boxing plan"],
+    ["Thu", "Bike ride", "45–60 min, no lifting"], ["Fri", "Upper", "Boxing plan"],
     ["Sat", "Delts, arms, abs, neck", "45 min"], ["Sun", "Rest", ""]
   ];
 
   // Push, Pull and Upper end with an incline walk: treadmill at 12%, 5.0 km/h, talking pace, so it adds burn
   // without eating into recovery. Only the minutes change: 20 to start, 25 in the work, 30 in the finish
-  // (when food is lowest), 20 over Christmas. Legs is left alone, and the long-walk day is cardio on its own.
-  // The long walk replaced the 5K run or bike (his say, Nov 2026): 45 min at the same 12% and 5.0 km/h, every phase.
+  // (when food is lowest), 20 over Christmas. Legs is left alone, and the bike day is cardio on its own.
+  // The bike ride replaced the 5K (his say, 26 Nov 2026; a long incline walk was tried for a day and was too boring).
   function walkMin(d) { var ph = phaseOn(d); return ph.n === "The work" ? 25 : ph.n === "The finish" ? 30 : 20; }
   // Each lift carries its RPE (10 = nothing left, 9 = one rep left, 8 = two). Heavy is the point: compounds at 8–9,
   // isolation and drop sets to 9–10. Week one only, everything stops at RPE 8 while joints catch up after time off.
@@ -411,7 +411,7 @@
     { d: "Pull", s: "Tuesday · Nippard", ex: [["1-arm kneeling pulldown","1 × 10–12",0,"9"],["Weighted pull-up","3 × 6–8",1,"8–9"],["Pendlay row","2 × 8–10",1,"8–9"],["Bayesian cable curl","3 × 12–15 ea",1,"9–10"],["Rope face pull","2 × 10–12 + drop",1,"10"],["Hammer curl","2 × 12–15",1,"9–10"],["Incline walk","WALK",0]] },
     { d: "Legs", s: "Wednesday · one leg day", ex: [["Goblet squat","3 × 8",0,"8–9"],["Romanian deadlift","3 × 8",1,"8"],["Walking lunges","3 × 8 ea",0,"8–9"],["Calf raise","3 × 15",0,"9–10"],["Hanging leg raise","3 × 12–15",1,"9"],["Plank","3 × 60 s",0,"8"]] },
     { d: "Upper", s: "Friday · boxing plan", ex: [["Lat pulldown","3 × 8",1,"8–9"],["DB bench press","3 × 8",0,"8–9"],["Seated cable row","3 × 10",1,"8–9"],["Incline smith press","3 × 8",0,"8–9"],["Lateral raises","3 × 12–15",1,"9–10"],["Face pulls","3 × 15",1,"9"],["Incline walk","WALK",0]] },
-    { d: "Long incline walk", s: "Thursday · 45 min", ex: [["Incline walk","LONG",0]] },
+    { d: "Bike ride", s: "Thursday · 45–60 min", ex: [["Bike ride","BIKE",0]] },
     { d: "Delts, arms, abs, neck", s: "Saturday · 45 min", ex: [["DB lateral raise","4 × 12–20",1,"9–10"],["Rear delt fly","3 × 15",1,"9–10"],["EZ-bar curl","3 × 12",1,"9"],["Incline DB curl","3 × 10",1,"9"],["Hammer curl","3 × 12–15",1,"9–10"],["Rope pushdown","2 × 12",0,"9–10"],["Neck curl with plate","3 × 15",1,"8"],["Weighted cable crunch","3 × 12",1,"9"]] }
   ];
 

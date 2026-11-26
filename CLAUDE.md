@@ -16,14 +16,14 @@ on the restart was 77 kg, one weigh-in. The phase numbers were kept: 2 kg moves 
 | Weeks | Phase      | kcal  | P   | F  | C   | Notes                                    |
 |-------|------------|-------|-----|----|-----|------------------------------------------|
 | 1–2   | Re-entry   | 2,350 | 185 | 78 | 215 | Steps 5k→8k, RPE 8 cap in week 1 only, small deficit |
-| 3–4   | The work   | 2,240 | 191 | 74 | 200 | Steps 10k, full intensity, the long walk once a round |
+| 3–4   | The work   | 2,240 | 191 | 74 | 200 | Steps 10k, full intensity, the bike ride once a round |
 | 5     | Diet break | 2,700 | 185 | 85 | 285 | Maintenance over Christmas (20–26 Dec)   |
 | 6–9   | The work   | 2,240 | 191 | 74 | 200 | Back to the deficit, same as weeks 3–4   |
 | 10–13 | The finish | 2,150 | 195 | 70 | 185 | Steps 10–12k, hold volume, nothing harder than the walks |
 
-Training is a seven-day **rotation**, not weekdays: Push, Pull, Legs, Long incline walk,
-Upper, Delts/arms/abs/neck, Rest, then round again. (The long walk, 45 min at 12% and 5.0 km/h with no lifting,
-replaced the 5K run or bike on his say, 26 Nov; same index 3, so old logs still read.) Day one (Sun 22 Nov 2026) is Push.
+Training is a seven-day **rotation**, not weekdays: Push, Pull, Legs, Bike ride,
+Upper, Delts/arms/abs/neck, Rest, then round again. (The bike ride, 45–60 min steady with no lifting, replaced the
+5K on his say, 26 Nov; a long incline walk was tried first and he found it boring. Same index 3, so old logs still read.) Day one (Sun 22 Nov 2026) is Push.
 The rotation follows what was **done**, not the calendar (`rotState()`): a skipped day keeps the same
 session owed; doing a different one (Upper on a Legs day) leaves Legs owed and Upper is skipped when the
 round reaches it. Any session can be logged from the chips on Train (`S.sess[date]` = index 0–6, which

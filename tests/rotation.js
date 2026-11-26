@@ -4,7 +4,7 @@
 const { chromium } = require('playwright'), path = require('path');
 const F = 'file://' + path.resolve(process.argv[2] || path.join(__dirname, '..', 'coach.html'));
 let bad = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) bad++; };
-const NAMES = ['Push', 'Pull', 'Legs', 'Long incline walk', 'Upper', 'Delts, arms, abs, neck', 'Rest'];
+const NAMES = ['Push', 'Pull', 'Legs', 'Bike ride', 'Upper', 'Delts, arms, abs, neck', 'Rest'];
 async function open(b, day, st) {
   const ctx = await b.newContext({ viewport: { width: 360, height: 800 } });
   await ctx.clock.setFixedTime(new Date(day + 'T12:00:00'));
@@ -25,7 +25,7 @@ const week = p => p.$$eval('#weekPlan .an', e => e.map(x => x.textContent));
   p = await open(b, '2026-11-24', { sess: { '2026-11-22': 0, '2026-11-23': 4 } });
   ok(await card(p) === 'Pull', 'Upper done on the Pull day: Pull still owed');
   const w = await week(p);
-  ok(JSON.stringify(w) === JSON.stringify(['Pull', 'Legs', 'Long incline walk', 'Delts, arms, abs, neck', 'Rest', 'Push', 'Pull']), 'next 7 days skip the Upper already done: ' + w.join(', '));
+  ok(JSON.stringify(w) === JSON.stringify(['Pull', 'Legs', 'Bike ride', 'Delts, arms, abs, neck', 'Rest', 'Push', 'Pull']), 'next 7 days skip the Upper already done: ' + w.join(', '));
   p = await open(b, '2026-11-23', { ticks: { '2026-11-22-d': { train: true } } });
   ok(await card(p) === 'Pull', 'trained ticked on the Today checklist counts as the session owed');
   // log a different session from the chips, then undo

@@ -381,7 +381,7 @@
 
   // ── Train ──
   function sessionFor(name) { for (var i = 0; i < SESSIONS.length; i++) if (SESSIONS[i].d === name) return SESSIONS[i]; return null; }
-  function exHtml(s2, d) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + (x[1] === "WALK" || x[1] === "LONG" ? (x[1] === "LONG" ? 45 : walkMin(d || TODAY)) + " min · 12% · 5.0 km/h" : setsFor(x, d || TODAY) + '<small class="rpe">RPE ' + rpeFor(x, d || TODAY) + "</small>") + "</span></div>"; }).join(""); }
+  function exHtml(s2, d) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + (x[1] === "BIKE" ? "45–60 min · steady" : x[1] === "WALK" ? walkMin(d || TODAY) + " min · 12% · 5.0 km/h" : setsFor(x, d || TODAY) + '<small class="rpe">RPE ' + rpeFor(x, d || TODAY) + "</small>") + "</span></div>"; }).join(""); }
   // Training is a rotation that started on Push on the first day of the cut, not fixed weekdays.
   function rideCount() {
     var n = 0;
@@ -442,7 +442,7 @@
   });
   // The rotation follows what was done, not the calendar. Skip a day and the same session waits. Do a different
   // one (Upper on a Legs day) and Legs is still owed next; Upper is then skipped when the round reaches it.
-  var SHORTS = { "Long incline walk": "Walk", "Delts, arms, abs, neck": "Delts" };
+  var SHORTS = { "Bike ride": "Bike", "Delts, arms, abs, neck": "Delts" };
   function step(st, v) {
     if (v !== st.owed) { st.ahead[v] = true; return st; }
     st.owed = (st.owed + 1) % 7;
@@ -495,10 +495,10 @@
       else rows += '<div class="acc wrow' + (today ? " today" : "") + '"><button class="acc-h" data-acc aria-expanded="false"><span class="daytag">' + tag + '</span><span class="ab"><span class="an">' + d[1] + '</span><span class="as">' + d[2] + '</span></span><i class="chev"></i></button><div class="acc-b"><div>' + exHtml(ss, date) + "</div></div></div>";
     }
     $("weekPlan").innerHTML = rows;
-    $("backAcc").innerHTML = accHtml("cardio1", false, "The incline walk", walkMin(TODAY) + " minutes after Push, Pull and Upper, 45 on the walk day", "",
+    $("backAcc").innerHTML = accHtml("cardio1", false, "The incline walk", walkMin(TODAY) + " minutes after Push, Pull and Upper", "",
       '<div class="acc-in"><p>Treadmill, 12% incline, 5.0 km/h, ' + walkMin(TODAY) + ' minutes. Hands off the rails. You should be able to talk in full sentences the whole way; if you can’t, drop the speed, not the incline.</p>' +
       "<p>The minutes go up with the plan: 20 now, 25 in the work, 30 in the finish, 20 over Christmas. Speed and incline stay the same.</p>" +
-      "<p>The walk day, once a round, is the same walk for 45 minutes and no lifting. It replaced the 5K: same fat burn, no pounding on the knees, and nothing that takes away from the heavy days.</p>" +
+      "<p>The bike day, once a round: 45–60 minutes at a steady pace, outside or on a gym bike. Steady means you can still talk in short sentences. Hard enough to sweat, easy enough that the next heavy day doesn’t feel it. Log the km under Other activity too if you like.</p>" +
       "<p>About 150–250 kcal each time, burned while you walk; the after-burn from easy cardio is small. The app does not count it, so don’t eat it back. If the treadmills are all taken, the stair climber at an easy pace for the same minutes.</p></div>") +
       accHtml("rpe1", false, "RPE, how hard each set is", "Heavy: compounds 8–9, the rest 9–10", "",
         '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">RPE 10</b>: nothing left, the next rep would fail. <b style="color:var(--fg);font-weight:600">9</b>: one more rep was there. <b style="color:var(--fg);font-weight:600">8</b>: two more. Each exercise shows its number.</p>' +

@@ -2,7 +2,7 @@
    The page is fetched fresh when there is a connection (so a new version arrives on its own) and
    falls back to the saved copy when there is not. Everything else is saved on first use.
    build.py puts the version in; a new build makes a new cache and the old one is deleted. */
-var V = "bda11577e7";
+var V = "685b3d920a";
 var CORE = "telos-" + V, FONTS = "telos-fonts";
 var SHELL = ["./", "index.html"];
 
