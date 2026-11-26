@@ -682,7 +682,7 @@
   .acc-in li { margin-bottom: 7px; font-size: 15.5px; line-height: 1.55; }
   .ex { display: flex; gap: 12px; align-items: baseline; padding: 9px 16px; border-top: 1px solid var(--line); font-size: 16px; }
   .ex .n { flex: 1; min-width: 0; color: var(--fg-2); }
-  .ex .sr { flex: none; font-family: var(--mono); font-size: 13.5px; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+  .ex .sr { flex: 0 1 auto; max-width: 52%; text-align: right; font-family: var(--mono); font-size: 13.5px; color: var(--fg-3); font-variant-numeric: tabular-nums; }
   .ex.pri .n { color: var(--fg); font-weight: 500; }
   .ex.pri .sr { color: var(--teal); }
   .acc-b .ex:first-child { border-top: 1px solid var(--line); }
@@ -934,7 +934,13 @@
   <!-- ===== TRAIN ===== -->
   <section class="view" id="v-train" hidden>
     <div class="gut">
-      <div class="titlerow"><h1>Train</h1><span class="dt" id="trDate"></span></div>
+      <div class="titlerow" style="align-items:center"><h1>Train</h1>
+        <div class="daynav">
+          <button class="dnb" id="tPrev" aria-label="Previous day"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <span class="dpick" id="trDate" style="display:grid;align-items:center;cursor:default"></span>
+          <button class="dnb" id="tNext" aria-label="Next day"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
       <p class="lede" id="trPhase"></p>
       <div class="card tcard" id="trToday" style="margin-top:14px"></div>
       <div class="list" id="trBike" style="margin-top:12px"></div>
@@ -8891,11 +8897,11 @@
     { n: "Re-entry",   w: [1, 2],   kcal: 2350, p: 185, f: 78, c: 215,
       d: "Steps 5k to 8k. Heavy from week two; week one stops at RPE 8. Small deficit on purpose." },
     { n: "The work",   w: [3, 4],   kcal: 2240, p: 191, f: 74, c: 200,
-      d: "Steps 10k. Full intensity. One run or ride weekly." },
+      d: "Steps 10k. Full intensity. The long walk once a round." },
     { n: "Diet break", w: [5, 5],   kcal: 2700, p: 185, f: 85, c: 285,
       d: "Maintenance over Christmas, on purpose. Resets hormones and appetite." },
     { n: "The work",   w: [6, 9],   kcal: 2240, p: 191, f: 74, c: 200,
-      d: "Back to the deficit. Steps 10k, full intensity, one run or ride weekly." },
+      d: "Back to the deficit. Steps 10k, full intensity, the long walk once a round." },
     { n: "The finish", w: [10, 13], kcal: 2150, p: 195, f: 70, c: 185,
       d: "Steps 10–12k. Hold volume. Keep the incline walks easy, add nothing harder. Abs show here." }
   ];
@@ -9279,13 +9285,14 @@
 
   var WEEKPLAN = [
     ["Mon", "Push", "Nippard"], ["Tue", "Pull", "Nippard"], ["Wed", "Legs", "Boxing plan"],
-    ["Thu", "5K run or bike", "No gym"], ["Fri", "Upper", "Boxing plan"],
+    ["Thu", "Long incline walk", "45 min, no lifting"], ["Fri", "Upper", "Boxing plan"],
     ["Sat", "Delts, arms, abs, neck", "45 min"], ["Sun", "Rest", ""]
   ];
 
   // Push, Pull and Upper end with an incline walk: treadmill at 12%, 5.0 km/h, talking pace, so it adds burn
   // without eating into recovery. Only the minutes change: 20 to start, 25 in the work, 30 in the finish
-  // (when food is lowest), 20 over Christmas. Legs is left alone, and the 5K day is already cardio.
+  // (when food is lowest), 20 over Christmas. Legs is left alone, and the long-walk day is cardio on its own.
+  // The long walk replaced the 5K run or bike (his say, Nov 2026): 45 min at the same 12% and 5.0 km/h, every phase.
   function walkMin(d) { var ph = phaseOn(d); return ph.n === "The work" ? 25 : ph.n === "The finish" ? 30 : 20; }
   // Each lift carries its RPE (10 = nothing left, 9 = one rep left, 8 = two). Heavy is the point: compounds at 8–9,
   // isolation and drop sets to 9–10. Week one only, everything stops at RPE 8 while joints catch up after time off.
@@ -9297,6 +9304,7 @@
     { d: "Pull", s: "Tuesday · Nippard", ex: [["1-arm kneeling pulldown","1 × 10–12",0,"9"],["Weighted pull-up","3 × 6–8",1,"8–9"],["Pendlay row","2 × 8–10",1,"8–9"],["Bayesian cable curl","3 × 12–15 ea",1,"9–10"],["Rope face pull","2 × 10–12 + drop",1,"10"],["Hammer curl","2 × 12–15",1,"9–10"],["Incline walk","WALK",0]] },
     { d: "Legs", s: "Wednesday · one leg day", ex: [["Goblet squat","3 × 8",0,"8–9"],["Romanian deadlift","3 × 8",1,"8"],["Walking lunges","3 × 8 ea",0,"8–9"],["Calf raise","3 × 15",0,"9–10"],["Hanging leg raise","3 × 12–15",1,"9"],["Plank","3 × 60 s",0,"8"]] },
     { d: "Upper", s: "Friday · boxing plan", ex: [["Lat pulldown","3 × 8",1,"8–9"],["DB bench press","3 × 8",0,"8–9"],["Seated cable row","3 × 10",1,"8–9"],["Incline smith press","3 × 8",0,"8–9"],["Lateral raises","3 × 12–15",1,"9–10"],["Face pulls","3 × 15",1,"9"],["Incline walk","WALK",0]] },
+    { d: "Long incline walk", s: "Thursday · 45 min", ex: [["Incline walk","LONG",0]] },
     { d: "Delts, arms, abs, neck", s: "Saturday · 45 min", ex: [["DB lateral raise","4 × 12–20",1,"9–10"],["Rear delt fly","3 × 15",1,"9–10"],["EZ-bar curl","3 × 12",1,"9"],["Incline DB curl","3 × 10",1,"9"],["Hammer curl","3 × 12–15",1,"9–10"],["Rope pushdown","2 × 12",0,"9–10"],["Neck curl with plate","3 × 15",1,"8"],["Weighted cable crunch","3 × 12",1,"9"]] }
   ];
 
@@ -11011,7 +11019,7 @@
 
   // ── Train ──
   function sessionFor(name) { for (var i = 0; i < SESSIONS.length; i++) if (SESSIONS[i].d === name) return SESSIONS[i]; return null; }
-  function exHtml(s2, d) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + (x[1] === "WALK" ? walkMin(d || TODAY) + " min · 12% · 5.0 km/h" : setsFor(x, d || TODAY) + '<small class="rpe">RPE ' + rpeFor(x, d || TODAY) + "</small>") + "</span></div>"; }).join(""); }
+  function exHtml(s2, d) { return s2.ex.map(function (x) { return '<div class="ex' + (x[2] ? " pri" : "") + '"><span class="n">' + x[0] + '</span><span class="sr">' + (x[1] === "WALK" || x[1] === "LONG" ? (x[1] === "LONG" ? 45 : walkMin(d || TODAY)) + " min · 12% · 5.0 km/h" : setsFor(x, d || TODAY) + '<small class="rpe">RPE ' + rpeFor(x, d || TODAY) + "</small>") + "</span></div>"; }).join(""); }
   // Training is a rotation that started on Push on the first day of the cut, not fixed weekdays.
   function rideCount() {
     var n = 0;
@@ -11019,17 +11027,17 @@
     return n;
   }
   function renderBike() {
-    var t = S.ticks[TODAY + "-d"], on = !!(t && t.bike), n = rideCount();
+    var t = S.ticks[TDAY + "-d"], on = !!(t && t.bike), n = rideCount();
     $("trBike").innerHTML = '<button class="trow' + (on ? " on" : "") + '" id="bikeBtn" aria-pressed="' + on + '"><span class="chk2"></span><span class="tb"><b>3 km bike ride</b><i>' +
       (n ? n + (n === 1 ? " ride" : " rides") + " in the last 7 days · " + (n * 3) + " km" : "Tick it on the days you ride") + "</i></span></button>";
   }
-  // Other activity: a run, ride, scooter or walk on top of the gym and the daily 3 km. It is logged for today and counted in km, not in calories.
+  // Other activity: a run, ride, scooter or walk on top of the gym and the daily 3 km. It is logged for the day picked on Train (TDAY) and counted in km, not in calories.
   var ACTS = [["run", "Run"], ["bike", "Bike"], ["scooter", "Scooter"], ["walk", "Walk"]], actType = "run";
   function actName(t) { for (var i = 0; i < ACTS.length; i++) if (ACTS[i][0] === t) return ACTS[i][1]; return "Activity"; }
   function actText(a) { return (a.km ? +a.km.toFixed(1) + " km" : "") + (a.km && a.min ? " · " : "") + (a.min ? a.min + " min" : ""); }
   function renderAct() {
     $("actType").innerHTML = ACTS.map(function (a) { return '<button class="chip' + (a[0] === actType ? " on" : "") + '" data-at="' + a[0] + '" aria-pressed="' + (a[0] === actType) + '">' + a[1] + "</button>"; }).join("");
-    var list = S.acts[TODAY] || [], n = 0, km = 0, i, d, l;
+    var list = S.acts[TDAY] || [], n = 0, km = 0, i, d, l;
     $("actList").hidden = !list.length;
     $("actList").innerHTML = list.map(function (a, j) {
       return '<div class="xrow"><div class="xb"><b>' + actName(a.t) + "</b><span>" + actText(a) + '</span></div><button class="pbtn" data-ad="' + j + '" aria-label="Remove ' + actName(a.t) + '">' + ICON_X + "</button></div>";
@@ -11047,31 +11055,32 @@
     if (km <= 0 && mn <= 0) { er.textContent = "Enter a distance, a time, or both."; er.hidden = false; return; }
     if (km > 500 || mn > 1440) { er.textContent = "That looks too big. Use kilometres and minutes."; er.hidden = false; return; }
     er.hidden = true;
-    if (!S.acts[TODAY]) S.acts[TODAY] = [];
+    var day = TDAY;
+    if (!S.acts[day]) S.acts[day] = [];
     var a = { t: actType, km: Math.round(km * 10) / 10, min: Math.round(mn) };
-    S.acts[TODAY].push(a);
+    S.acts[day].push(a);
     $("aKm").value = ""; $("aMin").value = "";
     save(); renderAct();
-    toast(actName(a.t) + " added · " + actText(a), function () {
-      var l = S.acts[TODAY] || [], i = l.indexOf(a); if (i >= 0) l.splice(i, 1);
-      if (!l.length) delete S.acts[TODAY];
+    toast(actName(a.t) + " added" + dayWord(day) + " · " + actText(a), function () {
+      var l = S.acts[day] || [], i = l.indexOf(a); if (i >= 0) l.splice(i, 1);
+      if (!l.length) delete S.acts[day];
       save(); renderAct();
     });
   });
   $("actList").addEventListener("click", function (ev) {
     var b = ev.target.closest("[data-ad]"); if (!b) return;
-    var l = S.acts[TODAY] || [], i = +b.getAttribute("data-ad"), a = l.splice(i, 1)[0];
+    var day = TDAY, l = S.acts[day] || [], i = +b.getAttribute("data-ad"), a = l.splice(i, 1)[0];
     if (!a) return;
-    if (!l.length) delete S.acts[TODAY];
+    if (!l.length) delete S.acts[day];
     save(); renderAct();
     toast(actName(a.t) + " removed", function () {
-      if (!S.acts[TODAY]) S.acts[TODAY] = [];
-      S.acts[TODAY].splice(Math.min(i, S.acts[TODAY].length), 0, a); save(); renderAct();
+      if (!S.acts[day]) S.acts[day] = [];
+      S.acts[day].splice(Math.min(i, S.acts[day].length), 0, a); save(); renderAct();
     });
   });
   // The rotation follows what was done, not the calendar. Skip a day and the same session waits. Do a different
   // one (Upper on a Legs day) and Legs is still owed next; Upper is then skipped when the round reaches it.
-  var SHORTS = { "5K run or bike": "5K", "Delts, arms, abs, neck": "Delts" };
+  var SHORTS = { "Long incline walk": "Walk", "Delts, arms, abs, neck": "Delts" };
   function step(st, v) {
     if (v !== st.owed) { st.ahead[v] = true; return st; }
     st.owed = (st.owed + 1) % 7;
@@ -11089,12 +11098,17 @@
     for (var d = START; dayDiff(d, day) > 0; d = shift(d, 1)) { var v = loggedOn(d, st.owed); if (v != null) step(st, v); }
     return st;
   }
-  var trSel = null;   // the session shown on the card: today's logged one, the next one owed, or one picked from the chips
+  var trSel = null;   // the session shown on the card: that day's logged one, the one owed, or one picked from the chips
+  // The top of Train (session, bike, other activity) can be any day back to the start, so a forgotten log can be filled in.
+  var TDAY = TODAY;
+  function dayWord(d) { return d === TODAY ? "" : d === shift(TODAY, -1) ? " for yesterday" : " for " + dayName(d); }
   function renderTrain() {
-    var st = rotState(TODAY), logged = loggedOn(TODAY, st.owed), base = logged != null ? logged : st.owed, ph = currentPhase();
+    var st = rotState(TDAY), logged = loggedOn(TDAY, st.owed), base = logged != null ? logged : st.owed, ph = currentPhase(), now = TDAY === TODAY;
     if (trSel == null) trSel = base;
     var plan = WEEKPLAN[trSel], s2 = sessionFor(plan[1]), done = logged === trSel;
-    $("trDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long" });
+    $("trDate").textContent = now ? "Today" : TDAY === shift(TODAY, -1) ? "Yesterday" : dayName(TDAY);
+    $("tPrev").disabled = dayDiff(START, TDAY) <= 0;
+    $("tNext").disabled = TDAY >= TODAY;
     $("trPhase").innerHTML = "<b>Week " + weekNumber() + ", " + ph.n + ".</b> " + ph.d;
     var chips = WEEKPLAN.map(function (w, i) {
       return '<button class="chip' + (i === trSel ? " on" : "") + '" data-ses="' + i + '" aria-pressed="' + (i === trSel) + '">' + (SHORTS[w[1]] || w[1]) + (i === logged ? " ✓" : "") + "</button>";
@@ -11103,14 +11117,14 @@
       : logged != null ? "Log " + (SHORTS[plan[1]] || plan[1]) + " instead"
       : (s2 ? "Mark as trained" : (plan[1] === "Rest" ? "Mark rest done" : "Mark as done"));
     $("trToday").innerHTML =
-      '<div class="mhead"><h3>' + plan[1] + '</h3><span class="tm">' + (trSel === base ? (logged != null ? "Today" : "Up next") : "Instead") + "</span></div>" +
+      '<div class="mhead"><h3>' + plan[1] + '</h3><span class="tm">' + (trSel === base ? (logged != null ? (now ? "Today" : "Done") : (now ? "Up next" : "Owed that day")) : "Instead") + "</span></div>" +
       (plan[2] ? '<div class="tsub">' + plan[2] + "</div>" : "") +
       '<div class="chips" style="flex-wrap:wrap;overflow:visible;margin:12px 0 4px">' + chips + "</div>" +
-      (s2 ? '<div class="exs">' + exHtml(s2) + "</div>" : '<p class="lede" style="margin:8px 0 14px">' + (plan[1] === "Rest" ? "Rest is part of the plan." : "No gym today.") + "</p>") +
+      (s2 ? '<div class="exs">' + exHtml(s2, TDAY) + "</div>" : '<p class="lede" style="margin:8px 0 14px">Rest is part of the plan.</p>') +
       '<button class="bigbtn' + (done ? " on" : "") + '" id="trDone">' + label + "</button>";
     renderBike(); renderAct();
-    var rows = "", seq = [base];
-    step(st, base);   // then as if each day does what is owed
+    var t0 = rotState(TODAY), l0 = loggedOn(TODAY, t0.owed), b0 = l0 != null ? l0 : t0.owed, rows = "", seq = [b0];
+    st = t0; step(st, b0);   // from today on, as if each day does what is owed
     for (var j = 1; j < 7; j++) { seq.push(st.owed); step(st, st.owed); }
     for (var k = 0; k < 7; k++) {
       var date = shift(TODAY, k), d = WEEKPLAN[seq[k]], ss = sessionFor(d[1]), today = k === 0;
@@ -11119,9 +11133,10 @@
       else rows += '<div class="acc wrow' + (today ? " today" : "") + '"><button class="acc-h" data-acc aria-expanded="false"><span class="daytag">' + tag + '</span><span class="ab"><span class="an">' + d[1] + '</span><span class="as">' + d[2] + '</span></span><i class="chev"></i></button><div class="acc-b"><div>' + exHtml(ss, date) + "</div></div></div>";
     }
     $("weekPlan").innerHTML = rows;
-    $("backAcc").innerHTML = accHtml("cardio1", false, "The incline walk", walkMin(TODAY) + " minutes after Push, Pull and Upper", "",
+    $("backAcc").innerHTML = accHtml("cardio1", false, "The incline walk", walkMin(TODAY) + " minutes after Push, Pull and Upper, 45 on the walk day", "",
       '<div class="acc-in"><p>Treadmill, 12% incline, 5.0 km/h, ' + walkMin(TODAY) + ' minutes. Hands off the rails. You should be able to talk in full sentences the whole way; if you can’t, drop the speed, not the incline.</p>' +
       "<p>The minutes go up with the plan: 20 now, 25 in the work, 30 in the finish, 20 over Christmas. Speed and incline stay the same.</p>" +
+      "<p>The walk day, once a round, is the same walk for 45 minutes and no lifting. It replaced the 5K: same fat burn, no pounding on the knees, and nothing that takes away from the heavy days.</p>" +
       "<p>About 150–250 kcal each time, burned while you walk; the after-burn from easy cardio is small. The app does not count it, so don’t eat it back. If the treadmills are all taken, the stair climber at an easy pace for the same minutes.</p></div>") +
       accHtml("rpe1", false, "RPE, how hard each set is", "Heavy: compounds 8–9, the rest 9–10", "",
         '<div class="acc-in"><p><b style="color:var(--fg);font-weight:600">RPE 10</b>: nothing left, the next rep would fail. <b style="color:var(--fg);font-weight:600">9</b>: one more rep was there. <b style="color:var(--fg);font-weight:600">8</b>: two more. Each exercise shows its number.</p>' +
@@ -11131,22 +11146,24 @@
   }
   $("trBike").addEventListener("click", function (ev) {
     if (!ev.target.closest("#bikeBtn")) return;
-    var key = TODAY + "-d";
+    var key = TDAY + "-d";
     if (!S.ticks[key]) S.ticks[key] = {};
     if (S.ticks[key].bike) delete S.ticks[key].bike; else S.ticks[key].bike = true;
     save(); renderBike(); renderMore();
   });
+  $("tPrev").addEventListener("click", function () { TDAY = shift(TDAY, -1); trSel = null; renderTrain(); });
+  $("tNext").addEventListener("click", function () { if (TDAY < TODAY) { TDAY = shift(TDAY, 1); trSel = null; renderTrain(); } });
   $("trToday").addEventListener("click", function (ev) {
     var c = ev.target.closest("[data-ses]");
     if (c) { trSel = +c.getAttribute("data-ses"); renderTrain(); return; }
     if (!ev.target.closest("#trDone")) return;
-    var key = TODAY + "-d", was = loggedOn(TODAY, rotState(TODAY).owed), name = WEEKPLAN[trSel][1];
+    var day = TDAY, key = day + "-d", was = loggedOn(day, rotState(day).owed), name = WEEKPLAN[trSel][1];
     if (!S.ticks[key]) S.ticks[key] = {};
-    if (was === trSel) { delete S.sess[TODAY]; delete S.ticks[key].train; trSel = null; }
-    else { S.sess[TODAY] = trSel; S.ticks[key].train = true; }
+    if (was === trSel) { delete S.sess[day]; delete S.ticks[key].train; trSel = null; }
+    else { S.sess[day] = trSel; S.ticks[key].train = true; }
     save(); renderTrain(); renderMore();
-    toast(was === trSel ? "Training undone" : (SHORTS[name] || name) + " logged for today", function () {
-      if (was == null) { delete S.sess[TODAY]; delete S.ticks[key].train; } else { S.sess[TODAY] = was; S.ticks[key].train = true; }
+    toast(was === trSel ? "Training undone" + dayWord(day) : (SHORTS[name] || name) + " logged" + (day === TODAY ? " for today" : dayWord(day)), function () {
+      if (was == null) { delete S.sess[day]; delete S.ticks[key].train; } else { S.sess[day] = was; S.ticks[key].train = true; }
       trSel = null; save(); renderTrain(); renderMore();
     });
   });
